@@ -94,6 +94,9 @@
         <input type="password" id="empPass" placeholder="Password">
         <button onclick="loginUser()">Login Karein</button>
         <p id="loginMsg" style="color: #f85149; font-weight: bold;"></p>
+        <div style="margin-top: 15px; border-top: 1px solid #30363d; padding-top: 12px;">
+          <a href="javascript:void(0)" onclick="openApiSettingsModal()" style="color: #58a6ff; font-size: 12px; text-decoration: none;">âš™ï¸ Backend API Settings</a>
+        </div>
       </div>
 
       <!-- ADMIN / OWNER PORTAL -->
@@ -291,12 +294,135 @@
     </div>
 
     <script>
+      // =====================================================================
+      // UNIVERSAL HYBRID BRIDGE: SUPPORTS VERCEL (FETCH API) & GOOGLE APPS SCRIPT
+      // =====================================================================
+      var DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyXHJaFTSkjwu6C8ze4czs2Q42NQsgzjW814j8OLA7ztMXTW-nqmh2gkpjebmdSW4YJjA/exec";
+      var CURRENT_API_URL = localStorage.getItem("TASK_APP_API_URL") || window.TASK_APP_API_URL || DEFAULT_GAS_URL;
+
+      // Read URL Query Parameters (empId, apiUrl)
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("apiUrl")) {
+        var pUrl = urlParams.get("apiUrl").trim();
+        if (pUrl) {
+          localStorage.setItem("TASK_APP_API_URL", pUrl);
+          CURRENT_API_URL = pUrl;
+        }
+      }
+
+      function openApiSettingsModal() {
+        document.getElementById("apiEndpointInput").value = CURRENT_API_URL;
+        document.getElementById("apiTestStatus").innerHTML = "";
+        document.getElementById("apiSettingsModal").style.display = "flex";
+      }
+
+      function closeApiSettingsModal() {
+        document.getElementById("apiSettingsModal").style.display = "none";
+      }
+
+      async function testApiConnection() {
+        var inputUrl = (document.getElementById("apiEndpointInput").value || "").trim();
+        var statusEl = document.getElementById("apiTestStatus");
+        if (!inputUrl) {
+          statusEl.innerHTML = "<span style='color:#f85149;'>Please enter a valid Google Apps Script Web App URL!</span>";
+          return;
+        }
+        statusEl.innerHTML = "<span style='color:#ffd33d;'>Testing backend connection...</span>";
+        try {
+          var res = await fetch(inputUrl, {
+            method: "POST",
+            body: JSON.stringify({ action: "ping" })
+          });
+          var json = await res.json();
+          if (json.status === "success" || json.pong) {
+            statusEl.innerHTML = "<span style='color:#2ea043; font-weight:bold;'>âœ… Connected successfully to Backend!</span>";
+          } else {
+            statusEl.innerHTML = "<span style='color:#f85149;'>âš ï¸ Reached backend, but got: " + (json.message || "Unknown response") + "</span>";
+          }
+        } catch (err) {
+          statusEl.innerHTML = "<span style='color:#f85149;'>âŒ Connection failed: " + err.message + "<br><small style='color:#8b949e;'>Ensure script is deployed as Web App with 'Anyone' access.</small></span>";
+        }
+      }
+
+      function saveApiUrlSettings() {
+        var inputUrl = (document.getElementById("apiEndpointInput").value || "").trim();
+        if (!inputUrl) {
+          alert("Please enter a valid URL!");
+          return;
+        }
+        localStorage.setItem("TASK_APP_API_URL", inputUrl);
+        CURRENT_API_URL = inputUrl;
+        alert("API Endpoint saved successfully! Reloading application...");
+        window.location.reload();
+      }
+
+      async function executeVercelApi(actionName, paramMap) {
+        var payload = Object.assign({ action: actionName }, paramMap || {});
+        var response = await fetch(CURRENT_API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        var text = await response.text();
+        var json;
+        try {
+          json = JSON.parse(text);
+        } catch (e) {
+          console.error("Non-JSON from GAS backend:", text);
+          throw new Error("Google Apps Script failed to return JSON. Ensure Web App is deployed with 'Anyone' access.");
+        }
+        if (json.status === "success") {
+          return json.data;
+        } else {
+          throw new Error(json.message || "Backend error occurred");
+        }
+      }
+
+      var isNativeGAS = (typeof google !== "undefined" && google.script && typeof google.script.run !== "undefined");
+
+      if (!isNativeGAS) {
+        window.google = window.google || {};
+        window.google.script = window.google.script || {};
+
+        var makeRunner = function(successHandler, failureHandler) {
+          var runner = {
+            withSuccessHandler: function(sh) { return makeRunner(sh, failureHandler); },
+            withFailureHandler: function(fh) { return makeRunner(successHandler, fh); },
+            _run: function(action, paramMap) {
+              var sCb = successHandler || function() {};
+              var fCb = failureHandler || function(err) { console.error(err); alert("API Error: " + (err.message || err)); };
+              executeVercelApi(action, paramMap).then(sCb).catch(fCb);
+            },
+            verifyLogin: function(id) { this._run("verifyLogin", { empId: id }); },
+            getStaffListForAdmin: function() { this._run("getStaffListForAdmin", {}); },
+            assignAdhocTask: function(staff, typeVal, desc, deadline, photosData, fileType, fileName) {
+              this._run("assignAdhocTask", { staff: staff, typeVal: typeVal, desc: desc, deadline: deadline, photosData: photosData, fileType: fileType, fileName: fileName });
+            },
+            getAdhocTasksForStaff: function(staffName) { this._run("getAdhocTasksForStaff", { staffName: staffName }); },
+            getTasksForRole: function(role, staffName) { this._run("getTasksForRole", { role: role, staffName: staffName }); },
+            getStaffScoreMetrics: function(staffName, empId) { this._run("getStaffScoreMetrics", { staffName: staffName, empId: empId }); },
+            getStaffLeaderboard: function(period) { this._run("getStaffLeaderboard", { period: period }); },
+            submitTaskWithProof: function(name, role, type, task, subTask, deadline, base64Data, mimeType, fileName, isAdhoc, adhocIndex, actionType) {
+              this._run("submitTaskWithProof", { name: name, role: role, type: type, task: task, subTask: subTask, deadline: deadline, base64Data: base64Data, mimeType: mimeType, fileName: fileName, isAdhoc: isAdhoc, adhocIndex: adhocIndex, actionType: actionType });
+            },
+            getStaffProgressReport: function(staffName) { this._run("getStaffProgressReport", { staffName: staffName }); },
+            getAllAdhocHistory: function() { this._run("getAllAdhocHistory", {}); },
+            getLiveOrdersForManager: function() { this._run("getLiveOrdersForManager", {}); },
+            completeStoreManagerOrder: function(rowIndex) { this._run("completeStoreManagerOrder", { rowIndex: rowIndex }); }
+          };
+          return runner;
+        };
+
+        window.google.script.run = makeRunner(null, null);
+      }
+
       var loggedInUser = null;
       var roleTasks = [], extraTasks = [], orderTasks = [];
       var currentActiveTab = 'Daily';
       var selectedTaskObj = null; 
       var lastOrderCount = -1; 
       var passedEmpId = "<?= portalEmpId ?>";
+      if (urlParams.has("empId")) passedEmpId = urlParams.get("empId");
+      else if (urlParams.has("id")) passedEmpId = urlParams.get("id");
       
       // Multi-photos store for task assignment
       var adminSelectedPhotos = [];
@@ -1239,5 +1365,25 @@
         window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
       }
     </script>
+
+    <!-- BACKEND API SETTINGS MODAL -->
+    <div id="apiSettingsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; padding:15px; backdrop-filter:blur(4px);">
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:22px; max-width:520px; width:100%; box-shadow:0 12px 36px rgba(0,0,0,0.85);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:#58a6ff; margin:0; font-size:16px;">âš™ï¸ Backend API Configuration</h3>
+          <span onclick="closeApiSettingsModal()" style="cursor:pointer; color:#8b949e; font-size:22px; font-weight:bold;">&times;</span>
+        </div>
+        <p style="font-size:12px; color:#8b949e; line-height:1.5; margin-bottom:12px;">
+          Google Apps Script Web App Deployment URL yahan enter karein. Vercel frontend is endpoint se live communicate karega:
+        </p>
+        <label style="font-size:11px; color:#58a6ff; font-weight:bold; text-transform:uppercase; display:block; margin-bottom:4px;">Apps Script /exec Endpoint:</label>
+        <input type="text" id="apiEndpointInput" style="font-size:12px; padding:10px; margin-bottom:12px;" placeholder="https://script.google.com/macros/s/.../exec" />
+        <div style="display:flex; gap:10px; margin-top:5px;">
+          <button type="button" class="btn-info" onclick="testApiConnection()" style="flex:1; padding:10px; font-size:12px;">ðŸ” Test Connection</button>
+          <button type="button" onclick="saveApiUrlSettings()" style="flex:1; padding:10px; font-size:12px;">ðŸ’¾ Save & Reload</button>
+        </div>
+        <div id="apiTestStatus" style="font-size:12px; margin-top:12px; text-align:center;"></div>
+      </div>
+    </div>
   </body>
 </html>
