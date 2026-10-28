@@ -500,7 +500,7 @@
           var parts = clean.split(",");
           for (var i = 0; i < parts.length; i++) {
             var u = parts[i].trim();
-            if (u) urls.push(u);
+            if (u && u !== "No Photo") urls.push(u);
           }
         }
         return urls;
@@ -718,6 +718,17 @@
             roleTasks = tasks || []; 
             google.script.run.withSuccessHandler(function(adhocs) { 
                 extraTasks = adhocs || []; 
+                
+                // Show notification banner if any pending assigned tasks
+                var pendingCount = extraTasks.filter(function(e) {
+                  return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped");
+                }).length;
+                if (pendingCount > 0) {
+                  var banner = document.getElementById("notificationBanner");
+                  banner.innerText = "🔔 " + pendingCount + " Naye Assigned Task Aaye Hain! Click to view.";
+                  banner.style.display = "block";
+                }
+
                 if (loggedInUser.role.toLowerCase().trim() === "store manager") {
                   google.script.run.withSuccessHandler(function(orders) { 
                     orderTasks = orders || []; 
@@ -826,7 +837,7 @@
             }
         }
 
-        // 2. Count Owner-Assigned Recurring Tasks (Daily, Weekly, Monthly)
+        // 2. Count Owner-Assigned Recurring Tasks (Daily, Weekly, Monthly) + One-Time Daily
         for(var a=0; a<extraTasks.length; a++) {
             var aItem = extraTasks[a];
             var aNormType = (aItem.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
@@ -834,6 +845,10 @@
             if(counts[aNormType]) {
                 counts[aNormType].t++;
                 if(aItem.status.includes("Uploaded") || aItem.status.includes("Completed") || aItem.status.includes("Skipped")) { counts[aNormType].d++; }
+            } else if (aNormType.indexOf("Extra") !== -1 || aNormType.indexOf("One") !== -1) {
+                // One-time tasks also counted in Daily total
+                counts.Daily.t++;
+                if(aItem.status.includes("Uploaded") || aItem.status.includes("Completed") || aItem.status.includes("Skipped")) { counts.Daily.d++; }
             }
         }
 
@@ -934,12 +949,18 @@
             }
           }
 
-          // 2. Render Owner-Assigned Recurring Tasks for this cycle (e.g. Daily assigned to Rekha, Vrushali, or All Staff)
+          // 2. Render Owner-Assigned Recurring Tasks + (One-Time tasks in Daily tab)
           var assignedForThisTab = [];
           for(var a = 0; a < extraTasks.length; a++) {
             var at = extraTasks[a];
             var atTypeClean = (at.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').toLowerCase().trim();
+            // Include matching recurring tasks
             if (atTypeClean === currentTabClean) {
+              assignedForThisTab.push({ data: at, index: a });
+              count++;
+            }
+            // In the Daily tab, also show active One-Time tasks so they are immediately visible alongside daily work
+            else if (currentTabClean === 'daily' && (atTypeClean.indexOf('extra') !== -1 || atTypeClean.indexOf('one') !== -1)) {
               assignedForThisTab.push({ data: at, index: a });
               count++;
             }
@@ -948,7 +969,7 @@
           // A) Display Owner Assigned Section (if any assigned by Owner)
           if (assignedForThisTab.length > 0) {
             html += "<div style='background:#1c2128; border:1px solid #ffd33d; border-radius:8px; padding:12px; margin-bottom:15px;'>";
-            html += "<h4 style='margin:0 0 10px 0; color:#ffd33d;'>⭐ Owner Assigned " + currentActiveTab + " Tasks (" + assignedForThisTab.length + ")</h4>";
+            html += "<h4 style='margin:0 0 10px 0; color:#ffd33d;'>⭐ Owner Assigned Tasks (" + assignedForThisTab.length + ")</h4>";
             for(var x = 0; x < assignedForThisTab.length; x++) {
               html += renderAssignedTaskItem(assignedForThisTab[x].data, assignedForThisTab[x].index, isOwner);
             }
