@@ -539,7 +539,7 @@ function getAllAdhocHistory() {
 }
 
 // =====================================================================
-// 11. STORE MANAGER: LIVE ORDERS DISPATCH
+// 11. STORE MANAGER: LIVE ORDERS DISPATCH & COMPLETE
 // =====================================================================
 function getLiveOrdersForManager() {
   try {
@@ -565,5 +565,22 @@ function getLiveOrdersForManager() {
     return orders;
   } catch (err) {
     return [];
+  }
+}
+
+function completeStoreManagerOrder(rowIndex) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Orders");
+    if (!sheet) return { success: false, message: "Orders sheet not found" };
+    
+    var r = parseInt(rowIndex);
+    if (r >= 2 && r <= sheet.getLastRow()) {
+      sheet.getRange(r, 7).setValue("Completed");
+      return { success: true };
+    }
+    return { success: false, message: "Invalid row index: " + rowIndex };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 }
