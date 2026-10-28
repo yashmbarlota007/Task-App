@@ -1,15 +1,40 @@
-﻿// =====================================================================
+// =====================================================================
 // YASH MARKETING - TASK OPERATIONS & STAFF SCORING BACKEND (Code.gs)
+// Live GitHub Sync: Automatically pulls Index.html live from GitHub
 // Features:
-// 1. 7-Period Score Engine (Daily, Weekly, Monthly, Last Month, Curr Qtr, Last Qtr, Yearly)
-// 2. Multiple Reference Photos Upload to Google Drive
-// 3. Dynamic Daily / Weekly / Monthly Owner Assigned Tasks & Tracking
-// 4. Role Routine Tasks & Store Manager Dispatch Operations
+// 1. Live Link between GAS and GitHub (Zero manual deployment needed)
+// 2. 7-Period Score Engine (Daily, Weekly, Monthly, Last Month, Curr Qtr, Last Qtr, Yearly)
+// 3. Multiple Reference Photos Upload to Google Drive
+// 4. Dynamic Daily / Weekly / Monthly Owner Assigned Tasks & Tracking
+// 5. Role Routine Tasks & Store Manager Dispatch Operations
 // =====================================================================
 
 function doGet(e) {
+  var empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
+  
+  // LIVE LINK WITH GITHUB: Directly fetch the latest Index.html from GitHub main branch
+  try {
+    var githubUrl = "https://raw.githubusercontent.com/yashmbarlota007/Task-App/main/Index.html?t=" + new Date().getTime();
+    var response = UrlFetchApp.fetch(githubUrl, {
+      headers: { "Cache-Control": "no-cache, no-store, max-age=0" },
+      muteHttpExceptions: true
+    });
+    
+    if (response.getResponseCode() === 200) {
+      var html = response.getContentText();
+      html = html.replace('<?= empId ?>', empId);
+      return HtmlService.createHtmlOutput(html)
+        .setTitle("Yash Marketing - Task Operations & Staff Portal")
+        .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    }
+  } catch (err) {
+    Logger.log("Live GitHub Fetch fallback: " + err.message);
+  }
+  
+  // Local fallback if GitHub is unreachable
   var template = HtmlService.createTemplateFromFile("Index");
-  template.empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
+  template.empId = empId;
   return template.evaluate()
     .setTitle("Yash Marketing - Task Operations & Staff Portal")
     .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
