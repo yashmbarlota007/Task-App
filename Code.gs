@@ -73,11 +73,47 @@ function getSheetByNameFlexible(ss, names) {
 }
 
 // =====================================================================
-// HELPER: ROBUST ADHOC_TASKS SHEET SCHEMA & COLUMN MAPPER
+// HELPER: NORMALIZE TASK FREQUENCY
+// =====================================================================
+function normalizeFrequency(freq) {
+  var f = String(freq || "").toLowerCase();
+  if (f.indexOf("daily") !== -1) return "Daily";
+  if (f.indexOf("week") !== -1) return "Weekly";
+  if (f.indexOf("month") !== -1) return "Monthly";
+  return "Extra (One Time)";
+}
+
+// =====================================================================
+// HELPER: STAFF MATCHING (Handles "All Staff", full names, empId, first names)
+// =====================================================================
+function isStaffMatch(assignedTo, staffName, empId) {
+  var a = String(assignedTo || "").replace("👤 ", "").trim().toLowerCase();
+  if (!a || a === "all" || a === "all staff" || a.indexOf("all") !== -1 || a === "everyone" || a === "team" || a === "all team") {
+    return true;
+  }
+  var s = String(staffName || "").replace("👤 ", "").trim().toLowerCase();
+  var id = String(empId || "").replace(/[^\w]/gi, '').toLowerCase();
+  var aClean = a.replace(/[^\w]/gi, '');
+
+  if (s && a === s) return true;
+  if (id && aClean === id) return true;
+  if (s && a.indexOf(s) !== -1) return true;
+  if (s && s.indexOf(a) !== -1) return true;
+
+  // First name match (e.g. "Rekha" vs "Rekha Barlota")
+  var sFirst = s.split(/\s+/)[0];
+  var aFirst = a.split(/\s+/)[0];
+  if (sFirst && aFirst && sFirst.length >= 3 && sFirst === aFirst) return true;
+
+  return false;
+}
+
+// =====================================================================
+// HELPER: ROBUST ADHOC_TASKS SHEET SCHEMA & DYNAMIC COLUMN MAPPER
 // Automatically ensures the Frequency column exists without corrupting data
 // =====================================================================
 function getOrSetupAdhocSheet(ss) {
-  var sheet = getSheetByNameFlexible(ss, ["Adhoc_Tasks", "Adhoc Tasks", "Assigned_Tasks"]);
+  var sheet = getSheetByNameFlexible(ss, ["Adhoc_Tasks", "Adhoc Tasks", "Assigned_Tasks", "Tasks_Assigned"]);
   var defaultHeaders = ["Assign Date", "Assigned To", "Frequency", "Task Description", "Deadline", "Reference Photo", "Status", "TaskId"];
   
   if (!sheet) {
@@ -91,54 +127,54 @@ function getOrSetupAdhocSheet(ss) {
 
   var numCols = Math.max(sheet.getLastColumn(), 1);
   var headerVals = sheet.getRange(1, 1, 1, numCols).getValues()[0];
-  
   var colMap = { date: -1, staff: -1, freq: -1, task: -1, deadline: -1, photo: -1, status: -1, id: -1 };
-  
+
   for (var c = 0; c < headerVals.length; c++) {
     var h = String(headerVals[c] || "").toLowerCase().trim();
     if (!h) continue;
-    if (h.indexOf("freq") !== -1 || h === "type") colMap.freq = c;
-    else if (colMap.date === -1 && (h.indexOf("date") !== -1 || h.indexOf("time") !== -1)) colMap.date = c;
-    else if (colMap.staff === -1 && (h.indexOf("staff") !== -1 || h.indexOf("assign") !== -1 || h.indexOf("user") !== -1 || h.indexOf("emp") !== -1)) colMap.staff = c;
-    else if (colMap.task === -1 && (h.indexOf("desc") !== -1 || (h.indexOf("task") !== -1 && h.indexOf("id") === -1 && h.indexOf("freq") === -1))) colMap.task = c;
-    else if (colMap.deadline === -1 && (h.indexOf("dead") !== -1 || h.indexOf("due") !== -1)) colMap.deadline = c;
-    else if (colMap.photo === -1 && (h.indexOf("photo") !== -1 || h.indexOf("image") !== -1 || h.indexOf("file") !== -1 || h.indexOf("proof") !== -1)) colMap.photo = c;
-    else if (colMap.status === -1 && h.indexOf("stat") !== -1) colMap.status = c;
-    else if (colMap.id === -1 && h.indexOf("id") !== -1) colMap.id = c;
+    if (h.indexOf("freq") !== -1 || h === "type" || h.indexOf("repeat") !== -1 || h.indexOf("recur") !== -1 || h === "task type") {
+      if (colMap.freq === -1) colMap.freq = c;
+    } else if (colMap.id === -1 && (h === "id" || h === "taskid" || h === "task id")) {
+      colMap.id = c;
+    } else if (colMap.date === -1 && (h.indexOf("date") !== -1 || h.indexOf("time") !== -1 || h === "timestamp")) {
+      colMap.date = c;
+    } else if (colMap.staff === -1 && (h.indexOf("staff") !== -1 || h.indexOf("assign") !== -1 || h.indexOf("user") !== -1 || h.indexOf("emp") !== -1)) {
+      colMap.staff = c;
+    } else if (colMap.deadline === -1 && (h.indexOf("dead") !== -1 || h.indexOf("due") !== -1)) {
+      colMap.deadline = c;
+    } else if (colMap.photo === -1 && (h.indexOf("photo") !== -1 || h.indexOf("image") !== -1 || h.indexOf("file") !== -1 || h.indexOf("proof") !== -1)) {
+      colMap.photo = c;
+    } else if (colMap.status === -1 && (h.indexOf("stat") !== -1 || h === "state")) {
+      colMap.status = c;
+    } else if (colMap.task === -1 && (h.indexOf("desc") !== -1 || h.indexOf("task") !== -1)) {
+      colMap.task = c;
+    }
   }
 
-  // If Frequency column is missing from header, insert it cleanly at column 3
+  // If Frequency column was missing from header, append it cleanly at the end
   if (colMap.freq === -1) {
-    sheet.insertColumnAfter(2);
-    sheet.getRange(1, 3).setValue("Frequency");
+    var newColIndex = numCols + 1;
+    sheet.getRange(1, newColIndex).setValue("Frequency");
     var totalRows = sheet.getLastRow();
     if (totalRows > 1) {
-      var fRange = sheet.getRange(2, 3, totalRows - 1, 1);
+      var fRange = sheet.getRange(2, newColIndex, totalRows - 1, 1);
       var fVals = fRange.getValues();
       for (var r = 0; r < fVals.length; r++) {
         if (!fVals[r][0]) fVals[r][0] = "Extra (One Time)";
       }
       fRange.setValues(fVals);
     }
-    // Re-index columns after insertion
-    colMap.freq = 2;
-    colMap.date = 0;
-    colMap.staff = 1;
-    colMap.task = 3;
-    colMap.deadline = 4;
-    colMap.photo = 5;
-    colMap.status = 6;
-    colMap.id = 7;
-  } else {
-    // Fill any missing defaults based on column index order
-    if (colMap.date === -1) colMap.date = 0;
-    if (colMap.staff === -1) colMap.staff = 1;
-    if (colMap.task === -1) colMap.task = (colMap.freq === 2) ? 3 : 2;
-    if (colMap.deadline === -1) colMap.deadline = colMap.task + 1;
-    if (colMap.photo === -1) colMap.photo = colMap.deadline + 1;
-    if (colMap.status === -1) colMap.status = colMap.photo + 1;
-    if (colMap.id === -1) colMap.id = colMap.status + 1;
+    colMap.freq = numCols;
   }
+
+  // Set defaults for any unidentified column
+  if (colMap.date === -1) colMap.date = 0;
+  if (colMap.staff === -1) colMap.staff = 1;
+  if (colMap.task === -1) colMap.task = 2;
+  if (colMap.deadline === -1) colMap.deadline = 3;
+  if (colMap.photo === -1) colMap.photo = 4;
+  if (colMap.status === -1) colMap.status = 5;
+  if (colMap.id === -1) colMap.id = 6;
 
   return { sheet: sheet, colMap: colMap };
 }
@@ -171,7 +207,8 @@ function verifyLogin(id, pass) {
       var rowActive = data[i][4];
       
       // Match by Emp ID or Name
-      var idMatches = (rowEmpId === cleanId || String(data[i][0] || "").trim().toLowerCase() === String(id).trim().toLowerCase());
+      var idMatches = (rowEmpId === cleanId || String(data[i][0] || "").trim().toLowerCase() === String(id).trim().toLowerCase() ||
+                       rowName.toLowerCase() === String(id).trim().toLowerCase());
       
       if (idMatches) {
         if (cleanPass === "SSO_BYPASS" || rowPass === cleanPass) {
@@ -236,13 +273,8 @@ function assignAdhocTask(staff, typeVal, desc, deadline, photosData, fileType, f
     var sheet = setup.sheet;
     var colMap = setup.colMap;
     
-    // Normalize frequency name: "Daily Task" -> "Daily", "Weekly Task" -> "Weekly", etc.
-    var cleanFreq = String(typeVal || "Extra (One Time)").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-    if (!cleanFreq || cleanFreq.toLowerCase() === "extra" || cleanFreq.toLowerCase() === "one time") {
-      cleanFreq = "Extra (One Time)";
-    } else {
-      cleanFreq = cleanFreq.charAt(0).toUpperCase() + cleanFreq.slice(1).toLowerCase();
-    }
+    // Normalize frequency: Daily, Weekly, Monthly, or Extra (One Time)
+    var cleanFreq = normalizeFrequency(typeVal);
     
     var cleanStaff = String(staff || "").replace("👤 ", "").trim();
     if (!cleanStaff || cleanStaff.toLowerCase().indexOf("all") !== -1) {
@@ -309,7 +341,7 @@ function assignAdhocTask(staff, typeVal, desc, deadline, photosData, fileType, f
 // =====================================================================
 // 4. STAFF: GET ADHOC & RECURRING TASKS FOR STAFF
 // Includes Auto-Reset Logic for Daily, Weekly, and Monthly cycles!
-// Supports "All Staff", Staff Name, and Staff ID matching!
+// Supports "All Staff", Staff Name, First Name, and Staff ID matching!
 // =====================================================================
 function getAdhocTasksForStaff(staffName, empId) {
   try {
@@ -321,17 +353,17 @@ function getAdhocTasksForStaff(staffName, empId) {
     var data = sheet.getDataRange().getValues();
     if (data.length <= 1) return [];
     
-    var cleanStaff = String(staffName || "").replace("👤 ", "").trim().toLowerCase();
+    var cleanStaff = String(staffName || "").replace("👤 ", "").trim();
     var cleanEmpId = String(empId || "").replace(/[^\w]/gi, '').toLowerCase();
     
-    // Also lookup Staff_List to find empId if not passed
+    // Lookup Staff_List to find empId if not passed
     if (!cleanEmpId && cleanStaff) {
       var staffSheet = getSheetByNameFlexible(ss, ["Staff_List", "Staff List", "Staff", "Users"]);
       if (staffSheet) {
         var sVals = staffSheet.getDataRange().getValues();
         for (var sv = 1; sv < sVals.length; sv++) {
           var svName = String(sVals[sv][2] || "").trim().toLowerCase();
-          if (svName === cleanStaff || (cleanStaff.length >= 3 && svName.indexOf(cleanStaff) !== -1)) {
+          if (svName === cleanStaff.toLowerCase() || (cleanStaff.length >= 3 && svName.indexOf(cleanStaff.toLowerCase()) !== -1)) {
             cleanEmpId = String(sVals[sv][0] || "").replace(/[^\w]/gi, '').toLowerCase();
             break;
           }
@@ -346,16 +378,14 @@ function getAdhocTasksForStaff(staffName, empId) {
     var currentWeekStr = Utilities.formatDate(now, timeZone, "yyyy-ww");
     var currentMonthStr = Utilities.formatDate(now, timeZone, "yyyy-MM");
     
-    // Fetch Task_Submissions to check cycle completions for this staff member
+    // Fetch Task_Submissions to check cycle completions for this specific staff member
     var subSheet = getSheetByNameFlexible(ss, ["Task_Submissions", "Task Submissions", "Submissions"]);
     var staffSubmissions = [];
     if (subSheet && subSheet.getLastRow() > 1) {
       var subData = subSheet.getDataRange().getValues();
       for (var s = 1; s < subData.length; s++) {
-        var sStaff = String(subData[s][1] || "").replace("👤 ", "").trim().toLowerCase();
-        var isSubStaffMatch = (sStaff === cleanStaff || (cleanStaff.length >= 3 && sStaff.indexOf(cleanStaff) !== -1) ||
-                               (cleanEmpId && sStaff.indexOf(cleanEmpId) !== -1));
-        if (isSubStaffMatch) {
+        var sStaff = String(subData[s][1] || "");
+        if (isStaffMatch(sStaff, cleanStaff, cleanEmpId)) {
           var rawDate = subData[s][0];
           var subDateObj = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
           var subDateFormatted = "";
@@ -382,31 +412,12 @@ function getAdhocTasksForStaff(staffName, empId) {
     var list = [];
     for (var i = 1; i < data.length; i++) {
       var assignedToRaw = String(data[i][colMap.staff] || "").trim();
-      var assignedToClean = assignedToRaw.replace("👤 ", "").trim().toLowerCase();
-      var assignedToEmpId = assignedToClean.replace(/[^\w]/gi, '');
       
       // Match condition: "All Staff", exact staff name, substring, or empId match
-      var isMatch = false;
-      if (assignedToClean.indexOf("all") !== -1 || assignedToClean === "everyone" || assignedToClean === "team" || !assignedToClean) {
-        isMatch = true;
-      } else if (assignedToClean === cleanStaff) {
-        isMatch = true;
-      } else if (cleanStaff.length >= 3 && assignedToClean.indexOf(cleanStaff) !== -1) {
-        isMatch = true;
-      } else if (assignedToClean.length >= 3 && cleanStaff.indexOf(assignedToClean) !== -1) {
-        isMatch = true;
-      } else if (cleanEmpId && (assignedToEmpId === cleanEmpId || assignedToClean.indexOf(cleanEmpId) !== -1)) {
-        isMatch = true;
-      }
+      var isMatch = isStaffMatch(assignedToRaw, cleanStaff, cleanEmpId);
       
       if (isMatch) {
-        var rawFreq = String(data[i][colMap.freq] || "Extra (One Time)").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-        if (!rawFreq || rawFreq.toLowerCase() === "extra" || rawFreq.toLowerCase() === "one time") {
-          rawFreq = "Extra (One Time)";
-        } else {
-          rawFreq = rawFreq.charAt(0).toUpperCase() + rawFreq.slice(1).toLowerCase();
-        }
-        
+        var rawFreq = normalizeFrequency(data[i][colMap.freq]);
         var taskDesc = String(data[i][colMap.task] || "");
         var deadline = String(data[i][colMap.deadline] || "Jald");
         var refPhoto = data[i][colMap.photo] || "No Photo";
@@ -415,7 +426,7 @@ function getAdhocTasksForStaff(staffName, empId) {
         
         var currentCycleStatus = "Pending";
         
-        // AUTO-RESET RECURRING CYCLES:
+        // AUTO-RESET RECURRING CYCLES PER SCHEDULE:
         if (rawFreq === "Daily") {
           var doneToday = staffSubmissions.some(function(sub) {
             return sub.dayStr === todayStr && (sub.adhocIndex === (i + 1) || sub.task === taskClean);
@@ -485,8 +496,8 @@ function getTasksForRole(roleName, staffName) {
     if (subSheet && subSheet.getLastRow() > 1) {
       var subData = subSheet.getDataRange().getValues();
       for (var s = 1; s < subData.length; s++) {
-        var sStaff = String(subData[s][1] || "").replace("👤 ", "").trim().toLowerCase();
-        if (sStaff === cleanStaff || (cleanStaff.length >= 3 && sStaff.indexOf(cleanStaff) !== -1)) {
+        var sStaff = String(subData[s][1] || "");
+        if (isStaffMatch(sStaff, cleanStaff, "")) {
           var rawDate = subData[s][0];
           var subDateObj = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
           if (!isNaN(subDateObj.getTime())) {
@@ -507,7 +518,7 @@ function getTasksForRole(roleName, staffName) {
                          (targetRole.length >= 3 && roleClean.indexOf(targetRole) !== -1));
       
       if (isRoleMatch) {
-        var type = String(data[i][1] || "").trim();
+        var type = normalizeFrequency(data[i][1]);
         var mainTask = String(data[i][2] || "").trim();
         var subTask = String(data[i][3] || "").trim();
         var deadline = String(data[i][4] || "N/A").trim();
@@ -553,15 +564,18 @@ function getStaffScoreMetrics(staffName, empId) {
       yearly: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 }
     };
     
-    var cleanStaff = String(staffName || "").replace("👤 ", "").trim().toLowerCase();
+    var cleanStaff = String(staffName || "").replace("👤 ", "").trim();
     var cleanEmpId = String(empId || "").replace(/[^\w]/gi, '').toLowerCase();
     var now = new Date();
     
     // Timeframe boundaries
     var startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    var endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    
     var dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
     var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1, 0, 0, 0, 0);
     var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    
     var startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
     var endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
     
@@ -572,7 +586,7 @@ function getStaffScoreMetrics(staffName, empId) {
     var startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
     
     var periods = [
-      { key: "daily", start: startOfToday, end: now },
+      { key: "daily", start: startOfToday, end: endOfToday },
       { key: "weekly", start: startOfWeek, end: now },
       { key: "monthly", start: startOfMonth, end: now },
       { key: "lastMonth", start: startOfLastMonth, end: endOfLastMonth },
@@ -586,10 +600,8 @@ function getStaffScoreMetrics(staffName, empId) {
     if (subSheet && subSheet.getLastRow() > 1) {
       var subData = subSheet.getDataRange().getValues();
       for (var s = 1; s < subData.length; s++) {
-        var sStaff = String(subData[s][1] || "").replace("👤 ", "").trim().toLowerCase();
-        var isMatch = (sStaff === cleanStaff || (cleanStaff.length >= 3 && sStaff.indexOf(cleanStaff) !== -1) ||
-                       (cleanEmpId && sStaff.indexOf(cleanEmpId) !== -1));
-        if (isMatch) {
+        var sStaff = String(subData[s][1] || "");
+        if (isStaffMatch(sStaff, cleanStaff, cleanEmpId)) {
           var rawDate = subData[s][0];
           var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
           if (isNaN(subDate.getTime())) continue;
@@ -623,14 +635,11 @@ function getStaffScoreMetrics(staffName, empId) {
     if (adSheet && adSheet.getLastRow() > 1) {
       var adData = adSheet.getDataRange().getValues();
       for (var a = 1; a < adData.length; a++) {
-        var aStaff = String(adData[a][colMap.staff] || "").replace("👤 ", "").trim().toLowerCase();
-        var isTargetStaff = (aStaff.indexOf("all") !== -1 || aStaff === cleanStaff ||
-                             (cleanStaff.length >= 3 && aStaff.indexOf(cleanStaff) !== -1) ||
-                             (cleanEmpId && aStaff.indexOf(cleanEmpId) !== -1));
-        if (isTargetStaff) {
+        var aStaff = String(adData[a][colMap.staff] || "");
+        if (isStaffMatch(aStaff, cleanStaff, cleanEmpId)) {
           var rawDate = adData[a][colMap.date];
           var aDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-          var rawFreq = String(adData[a][colMap.freq] || "Extra (One Time)").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+          var rawFreq = normalizeFrequency(adData[a][colMap.freq]);
           
           for (var p = 0; p < periods.length; p++) {
             var pr = periods[p];
@@ -764,8 +773,8 @@ function submitTaskWithProof(name, role, type, task, subTask, deadline, base64Da
       var colMap = setup.colMap;
       var row = parseInt(adhocIndex);
       if (row >= 2 && row <= adSheet.getLastRow()) {
-        var freqVal = String(adSheet.getRange(row, colMap.freq + 1).getValue() || "Extra (One Time)");
-        if (freqVal.indexOf("Daily") === -1 && freqVal.indexOf("Weekly") === -1 && freqVal.indexOf("Monthly") === -1) {
+        var freqVal = normalizeFrequency(adSheet.getRange(row, colMap.freq + 1).getValue());
+        if (freqVal === "Extra (One Time)") {
           adSheet.getRange(row, colMap.status + 1).setValue(finalStatus);
         }
       }
@@ -826,7 +835,7 @@ function getAllAdhocHistory() {
       list.push({
         date: data[i][colMap.date],
         assignedTo: data[i][colMap.staff],
-        type: data[i][colMap.freq] || "Extra (One Time)",
+        type: normalizeFrequency(data[i][colMap.freq]),
         task: data[i][colMap.task],
         deadline: data[i][colMap.deadline],
         refPhoto: data[i][colMap.photo],
