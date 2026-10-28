@@ -43,6 +43,117 @@ function doGet(e) {
 }
 
 // =====================================================================
+// REST / JSON API DISPATCHER (doPost) FOR VERCEL & EXTERNAL CLIENTS
+// Enables Task-App to run seamlessly on Vercel with zero redeployment lag
+// =====================================================================
+function doPost(e) {
+  try {
+    var raw = (e && e.postData && e.postData.contents) ? e.postData.contents : "{}";
+    var payload = {};
+    try {
+      payload = JSON.parse(raw);
+    } catch (pe) {
+      payload = {};
+    }
+
+    var action = payload.action || "";
+    var result = null;
+
+    switch (action) {
+      case "ping":
+        result = { pong: true, timestamp: new Date().toISOString() };
+        break;
+
+      case "verifyLogin":
+        result = verifyLogin(payload.empId || payload.id);
+        break;
+
+      case "getStaffListForAdmin":
+        result = getStaffListForAdmin();
+        break;
+
+      case "assignAdhocTask":
+        result = assignAdhocTask(
+          payload.staff,
+          payload.typeVal,
+          payload.desc,
+          payload.deadline,
+          payload.photosData,
+          payload.fileType,
+          payload.fileName
+        );
+        break;
+
+      case "getAdhocTasksForStaff":
+        result = getAdhocTasksForStaff(payload.staffName);
+        break;
+
+      case "getTasksForRole":
+        result = getTasksForRole(payload.role, payload.staffName);
+        break;
+
+      case "getStaffScoreMetrics":
+        result = getStaffScoreMetrics(payload.staffName, payload.empId);
+        break;
+
+      case "getStaffLeaderboard":
+        result = getStaffLeaderboard(payload.period);
+        break;
+
+      case "submitTaskWithProof":
+        result = submitTaskWithProof(
+          payload.name,
+          payload.role,
+          payload.type,
+          payload.task,
+          payload.subTask,
+          payload.deadline,
+          payload.base64Data,
+          payload.mimeType,
+          payload.fileName,
+          payload.isAdhoc,
+          payload.adhocIndex,
+          payload.actionType
+        );
+        break;
+
+      case "getStaffProgressReport":
+        result = getStaffProgressReport(payload.staffName);
+        break;
+
+      case "getAllAdhocHistory":
+        result = getAllAdhocHistory();
+        break;
+
+      case "getLiveOrdersForManager":
+        result = getLiveOrdersForManager();
+        break;
+
+      case "completeStoreManagerOrder":
+        result = completeStoreManagerOrder(payload.rowIndex);
+        break;
+
+      default:
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "error",
+          message: "Invalid action command: " + action
+        })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      data: result
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// =====================================================================
 // HELPER: FLEXIBLE SHEET FINDER (Handles spaces, underscores, casing)
 // =====================================================================
 function getSheetByNameFlexible(ss, names) {
