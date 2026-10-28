@@ -10,29 +10,6 @@
 
 function doGet(e) {
   var empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
-  
-  // LIVE LINK WITH GITHUB: Directly fetch latest Index.html from GitHub main branch
-  try {
-    var githubUrl = "https://raw.githubusercontent.com/yashmbarlota007/Task-App/main/Index.html?t=" + new Date().getTime();
-    var response = UrlFetchApp.fetch(githubUrl, {
-      headers: { "Cache-Control": "no-cache, no-store, max-age=0" },
-      muteHttpExceptions: true
-    });
-    
-    if (response.getResponseCode() === 200) {
-      var html = response.getContentText();
-      html = html.replace('<?= portalEmpId ?>', empId);
-      html = html.replace('<?= empId ?>', empId);
-      return HtmlService.createHtmlOutput(html)
-        .setTitle("Yash Marketing - Task Operations & Staff Portal")
-        .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    }
-  } catch (err) {
-    Logger.log("Live GitHub Fetch fallback: " + err.message);
-  }
-  
-  // Local fallback from Apps Script project if GitHub is unreachable
   var template = HtmlService.createTemplateFromFile("Index");
   template.portalEmpId = empId;
   template.empId = empId;
