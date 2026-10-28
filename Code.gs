@@ -126,13 +126,28 @@ function assignAdhocTask(staff, typeVal, desc, deadline, photosData, fileType, f
     if (!sheet) {
       sheet = ss.insertSheet("Adhoc_Tasks");
       sheet.appendRow(["Assign Date", "Assigned To", "Frequency", "Task Description", "Deadline", "Reference Photo", "Status"]);
+    } else {
+      // Auto-upgrade older 6-column sheet to 7 columns with Frequency
+      if (sheet.getLastRow() >= 1 && sheet.getLastColumn() < 7) {
+        var hVals = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        var hasFreq = hVals.some(function(h) { return /freq|type/i.test(String(h)); });
+        if (!hasFreq) {
+          sheet.insertColumnAfter(2);
+          sheet.getRange(1, 3).setValue("Frequency");
+        }
+      }
     }
     
     // Normalize frequency name: "Daily Task" -> "Daily", "Weekly Task" -> "Weekly", etc.
-    var cleanFreq = String(typeVal || "Extra (One Time)").replace(/\s*Task/i, '').trim();
-    if (!cleanFreq) cleanFreq = "Extra (One Time)";
+    var cleanFreq = String(typeVal || "Extra (One Time)").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+    if (!cleanFreq || cleanFreq.toLowerCase() === "extra" || cleanFreq.toLowerCase() === "one time") {
+      cleanFreq = "Extra (One Time)";
+    } else {
+      cleanFreq = cleanFreq.charAt(0).toUpperCase() + cleanFreq.slice(1).toLowerCase();
+    }
     
-    var cleanStaff = String(staff).replace("👤 ", "").trim();
+    var cleanStaff = String(staff || "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim();
+    if (cleanStaff.toLowerCase().indexOf("all") !== -1) cleanStaff = "All Staff";
     
     // Folder in Drive for task reference photos
     var photoLinks = [];
@@ -175,6 +190,7 @@ function assignAdhocTask(staff, typeVal, desc, deadline, photosData, fileType, f
 
 // =====================================================================
 // 4. STAFF: GET ASSIGNED TASKS (NORMALIZED FOR DAILY/WEEKLY/MONTHLY)
+// Robust matching for Rekha, Vrushali, all staff & emojis
 // =====================================================================
 function getAdhocTasksForStaff(staffName) {
   try {
@@ -183,24 +199,51 @@ function getAdhocTasksForStaff(staffName) {
     if (!sheet) return [];
     
     var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return [];
+    
     var list = [];
-    var cleanStaff = String(staffName || "").trim().toLowerCase();
+    var cleanStaff = String(staffName || "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    var hasFreqCol = (data[0].length >= 7);
     
     for (var i = 1; i < data.length; i++) {
-      var assignedTo = String(data[i][1]).trim();
-      var assignedToClean = assignedTo.toLowerCase();
-      var status = String(data[i][6]).trim();
+      var assignedToRaw = String(data[i][1] || "").trim();
+      var assignedToClean = assignedToRaw.replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      var statusColIdx = hasFreqCol ? 6 : 5;
+      var status = String(data[i][statusColIdx] || "Pending").trim();
       
-      if (assignedToClean === cleanStaff || assignedToClean === "all staff") {
-        var rawFreq = String(data[i][2] || "Extra (One Time)").replace(/\s*Task/i, '').trim();
+      // Match if assigned to all staff, exact match, or contains
+      var isMatch = false;
+      if (assignedToClean.indexOf("all") !== -1) {
+        isMatch = true;
+      } else if (assignedToClean === cleanStaff) {
+        isMatch = true;
+      } else if (cleanStaff.length >= 3 && assignedToClean.indexOf(cleanStaff) !== -1) {
+        isMatch = true;
+      } else if (assignedToClean.length >= 3 && cleanStaff.indexOf(assignedToClean) !== -1) {
+        isMatch = true;
+      }
+      
+      if (isMatch) {
+        var rawFreq = hasFreqCol ? String(data[i][2] || "Extra (One Time)") : "Extra (One Time)";
+        rawFreq = rawFreq.replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+        if (!rawFreq || rawFreq.toLowerCase() === "extra" || rawFreq.toLowerCase() === "one time") {
+          rawFreq = "Extra (One Time)";
+        } else {
+          rawFreq = rawFreq.charAt(0).toUpperCase() + rawFreq.slice(1).toLowerCase();
+        }
+        
+        var taskDesc = hasFreqCol ? data[i][3] : data[i][2];
+        var deadline = hasFreqCol ? data[i][4] : data[i][3];
+        var refPhoto = hasFreqCol ? data[i][5] : data[i][4];
+        
         list.push({
           index: i + 1,
           assignDate: data[i][0],
-          assignedTo: assignedTo,
+          assignedTo: assignedToRaw,
           type: rawFreq, // "Daily", "Weekly", "Monthly", or "Extra (One Time)"
-          task: data[i][3],
-          deadline: data[i][4],
-          refPhoto: data[i][5],
+          task: taskDesc,
+          deadline: deadline,
+          refPhoto: refPhoto,
           status: status
         });
       }
@@ -317,11 +360,14 @@ function getStaffScoreMetrics(staffName) {
     var startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
     
     var scores = { daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0 };
-    var cleanStaff = String(staffName || "").trim().toLowerCase();
+    var cleanStaff = String(staffName || "").replace(/[^\w\s]/gi, '').trim().toLowerCase();
     
     for (var i = 1; i < data.length; i++) {
-      var rowName = String(data[i][1] || "").trim().toLowerCase();
-      if (cleanStaff && rowName !== cleanStaff) continue;
+      var rowName = String(data[i][1] || "").replace(/[^\w\s]/gi, '').trim().toLowerCase();
+      if (cleanStaff) {
+        var isNameMatch = (rowName === cleanStaff || (cleanStaff.length >= 3 && rowName.indexOf(cleanStaff) !== -1) || (rowName.length >= 3 && cleanStaff.indexOf(rowName) !== -1));
+        if (!isNameMatch) continue;
+      }
       
       var rawDate = data[i][0];
       if (!rawDate) continue;
@@ -367,7 +413,7 @@ function getStaffLeaderboard(period) {
       var sActive = sData[s][4];
       if (sName && sActive !== false && String(sActive).toLowerCase() !== "false") {
         if (!sRole.toLowerCase().includes("owner") && !sRole.toLowerCase().includes("admin")) {
-          var cleanKey = sName.toLowerCase();
+          var cleanKey = sName.replace(/[^\w\s]/gi, '').trim().toLowerCase();
           staffInfoMap[cleanKey] = {
             name: sName,
             role: sRole,
@@ -396,8 +442,17 @@ function getStaffLeaderboard(period) {
       var startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
       
       for (var i = 1; i < data.length; i++) {
-        var rowName = String(data[i][1] || "").trim().toLowerCase();
-        if (!staffInfoMap[rowName]) continue;
+        var rowName = String(data[i][1] || "").replace(/[^\w\s]/gi, '').trim().toLowerCase();
+        var matchedKey = staffInfoMap[rowName] ? rowName : null;
+        if (!matchedKey) {
+          for (var sk in staffInfoMap) {
+            if (rowName && (sk.indexOf(rowName) !== -1 || rowName.indexOf(sk) !== -1)) {
+              matchedKey = sk;
+              break;
+            }
+          }
+        }
+        if (!matchedKey) continue;
         
         var rawDate = data[i][0];
         if (!rawDate) continue;
@@ -408,7 +463,7 @@ function getStaffLeaderboard(period) {
         if (status.indexOf("Skipped") !== -1) continue;
         
         var pts = parseInt(data[i][10]) || 10;
-        var m = staffInfoMap[rowName].metrics;
+        var m = staffInfoMap[matchedKey].metrics;
         if (subDate >= startOfToday) m.daily += pts;
         if (subDate >= startOfWeek) m.weekly += pts;
         if (subDate >= startOfMonth) m.monthly += pts;
@@ -493,8 +548,10 @@ function getStaffProgressReport(cleanName) {
     var role = "Staff";
     if (staffSheet) {
       var sData = staffSheet.getDataRange().getValues();
+      var cName = String(cleanName || "").replace(/[^\w\s]/gi, '').trim().toLowerCase();
       for (var s = 1; s < sData.length; s++) {
-        if (String(sData[s][2]).trim().toLowerCase() === String(cleanName).trim().toLowerCase()) {
+        var rowStaff = String(sData[s][2] || "").replace(/[^\w\s]/gi, '').trim().toLowerCase();
+        if (rowStaff === cName || (cName.length >= 3 && rowStaff.indexOf(cName) !== -1)) {
           role = String(sData[s][3] || "Staff").trim();
           break;
         }
@@ -503,10 +560,11 @@ function getStaffProgressReport(cleanName) {
     
     var routine = getTasksForRole(role, cleanName);
     var adhoc = getAdhocTasksForStaff(cleanName);
+    var metrics = getStaffScoreMetrics(cleanName);
     
-    return { role: role, routine: routine, adhoc: adhoc };
+    return { role: role, routine: routine, adhoc: adhoc, scores: metrics };
   } catch (err) {
-    return { role: "Staff", routine: [], adhoc: [] };
+    return { role: "Staff", routine: [], adhoc: [], scores: {} };
   }
 }
 
@@ -520,16 +578,26 @@ function getAllAdhocHistory() {
     if (!sheet) return [];
     
     var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return [];
+    var hasFreqCol = (data[0].length >= 7);
     var list = [];
+    
     for (var i = data.length - 1; i >= 1; i--) {
+      var assignedTo = data[i][1];
+      var rawType = hasFreqCol ? String(data[i][2] || "Extra (One Time)") : "Extra (One Time)";
+      var taskDesc = hasFreqCol ? data[i][3] : data[i][2];
+      var deadline = hasFreqCol ? data[i][4] : data[i][3];
+      var refPhoto = hasFreqCol ? data[i][5] : data[i][4];
+      var status = hasFreqCol ? data[i][6] : data[i][5];
+      
       list.push({
         date: data[i][0],
-        assignedTo: data[i][1],
-        type: data[i][2],
-        task: data[i][3],
-        deadline: data[i][4],
-        refPhoto: data[i][5],
-        status: data[i][6]
+        assignedTo: assignedTo,
+        type: rawType,
+        task: taskDesc,
+        deadline: deadline,
+        refPhoto: refPhoto,
+        status: status || "Pending"
       });
     }
     return list;

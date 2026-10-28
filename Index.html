@@ -411,8 +411,23 @@
         var cleanName = sel.replace("👤 ", "").trim();
         document.getElementById("staffProgressContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>Progress report nikal rahe hain...</p>";
         google.script.run.withSuccessHandler(function(res) {
-          var html = "<div style='background:#1f242c; padding:10px; border-radius:6px; margin-bottom:15px; border-left:4px solid #58a6ff;'>";
-          html += "<b style='color:#c9d1d9;'>" + cleanName + "</b> <span style='font-size:12px; color:#8b949e;'>(Role: " + res.role + ")</span></div>";
+          var html = "<div style='background:#1f242c; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #58a6ff;'>";
+          html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
+          html += "<div><b style='color:#c9d1d9; font-size:15px;'>" + cleanName + "</b> <span style='font-size:12px; color:#8b949e;'>(Role: " + res.role + ")</span></div>";
+          html += "</div>";
+          
+          if (res.scores) {
+            html += "<div style='display:grid; grid-template-columns:repeat(auto-fit, minmax(75px, 1fr)); gap:6px; margin-top:10px;'>";
+            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Daily</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.daily || 0) + "</div></div>";
+            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Weekly</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.weekly || 0) + "</div></div>";
+            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Monthly</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.monthly || 0) + "</div></div>";
+            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Last Mth</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.lastMonth || 0) + "</div></div>";
+            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Curr Qtr</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.currentQuarter || 0) + "</div></div>";
+            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Last Qtr</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.lastQuarter || 0) + "</div></div>";
+            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Yearly</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.yearly || 0) + "</div></div>";
+            html += "</div>";
+          }
+          html += "</div>";
           html += "<h4 style='color:#58a6ff; margin-bottom:10px; margin-top:0;'>📋 Permanent Routine Tasks</h4>";
           if(res.routine.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Koi routine task nahi hai.</p>";
           var groupedTasks = {};
@@ -640,7 +655,8 @@
         // 1. Role routine tasks
         for(var k=0; k<roleTasks.length; k++) {
             var tItem = roleTasks[k];
-            var normType = (tItem.type || "").replace(/\s*Task/i, '').trim();
+            var normType = (tItem.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+            normType = normType.charAt(0).toUpperCase() + normType.slice(1).toLowerCase();
             if(counts[normType]) {
                 counts[normType].t++;
                 if(tItem.status.includes("Uploaded") || tItem.status.includes("Completed") || tItem.status.includes("Skipped")) { counts[normType].d++; }
@@ -650,7 +666,8 @@
         // 2. Owner Assigned tasks belonging to Daily, Weekly, Monthly
         for(var a=0; a<extraTasks.length; a++) {
             var aItem = extraTasks[a];
-            var aNormType = (aItem.type || "").replace(/\s*Task/i, '').trim();
+            var aNormType = (aItem.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+            aNormType = aNormType.charAt(0).toUpperCase() + aNormType.slice(1).toLowerCase();
             if(counts[aNormType]) {
                 counts[aNormType].t++;
                 if(aItem.status.includes("Uploaded") || aItem.status.includes("Completed") || aItem.status.includes("Skipped")) { counts[aNormType].d++; }
@@ -667,7 +684,8 @@
         var adhocBtn = document.getElementById("adhocTabBtn");
         if(adhocBtn) {
            var adhocOnly = extraTasks.filter(function(e){ 
-             var norm = (e.type || "").replace(/\s*Task/i, '').trim();
+             var norm = (e.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+             norm = norm.charAt(0).toUpperCase() + norm.slice(1).toLowerCase();
              return norm !== "Daily" && norm !== "Weekly" && norm !== "Monthly";
            });
            var adhocPending = adhocOnly.filter(function(e){ return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); }).length;
@@ -746,7 +764,7 @@
           var groupedTasks = {};
           for(var i = 0; i < roleTasks.length; i++) {
             var t = roleTasks[i];
-            var tTypeClean = (t.type || "").replace(/\s*Task/i, '').toLowerCase().trim();
+            var tTypeClean = (t.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').toLowerCase().trim();
             if(tTypeClean === currentTabClean) {
               if(!groupedTasks[t.task]) groupedTasks[t.task] = [];
               groupedTasks[t.task].push({ data: t, index: i, isAdhoc: false });
@@ -758,7 +776,7 @@
           var assignedForThisTab = [];
           for(var a = 0; a < extraTasks.length; a++) {
             var at = extraTasks[a];
-            var atTypeClean = (at.type || "").replace(/\s*Task/i, '').toLowerCase().trim();
+            var atTypeClean = (at.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').toLowerCase().trim();
             if (atTypeClean === currentTabClean) {
               assignedForThisTab.push({ data: at, index: a });
               count++;
