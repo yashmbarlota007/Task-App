@@ -6,7 +6,7 @@
     <style>
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 15px; }
       .container { max-width: 650px; margin: auto; background: #161b22; padding: 20px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #30363d; }
-      h2, h3 { color: #58a6ff; margin-top:0; }
+      h2, h3, h4 { color: #58a6ff; margin-top: 0; }
       input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #30363d; border-radius: 8px; box-sizing: border-box; background: #0d1117; color: #c9d1d9; font-size: 14px; font-family: inherit;}
       input[type="time"], input[type="datetime-local"] { color-scheme: dark; cursor: pointer; }
       button { background: #238636; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -38,11 +38,11 @@
       .btn-capture { background: #58a6ff; color: #0d1117; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; font-weight: bold; cursor: pointer; width: auto !important; margin: 0 !important; }
       .btn-skip { background: #484f58; color: #c9d1d9; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; cursor: pointer; width: auto !important; margin: 0 !important; }
 
-      .status-text { font-size: 12px; font-weight: bold; text-align: right; margin-top:5px; }
+      .status-text { font-size: 12px; font-weight: bold; text-align: right; margin-top: 5px; }
       
       .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px 0;}
       .modal-content { background: #161b22; margin: auto; padding: 20px; border: 1px solid #30363d; width: 90%; max-width: 440px; border-radius: 10px; text-align: left; box-sizing: border-box; }
-      #photoPreview { border: 2px solid #238636; margin-top: 10px; margin-bottom: 15px; width: 100%; max-height: 250px; border-radius:8px;}
+      #photoPreview { border: 2px solid #238636; margin-top: 10px; margin-bottom: 15px; width: 100%; max-height: 250px; border-radius: 8px;}
       .hidden { display: none; }
       
       #notificationBanner { display: none; background: #2ea043; color: white; text-align: center; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; cursor: pointer; animation: blinker 1.5s linear infinite; box-shadow: 0px 4px 15px rgba(46, 160, 67, 0.4); }
@@ -67,7 +67,7 @@
       .photo-preview-remove { position: absolute; top: 2px; right: 2px; background: rgba(218, 54, 51, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
       
       .gallery-container { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-      .gallery-thumb { width: 44px; height: 44px; border-radius: 4px; border: 1px solid #30363d; object-fit: cover; cursor: pointer; transition: transform 0.2s; }
+      .gallery-thumb { width: 48px; height: 48px; border-radius: 6px; border: 1px solid #30363d; object-fit: cover; cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
       .gallery-thumb:hover { transform: scale(1.08); border-color: #58a6ff; }
       
       /* --- ADMIN SCORECARD TABLE --- */
@@ -75,6 +75,12 @@
       .scorecard-table th { background: #0d1117; color: #58a6ff; text-align: left; padding: 8px 6px; border-bottom: 2px solid #30363d; }
       .scorecard-table td { padding: 8px 6px; border-bottom: 1px solid #21262d; color: #c9d1d9; }
       .scorecard-table tr:hover td { background: #161b22; }
+
+      .freq-tag { display: inline-block; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+      .freq-tag.daily { background: #1f6feb; color: white; }
+      .freq-tag.weekly { background: #8957e5; color: white; }
+      .freq-tag.monthly { background: #da3633; color: white; }
+      .freq-tag.extra { background: #d29922; color: #0d1117; }
     </style>
   </head>
   <body>
@@ -228,7 +234,7 @@
           <div id="tabDaily" class="tab active" onclick="switchTab('Daily', this)">Daily</div>
           <div id="tabWeekly" class="tab" onclick="switchTab('Weekly', this)">Weekly</div>
           <div id="tabMonthly" class="tab" onclick="switchTab('Monthly', this)">Monthly</div>
-          <div id="adhocTabBtn" class="tab" onclick="switchTab('Adhoc', this)" style="color:#ffd33d;">🔔 Extra Tasks</div>
+          <div id="adhocTabBtn" class="tab" onclick="switchTab('Adhoc', this)" style="color:#ffd33d;">🔔 Assigned Tasks</div>
         </div>
 
         <div id="tabContentArea"></div>
@@ -247,7 +253,6 @@
         
         <label for="proofFile" class="custom-file-upload" id="uploadLabel">📸 Open Camera</label>
         <input type="file" id="proofFile" accept="image/*" capture="environment" style="display:none;" onchange="showPhotoPreview(event)">
-        
         <img id="photoPreview" style="display:none;" />
         
         <button onclick="confirmSubmitProof()" style="background:#2ea043; padding: 15px; font-size: 15px; width:100%; display:none;" id="uploadBtn">✅ Done</button>
@@ -320,7 +325,7 @@
 
         google.script.run.withSuccessHandler(function(res) {
           if(res.success) {
-            loggedInUser = { name: res.name, role: res.role };
+            loggedInUser = { empId: res.empId || id, name: res.name, role: res.role };
             document.getElementById("loginScreen").classList.add("hidden");
             var roleClean = res.role.toLowerCase().trim();
             if (roleClean === "admin" || roleClean === "owner") {
@@ -508,7 +513,7 @@
         for (var i = 0; i < urls.length; i++) {
           var u = urls[i];
           var driveIdMatch = u.match(/\/d\/([a-zA-Z0-9_-]+)/);
-          var previewImgUrl = driveIdMatch ? ("https://drive.google.com/uc?id=" + driveIdMatch[1]) : u;
+          var previewImgUrl = driveIdMatch ? ("https://drive.google.com/thumbnail?id=" + driveIdMatch[1] + "&sz=w200") : u;
           html += "<img class='gallery-thumb' src='" + previewImgUrl + "' onclick='openPhotoZoomModal(\"" + encodeURIComponent(u) + "\", \"" + encodeURIComponent(previewImgUrl) + "\", " + (i + 1) + ")' title='Click to zoom photo #" + (i + 1) + "'>";
         }
         html += "</div>";
@@ -674,7 +679,7 @@
         google.script.run.withSuccessHandler(function(scores) {
           staffScoresCache = scores || {};
           renderStaffScoreUI();
-        }).getStaffScoreMetrics(loggedInUser.name);
+        }).getStaffScoreMetrics(loggedInUser.name, loggedInUser.empId);
       }
 
       function switchStaffScorePeriod(periodKey, labelText, el) {
@@ -703,7 +708,7 @@
         var tabs = document.querySelectorAll('.tab');
         for(var i=0; i<tabs.length; i++) tabs[i].classList.remove('active');
         if(el) el.classList.add('active');
-        if(tabName === 'Orders') document.getElementById("notificationBanner").style.display = "none";
+        if(tabName === 'Orders' || tabName === 'Adhoc') document.getElementById("notificationBanner").style.display = "none";
         renderStaffContent(); 
       }
 
@@ -721,7 +726,7 @@
                 } else {
                   renderStaffContent(); 
                 }
-            }).getAdhocTasksForStaff(loggedInUser.name);
+            }).getAdhocTasksForStaff(loggedInUser.name, loggedInUser.empId);
         }).getTasksForRole(loggedInUser.role, loggedInUser.name);
       }
 
@@ -768,12 +773,45 @@
       }
       setInterval(updateLiveTimers, 10000); 
 
+      // Helper function to render a task row for Owner-Assigned tasks
+      function renderAssignedTaskItem(atObj, atIdx, isOwner) {
+        var isDone = atObj.status.includes("Uploaded") || atObj.status.includes("Completed") || atObj.status.includes("Skipped");
+        var isSkipped = atObj.status.includes("Skipped");
+        var normType = (atObj.type || "Extra").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+        var tagClass = normType.toLowerCase() === "daily" ? "daily" : (normType.toLowerCase() === "weekly" ? "weekly" : (normType.toLowerCase() === "monthly" ? "monthly" : "extra"));
+
+        var html = "<div class='subtask-row " + (isDone ? "completed" : "") + "' style='border-left:4px solid #ffd33d; margin-bottom:10px;'>";
+        html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
+        html += "<div><b style='color:#c9d1d9; font-size:14px;'>" + atObj.task + "</b><span class='freq-tag " + tagClass + "'>" + normType + "</span></div>";
+        html += "<span style='font-size:11px; color:#ffd33d; font-weight:bold;'>🎯 10 Pts</span>";
+        html += "</div>";
+        
+        var displayDead = atObj.deadline || "Jald";
+        html += "<div style='font-size:11px; color:#8b949e; margin-top:4px;'>⏰ Deadline: " + displayDead;
+        html += " <span class='live-timer' data-deadline='" + displayDead + "' data-completed='" + isDone + "'></span>";
+        html += "</div>";
+        
+        html += renderPhotoGalleryHtml(atObj.refPhoto);
+        
+        if(isDone) {
+          html += "<div class='status-text' style='color:" + (isSkipped ? "#da3633" : "#2ea043") + "; text-align:left; margin-top:5px;'>" + atObj.status + "</div>";
+        } else {
+          html += "<div class='subtask-actions' style='margin-top:8px;'>";
+          html += "<button class='btn-complete' onclick='openAdhocProofModal(" + atIdx + ")'>✅ Done</button>";
+          html += "<button class='btn-capture' onclick='openAdhocProofModal(" + atIdx + ")'>📸 Photo</button>";
+          if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + atIdx + ", this)'>⏭️ Skip</button>";
+          html += "</div>";
+        }
+        html += "</div>";
+        return html;
+      }
+
       // ==========================================
       // COMBINED & NORMALIZED TASK RENDERING
-      // Daily, Weekly, Monthly, Extra, & Orders Tabs
+      // Daily, Weekly, Monthly, Assigned Tasks & Orders
       // ==========================================
       function renderStaffContent() {
-        var isOwner = (loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin");
+        var isOwner = (loggedInUser && loggedInUser.role && (loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin"));
         
         var counts = { Daily: {t:0, d:0}, Weekly: {t:0, d:0}, Monthly: {t:0, d:0} };
 
@@ -808,13 +846,10 @@
         
         var adhocBtn = document.getElementById("adhocTabBtn");
         if(adhocBtn) {
-           var adhocOnly = extraTasks.filter(function(e){ 
-             var norm = (e.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-             norm = norm.charAt(0).toUpperCase() + norm.slice(1).toLowerCase();
-             return norm !== "Daily" && norm !== "Weekly" && norm !== "Monthly";
-           });
-           var adhocPending = adhocOnly.filter(function(e){ return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); }).length;
-           adhocBtn.innerHTML = "🔔 Extra Tasks (" + adhocPending + ")";
+           var pendingAssigned = extraTasks.filter(function(e){ 
+             return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); 
+           }).length;
+           adhocBtn.innerHTML = "🔔 Assigned Tasks (" + pendingAssigned + ")";
         }
 
         var area = document.getElementById("tabContentArea");
@@ -836,32 +871,32 @@
             html += "</div>";
           }
         } 
-        // EXTRA (ONE-TIME) TASKS TAB
+        // ASSIGNED TASKS TAB (DISPLAYS ALL OWNER ASSIGNED TASKS: ONE-TIME & RECURRING)
         else if (currentActiveTab === 'Adhoc') {
-          var filteredAdhocs = [];
-          for(var a=0; a<extraTasks.length; a++) {
-            var atType = (extraTasks[a].type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-            atType = atType.charAt(0).toUpperCase() + atType.slice(1).toLowerCase();
-            if (atType !== "Daily" && atType !== "Weekly" && atType !== "Monthly") {
-              filteredAdhocs.push({ task: extraTasks[a], index: a });
-            }
+          if(extraTasks.length === 0) { 
+            area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Aapko koi extra ya assigned task nahi diya gaya hai! 🎉</div>"; 
+            updateLiveTimers(); 
+            return; 
           }
-
-          if(filteredAdhocs.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Koi extra task nahi hai! 🎉</div>"; updateLiveTimers(); return; }
-          for(var i=0; i<filteredAdhocs.length; i++) {
-            var t = filteredAdhocs[i].task;
-            var realIdx = filteredAdhocs[i].index;
+          
+          for(var i=0; i<extraTasks.length; i++) {
+            var t = extraTasks[i];
             var isCompleted = t.status.includes("Uploaded") || t.status.includes("Completed") || t.status.includes("Skipped");
             var isSkipped = t.status.includes("Skipped");
-            html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#1f242c;'>";
-            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:#ffd33d;'>🔔 Extra Task: " + t.task + "</p>";
+            var normType = (t.type || "Extra").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+            var tagClass = normType.toLowerCase() === "daily" ? "daily" : (normType.toLowerCase() === "weekly" ? "weekly" : (normType.toLowerCase() === "monthly" ? "monthly" : "extra"));
+
+            html += "<div class='task-card adhoc' style='border-left-color: #ffd33d; background:#1f242c;'>";
+            html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
+            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:#ffd33d;'>🔔 " + t.task + " <span class='freq-tag " + tagClass + "'>" + normType + "</span></p>";
+            html += "<span style='color:#ffd33d; font-weight:bold; font-size:12px;'>🎯 10 Pts</span>";
+            html += "</div>";
             
             html += "<div style='background:#0d1117; padding:10px; border-radius:8px; margin: 10px 0; border:1px solid #30363d;'>";
-            if (t.assignDate) { html += "<p style='margin:0 0 5px 0; font-size:11px; color:#58a6ff;'>🟢 <b>Assigned:</b> " + t.assignDate + "</p>"; }
+            if (t.assignDate) { html += "<p style='margin:0 0 5px 0; font-size:11px; color:#58a6ff;'>🟢 <b>Assigned:</b> " + t.assignDate + (t.assignedTo ? " (To: " + t.assignedTo + ")" : "") + "</p>"; }
             var displayDead = t.deadline || "Jald";
             html += "<p style='margin:0; font-size:12px; color:#ffd33d;'>⏰ <b>Deadline:</b> " + displayDead;
-            html += " <span class='live-timer' data-deadline='" + displayDead + "' data-completed='" + isCompleted + "'></span>";
-            html += " <span style='color:#ffd33d; font-weight:bold; float:right;'>🎯 10 Pts</span></p>";
+            html += " <span class='live-timer' data-deadline='" + displayDead + "' data-completed='" + isCompleted + "'></span></p>";
             html += "</div>";
 
             html += renderPhotoGalleryHtml(t.refPhoto);
@@ -873,10 +908,10 @@
             } else {
               html += "<div class='subtask-name' style='font-size:13px; color:#c9d1d9; margin-bottom:6px;'>👉 Action:</div>";
               html += "<div class='subtask-actions'>";
-              html += "<button class='btn-complete' onclick='openAdhocProofModal(" + realIdx + ")'>✅ Done</button>";
-              html += "<button class='btn-capture' onclick='openAdhocProofModal(" + realIdx + ")'>📸 Photo</button>";
+              html += "<button class='btn-complete' onclick='openAdhocProofModal(" + i + ")'>✅ Done</button>";
+              html += "<button class='btn-capture' onclick='openAdhocProofModal(" + i + ")'>📸 Photo</button>";
               if (isOwner) {
-                html += "<button class='btn-skip' onclick='skipAdhocTask(" + realIdx + ", this)'>⏭️ Skip</button>";
+                html += "<button class='btn-skip' onclick='skipAdhocTask(" + i + ", this)'>⏭️ Skip</button>";
               }
               html += "</div>";
             }
@@ -899,7 +934,7 @@
             }
           }
 
-          // 2. Render Owner-Assigned Recurring Tasks (e.g. Daily assigned to Rekha, Vrushali, or All Staff)
+          // 2. Render Owner-Assigned Recurring Tasks for this cycle (e.g. Daily assigned to Rekha, Vrushali, or All Staff)
           var assignedForThisTab = [];
           for(var a = 0; a < extraTasks.length; a++) {
             var at = extraTasks[a];
@@ -915,27 +950,7 @@
             html += "<div style='background:#1c2128; border:1px solid #ffd33d; border-radius:8px; padding:12px; margin-bottom:15px;'>";
             html += "<h4 style='margin:0 0 10px 0; color:#ffd33d;'>⭐ Owner Assigned " + currentActiveTab + " Tasks (" + assignedForThisTab.length + ")</h4>";
             for(var x = 0; x < assignedForThisTab.length; x++) {
-              var atObj = assignedForThisTab[x].data;
-              var atIdx = assignedForThisTab[x].index;
-              var isDone = atObj.status.includes("Uploaded") || atObj.status.includes("Completed") || atObj.status.includes("Skipped");
-              var isSkipped = atObj.status.includes("Skipped");
-              
-              html += "<div class='subtask-row " + (isDone ? "completed" : "") + "' style='border-left:4px solid #ffd33d; margin-bottom:10px;'>";
-              html += "<div style='display:flex; justify-content:space-between;'><b style='color:#c9d1d9; font-size:14px;'>" + atObj.task + "</b><span style='font-size:11px; color:#ffd33d;'>🎯 10 Pts</span></div>";
-              if(atObj.deadline) html += "<div style='font-size:11px; color:#8b949e; margin-top:3px;'>⏰ Deadline: " + atObj.deadline + "</div>";
-              
-              html += renderPhotoGalleryHtml(atObj.refPhoto);
-              
-              if(isDone) {
-                html += "<div class='status-text' style='color:" + (isSkipped ? "#da3633" : "#2ea043") + "; text-align:left; margin-top:5px;'>" + atObj.status + "</div>";
-              } else {
-                html += "<div class='subtask-actions' style='margin-top:8px;'>";
-                html += "<button class='btn-complete' onclick='openAdhocProofModal(" + atIdx + ")'>✅ Done</button>";
-                html += "<button class='btn-capture' onclick='openAdhocProofModal(" + atIdx + ")'>📸 Photo</button>";
-                if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + atIdx + ", this)'>⏭️ Skip</button>";
-                html += "</div>";
-              }
-              html += "</div>";
+              html += renderAssignedTaskItem(assignedForThisTab[x].data, assignedForThisTab[x].index, isOwner);
             }
             html += "</div>";
           }
@@ -995,7 +1010,9 @@
             html += "</div></div>";
           }
         }
-        if(currentActiveTab !== 'Orders' && currentActiveTab !== 'Adhoc' && count === 0) html = "<div class='card' style='text-align:center; color:#8b949e;'>Is tab mein abhi koi task nahi hai! 🎉</div>";
+        if(currentActiveTab !== 'Orders' && currentActiveTab !== 'Adhoc' && count === 0) {
+          html = "<div class='card' style='text-align:center; color:#8b949e;'>Is tab mein abhi koi task nahi hai! 🎉</div>";
+        }
         area.innerHTML = html;
         updateLiveTimers(); 
       }
@@ -1051,7 +1068,7 @@
       function openAdhocProofModal(index) {
         selectedTaskObj = extraTasks[index];
         selectedTaskObj.isAdhoc = true;
-        document.getElementById("modalHeading").innerText = "📸 Extra Task Proof";
+        document.getElementById("modalHeading").innerText = "📸 Task Proof";
         document.getElementById("modalTaskTitle").innerText = "Task: " + selectedTaskObj.task;
         document.getElementById("proofModal").style.display = "block";
         document.getElementById("proofFile").value = "";
@@ -1191,7 +1208,7 @@
         }
 
         var text = "*Daily EOD Work Report - Yash Marketing*\n\n";
-        text += "👤 *Staff:* " + loggedInUser.name + " (" + loggedInUser.role + ")\n";
+        text += "👤 *Staff:* " + (loggedInUser ? loggedInUser.name : "Staff") + " (" + (loggedInUser ? loggedInUser.role : "Role") + ")\n";
         text += "📅 *Date:* " + new Date().toLocaleDateString('en-GB') + "\n\n";
         text += "📋 *Routine Checklist:* " + doneRoutine + " / " + totalRoutine + " Tasks Completed\n";
         text += "🔔 *Assigned Tasks:* " + doneAdhoc + " / " + totalAdhoc + " Tasks Completed\n\n";
