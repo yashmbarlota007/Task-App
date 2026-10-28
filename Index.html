@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 15px; }
-      .container { max-width: 600px; margin: auto; background: #161b22; padding: 20px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #30363d; }
-      h2, h3 { color: #58a6ff; margin-top:0; }
+      .container { max-width: 650px; margin: auto; background: #161b22; padding: 20px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #30363d; }
+      h2, h3, h4 { color: #58a6ff; margin-top:0; }
       input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #30363d; border-radius: 8px; box-sizing: border-box; background: #0d1117; color: #c9d1d9; font-size: 14px; font-family: inherit;}
       input[type="time"], input[type="datetime-local"] { color-scheme: dark; cursor: pointer; }
       button { background: #238636; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -16,77 +16,83 @@
       .card { background: #21262d; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #30363d; }
       .profile-header { background: linear-gradient(135deg, #1f6feb, #238636); padding: 15px; border-radius: 10px; color: white; margin-bottom: 15px; }
       
-      .tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #30363d; overflow-x: auto;}
-      .tab { cursor: pointer; padding: 8px 12px; font-weight: bold; color: #8b949e; border-radius: 6px; white-space: nowrap; font-size:13px; }
-      .tab.active { background: #238636; color: white; }
+      .tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 8px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 13px; cursor: pointer; overflow-x: auto; white-space: nowrap; gap: 6px; }
+      .tab { padding: 6px 12px; border-radius: 6px; color: #8b949e; flex: 1; text-align: center; }
+      .tab.active { background: #30363d; color: #58a6ff; }
       
-      .task-card { background: #161b22; border-left: 5px solid #238636; padding: 15px; border-radius: 8px; margin-bottom: 12px; border-top: 1px solid #30363d; border-right: 1px solid #30363d; border-bottom: 1px solid #30363d; }
-      .task-card.adhoc { border-left-color: #e67e22; background: #1a1e24; }
-      .task-card.order { border-left-color: #2ea043; background: #161f18; }
+      .admin-tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 8px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 12px; cursor: pointer; gap: 4px; overflow-x: auto; white-space: nowrap; }
+      .admin-tab { padding: 8px 10px; border-radius: 6px; color: #8b949e; flex: 1; text-align: center; }
+      .admin-tab.active { background: #58a6ff; color: #0d1117; }
       
-      .subtask-container { background: #0d1117; border-radius: 6px; padding: 10px; margin-top: 10px; border: 1px solid #30363d; }
-      .subtask-header { font-size: 11px; font-weight: bold; color: #8b949e; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
-      .subtask-row { background: #161b22; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #30363d; }
-      .subtask-row.completed { border-left: 3px solid #2ea043; background: #111a14; }
-      .subtask-name { font-size: 13px; font-weight: 500; color: #c9d1d9; margin-bottom: 8px; }
-      .subtask-actions { display: flex; gap: 8px; }
-      .subtask-actions button { margin: 0; padding: 8px; font-size: 12px; border-radius: 4px; flex: 1; }
-      .btn-complete { background: #238636; }
-      .btn-capture { background: #1f6feb; }
-      .btn-skip { background: #da3633; }
-      .status-text { font-size: 12px; font-weight: bold; margin-top: 6px; }
+      .task-card { background: #161b22; border-left: 5px solid #58a6ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-top: 1px solid #30363d; border-right: 1px solid #30363d; border-bottom: 1px solid #30363d; }
+      .task-card.order { border-left-color: #2ea043; background: #1a231d; }
+      .task-card.assigned-card { border-left-color: #ffd33d; background: #1f242c; }
+      
+      .subtask-container { background: #0d1117; padding: 12px; border-radius: 8px; border: 1px solid #30363d; margin-top: 10px; }
+      .subtask-header { font-size: 11px; color: #8b949e; margin-bottom: 10px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+      .subtask-row { display: flex; flex-direction: column; background: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 12px 10px; margin-bottom: 8px; }
+      .subtask-row.completed { opacity: 0.8; }
+      .subtask-name { font-size: 14px; font-weight: 500; color: #c9d1d9; margin-bottom: 8px; }
+      
+      .subtask-actions { display: flex; gap: 8px; flex-direction: row; justify-content: flex-end; align-items: center; }
+      .btn-complete { background: #2ea043; color: white; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; font-weight: bold; cursor: pointer; width: auto !important; margin: 0 !important; }
+      .btn-capture { background: #58a6ff; color: #0d1117; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; font-weight: bold; cursor: pointer; width: auto !important; margin: 0 !important; }
+      .btn-skip { background: #484f58; color: #c9d1d9; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; cursor: pointer; width: auto !important; margin: 0 !important; }
 
-      .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px; }
-      .stat-card { background: #21262d; padding: 12px; border-radius: 8px; border: 1px solid #30363d; }
-      .stat-val { font-size: 18px; font-weight: bold; color: #58a6ff; margin-top: 4px; }
-      .stat-lbl { font-size: 11px; color: #8b949e; text-transform: uppercase; }
-
-      .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
-      .modal-content { background-color: #161b22; margin: 10% auto; padding: 20px; border: 1px solid #30363d; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
-      .custom-file-upload { display: block; border: 2px dashed #30363d; border-radius: 8px; padding: 25px; text-align: center; cursor: pointer; color: #58a6ff; font-weight: bold; margin: 15px 0; background: #0d1117; }
-      #photoPreview { width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; margin-bottom: 15px; border: 1px solid #30363d; }
+      .status-text { font-size: 12px; font-weight: bold; text-align: right; margin-top:5px; }
       
-      .admin-tabs { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; }
-      .admin-tab { flex: 1; padding: 10px; text-align: center; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; font-size: 12px; color: #8b949e; font-weight: bold; white-space: nowrap; }
-      .admin-tab.active { background: #1f6feb; color: white; border-color: #1f6feb; }
-      .hidden { display: none; }
-
-      #notificationBanner { display: none; background: #e67e22; color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 13px; cursor: pointer; }
+      .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px 0; }
+      .modal-content { background: #161b22; margin: auto; padding: 20px; border: 1px solid #30363d; width: 90%; max-width: 450px; border-radius: 10px; text-align: left; }
+      #photoPreview { border: 2px solid #238636; margin-top: 10px; margin-bottom: 15px; width: 100%; max-height: 250px; border-radius:8px; object-fit: contain; }
+      .hidden { display: none !important; }
       
-      /* SCORE PILLS & LEADERBOARD STYLING */
-      .score-pill-container { display: flex; overflow-x: auto; gap: 5px; margin-top: 12px; padding-bottom: 5px; }
-      .score-pill { background: #0d1117; border: 1px solid #30363d; color: #8b949e; font-size: 11px; padding: 6px 10px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-      .score-pill.active { background: #ffd33d; color: #0d1117; font-weight: bold; border-color: #ffd33d; }
+      #notificationBanner { display: none; background: #2ea043; color: white; text-align: center; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; cursor: pointer; animation: blinker 1.5s linear infinite; box-shadow: 0px 4px 15px rgba(46, 160, 67, 0.4); }
+      @keyframes blinker { 50% { opacity: 0.7; } }
       
-      .leaderboard-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-      .leaderboard-table th { background: #0d1117; color: #58a6ff; padding: 10px; text-align: left; border-bottom: 1px solid #30363d; }
-      .leaderboard-table td { padding: 10px; border-bottom: 1px solid #21262d; }
-      .leaderboard-table tr:hover { background: #161b22; }
-
-      /* REFERENCE PHOTOS GALLERY & PREVIEWS */
+      /* SCORE PILLS & PERFORMANCE WIDGET */
+      .score-pill-container { display: flex; gap: 4px; overflow-x: auto; white-space: nowrap; padding: 6px 0; margin-top: 8px; }
+      .score-pill { padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 12px; background: #0d1117; color: #8b949e; cursor: pointer; border: 1px solid #30363d; transition: 0.2s; }
+      .score-pill.active { background: #ffd33d; color: #0d1117; border-color: #ffd33d; }
+      .score-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; text-align: center; }
+      .metric-box { background: #0d1117; padding: 8px 4px; border-radius: 6px; border: 1px solid #30363d; }
+      .metric-lbl { font-size: 10px; color: #8b949e; text-transform: uppercase; font-weight: 600; }
+      .metric-val { font-size: 14px; font-weight: bold; color: #ffd33d; margin-top: 2px; }
+      
+      /* PHOTO GALLERY & PREVIEW */
       .ref-photo-gallery { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-      .ref-photo-item { position: relative; display: inline-block; }
-      .ref-photo-item a { background: #1f6feb; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; text-decoration: none; display: inline-block; }
-      .photo-hover-preview { display: none; position: absolute; bottom: 30px; left: 0; z-index: 100; background: #000; border: 1px solid #30363d; border-radius: 6px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.8); }
-      .photo-hover-preview img { max-width: 180px; max-height: 180px; border-radius: 4px; display: block; }
+      .ref-photo-item { position: relative; display: inline-flex; align-items: center; background: #1f6feb; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; text-decoration: none; cursor: pointer; }
+      .ref-photo-item:hover { background: #388bfd; }
+      .ref-photo-item .photo-hover-preview { display: none; position: absolute; bottom: 100%; left: 0; z-index: 1000; background: #161b22; padding: 5px; border: 1px solid #30363d; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); margin-bottom: 5px; }
       .ref-photo-item:hover .photo-hover-preview { display: block; }
+      .ref-photo-item .photo-hover-preview img { max-width: 220px; max-height: 220px; border-radius: 4px; display: block; object-fit: contain; }
+
+      /* MULTI-PHOTO UPLOAD PREVIEW LIST */
+      .thumb-preview-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+      .thumb-card { position: relative; width: 60px; height: 60px; border-radius: 6px; border: 1px solid #30363d; overflow: hidden; background: #0d1117; }
+      .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
+      .thumb-remove-btn { position: absolute; top: 2px; right: 2px; background: rgba(218, 54, 51, 0.85); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; line-height: 18px; text-align: center; cursor: pointer; padding: 0; }
+
+      /* LEADERBOARD TABLE */
+      .leaderboard-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+      .leaderboard-table th { background: #0d1117; color: #8b949e; padding: 8px 6px; text-align: left; border-bottom: 1px solid #30363d; }
+      .leaderboard-table td { padding: 8px 6px; border-bottom: 1px solid #21262d; }
+      .badge-rate { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; }
     </style>
   </head>
   <body>
+    <? var portalEmpId = typeof empId !== 'undefined' ? empId : ''; ?>
+    
     <div class="container">
       <!-- LOGIN SCREEN -->
-      <div id="loginScreen" class="card">
-        <h2 style="text-align: center; margin-bottom: 5px;">⚡ Yash Marketing</h2>
-        <p style="text-align: center; color: #8b949e; font-size: 13px; margin-top:0;">Task Operations & Staff Portal</p>
-        
-        <input type="text" id="empId" placeholder="Employee ID (e.g. EMP001)" autofocus>
+      <div id="loginScreen" class="card" style="text-align: center; padding: 30px;">
+        <h2>🔒 Secure System Login</h2>
+        <input type="text" id="empId" placeholder="Employee ID">
         <input type="password" id="empPass" placeholder="Password">
-        
         <button onclick="loginUser()">Login Karein</button>
         <p id="loginMsg" style="color: #f85149; font-weight: bold;"></p>
       </div>
 
-      <!-- ADMIN PORTAL -->
+      <!-- ADMIN / OWNER PORTAL -->
       <div id="adminPortal" class="hidden">
         <div class="profile-header">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -98,7 +104,7 @@
         <div class="admin-tabs">
           <div class="admin-tab active" id="tabBtnAssign" onclick="switchAdminTab('Assign')">➕ Assign Task</div>
           <div class="admin-tab" id="tabBtnProgress" onclick="switchAdminTab('Progress')">📊 Staff Progress</div>
-          <div class="admin-tab" id="tabBtnScores" onclick="switchAdminTab('Scores')">🏆 Staff Scores</div>
+          <div class="admin-tab" id="tabBtnScores" onclick="switchAdminTab('Scores')">🏆 Staff Scorecard</div>
           <div class="admin-tab" id="tabBtnHistory" onclick="switchAdminTab('History')">📜 Task History</div>
         </div>
 
@@ -123,7 +129,8 @@
           <!-- MULTIPLE PHOTO UPLOAD -->
           <label style="color:#8b949e; font-size:12px; margin-top:10px; display:block;">Reference Photos (Multiple Select Kar Sakte Hain):</label>
           <input type="file" id="adminTaskPhotoFile" accept="image/*" multiple onchange="handleAdminPhotoSelection(event)" style="background:#0d1117; padding:8px; border:1px solid #30363d; border-radius:6px; margin-top:5px; width:100%; box-sizing:border-box;">
-          <div id="adminPhotoThumbnails" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+          
+          <div id="adminPhotoThumbnails" class="thumb-preview-container"></div>
 
           <button id="btnAssignTask" onclick="sendAdhocTask()" class="btn-info" style="margin-top:15px;">Assign Task 🚀</button>
           <p id="adminMsg" style="color: #2ea043; font-weight: bold; text-align:center;"></p>
@@ -136,9 +143,11 @@
           <div id="staffProgressContent" style="margin-top:15px;"></div>
         </div>
 
-        <!-- TAB 3: OWNER LEADERBOARD / SCORES -->
+        <!-- TAB 3: STAFF SCORECARD (ADMIN OVERVIEW) -->
         <div id="adminTabScores" class="card hidden">
-          <h3 style="margin-top:0; color:#ffd33d;">🏆 Staff Scoreboard</h3>
+          <h3 style="margin-top:0; color:#ffd33d;">🏆 Comprehensive Staff Scorecard</h3>
+          <p style="color:#8b949e; font-size:12px; margin-top:-5px;">Timeframe chunein aur sabhi staff ka score dekhein:</p>
+          
           <div class="score-pill-container" id="adminScorePillBar">
             <div class="score-pill active" onclick="fetchAdminLeaderboard('daily', this)">Daily</div>
             <div class="score-pill" onclick="fetchAdminLeaderboard('weekly', this)">Weekly</div>
@@ -148,6 +157,7 @@
             <div class="score-pill" onclick="fetchAdminLeaderboard('lastQuarter', this)">Last Qtr</div>
             <div class="score-pill" onclick="fetchAdminLeaderboard('yearly', this)">Yearly</div>
           </div>
+          
           <div id="adminLeaderboardContent" style="margin-top:15px;"></div>
         </div>
 
@@ -161,27 +171,48 @@
       <!-- STAFF DASHBOARD -->
       <div id="staffPortal" class="hidden">
         <div class="profile-header">
-          <div style="display: flex; justify-content: space-between;">
+          <div style="display: flex; justify-content: space-between; align-items:center;">
             <h2 id="staffNameDisplay" style="margin:0; color:white;">Hello, User</h2>
             <button onclick="logout()" style="width: auto; padding: 4px 8px; font-size: 11px; background: rgba(0,0,0,0.3);">Logout</button>
           </div>
           <p id="staffRoleDisplay" style="margin: 5px 0 0 0; font-size: 13px; color: #ffd33d;">🏆 Role: Staff</p>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card" style="border-color:#ffd33d;">
-            <div class="stat-lbl" id="staffScoreLabel" style="color: #ffd33d;">🏆 Daily Points</div>
-            <div class="stat-val" id="lblRewardPoints" style="color: #ffd33d; font-size:24px;">0 Pts</div>
-            
-            <!-- 7 TIMEFRAMES SCORE PILLS -->
-            <div class="score-pill-container" id="staffScorePillBar">
-              <div class="score-pill active" onclick="switchStaffScorePeriod('daily', 'Daily Points', this)">Daily</div>
-              <div class="score-pill" onclick="switchStaffScorePeriod('weekly', 'Weekly Points', this)">Weekly</div>
-              <div class="score-pill" onclick="switchStaffScorePeriod('monthly', 'Monthly Points', this)">Monthly</div>
-              <div class="score-pill" onclick="switchStaffScorePeriod('lastMonth', 'Last Month Points', this)">Last Month</div>
-              <div class="score-pill" onclick="switchStaffScorePeriod('currentQuarter', 'Current Qtr Points', this)">Current Qtr</div>
-              <div class="score-pill" onclick="switchStaffScorePeriod('lastQuarter', 'Last Qtr Points', this)">Last Qtr</div>
-              <div class="score-pill" onclick="switchStaffScorePeriod('yearly', 'Yearly Points', this)">Yearly</div>
+        <!-- COMPREHENSIVE PERFORMANCE WIDGET -->
+        <div class="card" style="border-color:#ffd33d; background:#1c2128; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:13px; font-weight:bold; color:#ffd33d;" id="staffScoreTimeframeTitle">🏆 Today's Performance</div>
+            <div style="font-size:16px; font-weight:bold; color:#58a6ff;" id="lblRewardPoints">0 Pts</div>
+          </div>
+          
+          <!-- 7 Timeframe Switcher Pills -->
+          <div class="score-pill-container" id="staffScorePillBar">
+            <div class="score-pill active" onclick="switchStaffScorePeriod('daily', 'Today\'s Performance', this)">Daily</div>
+            <div class="score-pill" onclick="switchStaffScorePeriod('weekly', 'Current Week', this)">Weekly</div>
+            <div class="score-pill" onclick="switchStaffScorePeriod('monthly', 'Current Month', this)">Monthly</div>
+            <div class="score-pill" onclick="switchStaffScorePeriod('lastMonth', 'Last Month', this)">Last Month</div>
+            <div class="score-pill" onclick="switchStaffScorePeriod('currentQuarter', 'Current Quarter', this)">Current Qtr</div>
+            <div class="score-pill" onclick="switchStaffScorePeriod('lastQuarter', 'Last Quarter', this)">Last Qtr</div>
+            <div class="score-pill" onclick="switchStaffScorePeriod('yearly', 'Current Year', this)">Yearly</div>
+          </div>
+
+          <!-- 4 Performance Metric Boxes -->
+          <div class="score-metrics-grid">
+            <div class="metric-box">
+              <div class="metric-lbl">Assigned</div>
+              <div class="metric-val" id="metricAssigned">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-lbl">Completed</div>
+              <div class="metric-val" style="color:#2ea043;" id="metricCompleted">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-lbl">Delayed</div>
+              <div class="metric-val" style="color:#e67e22;" id="metricDelayed">0</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-lbl">Score %</div>
+              <div class="metric-val" style="color:#58a6ff;" id="metricPercentage">100%</div>
             </div>
           </div>
         </div>
@@ -190,6 +221,7 @@
           🔔 Naya Task Aaya Hai! Click here to view.
         </div>
 
+        <!-- TABS -->
         <div class="tabs" id="navTabs">
           <div id="tabDaily" class="tab active" onclick="switchTab('Daily', this)">Daily</div>
           <div id="tabWeekly" class="tab" onclick="switchTab('Weekly', this)">Weekly</div>
@@ -197,6 +229,7 @@
           <div id="adhocTabBtn" class="tab" onclick="switchTab('Adhoc', this)" style="color:#ffd33d;">🔔 Extra Tasks</div>
         </div>
 
+        <!-- DYNAMIC TASK CONTENT -->
         <div id="tabContentArea"></div>
 
         <div style="text-align: center; margin-top: 20px;">
@@ -216,24 +249,38 @@
         
         <img id="photoPreview" style="display:none;" />
         
-        <button onclick="confirmSubmitProof()" style="background:#2ea043; padding: 15px; font-size: 15px; width:100%; display:none;" id="uploadBtn">✅ Submit With Photo</button>
-        <button onclick="confirmSubmitWithoutProof()" style="background:#30363d; color:#c9d1d9; padding: 10px; font-size: 13px; width:100%; margin-top:8px;" id="btnSubmitNoProof">⚡ Mark Done (Bina Photo)</button>
+        <button onclick="confirmSubmitProof()" style="background:#2ea043; padding: 12px; font-size: 15px; width:100%; display:none; margin-top:10px;" id="uploadBtn">✅ Submit With Photo</button>
+        <button onclick="confirmSubmitWithoutProof()" style="background:#1f6feb; padding: 12px; font-size: 14px; width:100%; margin-top:10px;" id="btnSubmitNoProof">⚡ Mark Done (Bina Photo)</button>
         <button onclick="closeModal()" class="btn-danger" style="margin-top:10px; width:100%;">Cancel</button>
       </div>
     </div>
 
-    <!-- SOP MODALS -->
+    <!-- PHOTO ZOOM / PREVIEW MODAL -->
+    <div id="photoZoomModal" class="modal" onclick="closePhotoZoomModal()">
+      <div class="modal-content" style="max-width: 550px; text-align: center; background: #0d1117;" onclick="event.stopPropagation()">
+        <h4 style="margin: 0 0 10px 0; color:#ffd33d;" id="zoomModalTitle">Reference Photo</h4>
+        <img id="zoomModalImg" style="width: 100%; max-height: 450px; object-fit: contain; border-radius: 8px; border: 1px solid #30363d;">
+        <div style="display:flex; gap:10px; margin-top: 15px;">
+          <a id="zoomModalDriveLink" href="#" target="_blank" style="flex:1; background:#1f6feb; color:white; padding:10px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:13px;">🔗 Open in Google Drive</a>
+          <button onclick="closePhotoZoomModal()" style="flex:1; background:#30363d;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOP GUIDELINES MODAL -->
     <div id="sopModal" class="modal">
       <div class="modal-content" style="text-align: center;">
         <h3 style="color:#58a6ff; margin-top:0;">📖 Task SOP Guidelines</h3>
-        <p id="sopTextContent" style="font-size: 14px; color:#c9d1d9; background:#0d1117; padding:15px; border-radius:6px; text-align:left;"></p>
+        <p id="sopTextContent" style="font-size: 14px; color:#c9d1d9; background:#0d1117; padding:15px; border-radius:6px; text-align:left; max-height:300px; overflow-y:auto;"></p>
         <button onclick="closeSopModal()" style="background:#30363d; margin-top:10px;">Close</button>
       </div>
     </div>
+
+    <!-- SOP VIDEO MODAL -->
     <div id="videoModal" class="modal">
       <div class="modal-content" style="text-align: center;">
         <h3 style="color:#58a6ff; margin-top:0;">🎥 SOP Training Video</h3>
-        <iframe id="sopVideoPlayer" width="100%" height="300px" style="border:none; border-radius:8px;" allow="autoplay"></iframe>
+        <iframe id="sopVideoPlayer" width="100%" height="280px" style="border:none; border-radius:8px;" allow="autoplay"></iframe>
         <button onclick="closeVideoModal()" style="background:#da3633; margin-top:15px;">Close Video</button>
       </div>
     </div>
@@ -243,14 +290,14 @@
       var roleTasks = [], extraTasks = [], orderTasks = [];
       var currentActiveTab = 'Daily';
       var selectedTaskObj = null; 
-      var lastOrderCount = -1; 
-      var passedEmpId = "<?= empId ?>";
       var staffScoresCache = {};
+      var currentStaffScorePeriod = 'daily';
       var currentAdminScorePeriod = 'daily';
       var selectedAdminPhotos = [];
+      var passedEmpId = "<?= portalEmpId ?>";
 
       window.onload = function() {
-        if (passedEmpId && passedEmpId.trim() !== "") {
+        if (passedEmpId && passedEmpId.trim() !== "" && !passedEmpId.includes("<%=")) {
           document.getElementById('empId').value = passedEmpId;
           document.getElementById('empPass').value = "SSO_BYPASS";
           loginUser();
@@ -278,18 +325,12 @@
               document.getElementById("staffNameDisplay").innerText = "Hello, " + res.name;
               document.getElementById("staffRoleDisplay").innerText = "🏆 Role: " + res.role;
               
-              if (res.scores) {
-                staffScoresCache = res.scores;
-                document.getElementById('lblRewardPoints').innerText = (res.scores.daily || 0) + " Pts";
-              } else {
-                loadStaffScores();
-              }
-
               if(roleClean === "store manager") {
                 if(!document.getElementById("orderTabBtn")) {
                   document.getElementById("navTabs").innerHTML += '<div id="orderTabBtn" class="tab" onclick="switchTab(\'Orders\', this)" style="color:#2ea043;">📦 Orders</div>';
                 }
               }
+              loadStaffScores();
               loadStaffDashboard();
             }
           } else { document.getElementById("loginMsg").innerText = res.message; }
@@ -309,12 +350,11 @@
 
       function switchAdminTab(tabName) {
         var tabs = ['Assign', 'Progress', 'Scores', 'History'];
-        for (var t = 0; t < tabs.length; t++) {
-          var name = tabs[t];
-          var btn = document.getElementById('tabBtn' + name);
-          var card = document.getElementById('adminTab' + name);
-          if (btn) btn.classList.remove('active');
-          if (card) card.classList.add('hidden');
+        for (var i = 0; i < tabs.length; i++) {
+          var b = document.getElementById('tabBtn' + tabs[i]);
+          var c = document.getElementById('adminTab' + tabs[i]);
+          if (b) b.classList.remove('active');
+          if (c) c.classList.add('hidden');
         }
         var activeBtn = document.getElementById('tabBtn' + tabName);
         var activeCard = document.getElementById('adminTab' + tabName);
@@ -345,12 +385,9 @@
       }
 
       // ==========================================
-      // MULTIPLE PHOTOS HANDLER
+      // MULTIPLE PHOTO SELECTION & THUMBNAILS
       // ==========================================
       function handleAdminPhotoSelection(event) {
-        selectedAdminPhotos = [];
-        var container = document.getElementById("adminPhotoThumbnails");
-        container.innerHTML = "";
         var files = event.target.files;
         if (!files || files.length === 0) return;
 
@@ -358,22 +395,34 @@
           (function(file) {
             var reader = new FileReader();
             reader.onload = function(e) {
-              selectedAdminPhotos.push({
+              var photoObj = {
                 base64Data: e.target.result.split(',')[1],
-                fileType: file.type,
-                fileName: file.name
-              });
-              var thumb = document.createElement("img");
-              thumb.src = e.target.result;
-              thumb.style.width = "48px";
-              thumb.style.height = "48px";
-              thumb.style.objectFit = "cover";
-              thumb.style.borderRadius = "4px";
-              thumb.style.border = "1px solid #30363d";
-              container.appendChild(thumb);
+                fileType: file.type || "image/jpeg",
+                fileName: file.name || "photo.jpg",
+                dataUrl: e.target.result
+              };
+              selectedAdminPhotos.push(photoObj);
+              renderAdminPhotoThumbnails();
             };
             reader.readAsDataURL(file);
           })(files[i]);
+        }
+      }
+
+      function removeAdminPhoto(idx) {
+        selectedAdminPhotos.splice(idx, 1);
+        renderAdminPhotoThumbnails();
+      }
+
+      function renderAdminPhotoThumbnails() {
+        var container = document.getElementById("adminPhotoThumbnails");
+        container.innerHTML = "";
+        for (var i = 0; i < selectedAdminPhotos.length; i++) {
+          var p = selectedAdminPhotos[i];
+          var div = document.createElement("div");
+          div.className = "thumb-card";
+          div.innerHTML = '<img src="' + p.dataUrl + '"><button class="thumb-remove-btn" onclick="removeAdminPhoto(' + i + ')">✕</button>';
+          container.appendChild(div);
         }
       }
 
@@ -391,13 +440,14 @@
         btn.disabled = true;
         document.getElementById("adminMsg").innerText = "Processing & Uploading...";
 
+        // Pass array of photos to backend
         google.script.run.withSuccessHandler(function(res) {
           document.getElementById("adminMsg").innerText = res;
           document.getElementById("adminAdhocTask").value = "";
           document.getElementById("adminAdhocDeadline").value = "";
           document.getElementById("adminTaskPhotoFile").value = "";
-          document.getElementById("adminPhotoThumbnails").innerHTML = "";
           selectedAdminPhotos = [];
+          renderAdminPhotoThumbnails();
           btn.innerText = "Assign Task 🚀";
           btn.disabled = false;
           setTimeout(function() { document.getElementById("adminMsg").innerText = ""; }, 3500);
@@ -405,29 +455,76 @@
         }).assignAdhocTask(staff, rawTypeVal, desc, dead, selectedAdminPhotos);
       }
 
+      // ==========================================
+      // PHOTO GALLERY & CLICK-TO-ZOOM MODAL
+      // ==========================================
+      function renderPhotoGalleryHtml(refPhotoString) {
+        if (!refPhotoString || refPhotoString === "No Photo") return "";
+        var urls = refPhotoString.split(/\s*,\s*|\n/);
+        var html = "<div class='ref-photo-gallery'>";
+        for (var p = 0; p < urls.length; p++) {
+          var cleanUrl = urls[p].replace('=HYPERLINK("', '').split('",')[0].trim();
+          if (!cleanUrl) continue;
+          var driveIdMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/id=([a-zA-Z0-9_-]+)/);
+          var previewImgUrl = driveIdMatch ? ("https://drive.google.com/uc?id=" + driveIdMatch[1]) : cleanUrl;
+          
+          html += "<div class='ref-photo-item' onclick='openPhotoZoomModal(\"" + encodeURIComponent(cleanUrl) + "\", \"" + encodeURIComponent(previewImgUrl) + "\", " + (p + 1) + ")'>";
+          html += "📷 Photo " + (p + 1);
+          if (driveIdMatch) {
+            html += "<div class='photo-hover-preview'><img src='" + previewImgUrl + "'></div>";
+          }
+          html += "</div>";
+        }
+        html += "</div>";
+        return html;
+      }
+
+      function openPhotoZoomModal(driveUrl, imgUrl, index) {
+        var cleanDrive = decodeURIComponent(driveUrl);
+        var cleanImg = decodeURIComponent(imgUrl);
+        document.getElementById("zoomModalTitle").innerText = "📷 Reference Photo #" + index;
+        document.getElementById("zoomModalImg").src = cleanImg;
+        document.getElementById("zoomModalDriveLink").href = cleanDrive;
+        document.getElementById("photoZoomModal").style.display = "block";
+      }
+
+      function closePhotoZoomModal() {
+        document.getElementById("photoZoomModal").style.display = "none";
+        document.getElementById("zoomModalImg").src = "";
+      }
+
       function fetchStaffProgress() {
         var sel = document.getElementById("adminViewStaffSelect").value;
         if(!sel) { document.getElementById("staffProgressContent").innerHTML = ""; return; }
         var cleanName = sel.replace("👤 ", "").trim();
         document.getElementById("staffProgressContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>Progress report nikal rahe hain...</p>";
+        
         google.script.run.withSuccessHandler(function(res) {
           var html = "<div style='background:#1f242c; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #58a6ff;'>";
           html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
           html += "<div><b style='color:#c9d1d9; font-size:15px;'>" + cleanName + "</b> <span style='font-size:12px; color:#8b949e;'>(Role: " + res.role + ")</span></div>";
           html += "</div>";
           
+          // 7-Period Score Card for Selected Staff
           if (res.scores) {
             html += "<div style='display:grid; grid-template-columns:repeat(auto-fit, minmax(75px, 1fr)); gap:6px; margin-top:10px;'>";
-            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Daily</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.daily || 0) + "</div></div>";
-            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Weekly</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.weekly || 0) + "</div></div>";
-            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Monthly</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.monthly || 0) + "</div></div>";
-            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Last Mth</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.lastMonth || 0) + "</div></div>";
-            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Curr Qtr</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.currentQuarter || 0) + "</div></div>";
-            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Last Qtr</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.lastQuarter || 0) + "</div></div>";
-            html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'><div style='font-size:10px; color:#8b949e;'>Yearly</div><div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (res.scores.yearly || 0) + "</div></div>";
+            var timePeriods = [
+              { k: 'daily', lbl: 'Daily' }, { k: 'weekly', lbl: 'Weekly' }, { k: 'monthly', lbl: 'Monthly' },
+              { k: 'lastMonth', lbl: 'Last Mth' }, { k: 'currentQuarter', lbl: 'Curr Qtr' },
+              { k: 'lastQuarter', lbl: 'Last Qtr' }, { k: 'yearly', lbl: 'Yearly' }
+            ];
+            for (var t = 0; t < timePeriods.length; t++) {
+              var m = res.scores[timePeriods[t].k] || { points: 0, percentage: 100 };
+              html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'>";
+              html += "<div style='font-size:10px; color:#8b949e;'>" + timePeriods[t].lbl + "</div>";
+              html += "<div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (m.points || 0) + " Pts</div>";
+              html += "<div style='font-size:10px; color:#58a6ff;'>" + (m.percentage || 100) + "%</div>";
+              html += "</div>";
+            }
             html += "</div>";
           }
           html += "</div>";
+
           html += "<h4 style='color:#58a6ff; margin-bottom:10px; margin-top:0;'>📋 Permanent Routine Tasks</h4>";
           if(res.routine.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Koi routine task nahi hai.</p>";
           var groupedTasks = {};
@@ -452,7 +549,8 @@
             }
             html += "</div>";
           }
-          html += "<h4 style='color:#ffd33d; margin-top:20px; margin-bottom:10px;'>🔔 Extra / Assigned Tasks</h4>";
+          
+          html += "<h4 style='color:#ffd33d; margin-top:20px; margin-bottom:10px;'>🔔 Extra & Assigned Tasks</h4>";
           if(res.adhoc.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Inko koi extra task assign nahi kiya gaya hai.</p>";
           for(var i=0; i<res.adhoc.length; i++) {
              var at = res.adhoc[i];
@@ -461,36 +559,12 @@
              html += "<div class='subtask-container' style='margin-bottom:10px; border-left: 4px solid #e67e22;'>";
              html += "<div class='subtask-name' style='font-size:13px; margin-bottom:0; " + (isDone ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + at.task + " <span style='font-size:11px; color:#ffd33d;'>(" + (at.type || 'Extra') + ")</span></div>";
              
-             // Multiple photos render
              html += renderPhotoGalleryHtml(at.refPhoto);
-
              html += "<div class='status-text' style='margin-top:2px; font-size:11px; color:" + cColor + "; text-align:left;'>" + at.status + "</div>";
              html += "</div>";
           }
           document.getElementById("staffProgressContent").innerHTML = html;
         }).getStaffProgressReport(cleanName);
-      }
-
-      function renderPhotoGalleryHtml(refPhotoString) {
-        if (!refPhotoString || refPhotoString === "No Photo") return "";
-        var urls = refPhotoString.split(/\s*,\s*|\n/);
-        var html = "<div class='ref-photo-gallery'>";
-        for (var p = 0; p < urls.length; p++) {
-          var cleanUrl = urls[p].replace('=HYPERLINK("', '').split('",')[0].trim();
-          if (!cleanUrl) continue;
-          var driveIdMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/id=([a-zA-Z0-9_-]+)/);
-          var imgTag = "";
-          if (driveIdMatch) {
-            var previewImgUrl = "https://drive.google.com/uc?id=" + driveIdMatch[1];
-            imgTag = "<div class='photo-hover-preview'><img src='" + previewImgUrl + "'></div>";
-          }
-          html += "<div class='ref-photo-item'>";
-          html += "<a href='" + cleanUrl + "' target='_blank'>📷 Photo " + (p + 1) + "</a>";
-          html += imgTag;
-          html += "</div>";
-        }
-        html += "</div>";
-        return html;
       }
 
       function loadAdminHistory() {
@@ -517,7 +591,7 @@
       }
 
       // ==========================================
-      // OWNER LEADERBOARD
+      // OWNER LEADERBOARD / SCORECARD
       // ==========================================
       function fetchAdminLeaderboard(period, el) {
         currentAdminScorePeriod = period || 'daily';
@@ -534,8 +608,17 @@
             container.innerHTML = "<p style='color:#8b949e; text-align:center;'>Koi staff scores record nahi mile.</p>";
             return;
           }
-          var html = "<table class='leaderboard-table'>";
-          html += "<thead><tr><th style='width:50px;'>Rank</th><th>Staff Name</th><th>Role</th><th style='text-align:right;'>Points</th></tr></thead><tbody>";
+          var html = "<div style='overflow-x:auto;'><table class='leaderboard-table'>";
+          html += "<thead><tr>";
+          html += "<th style='width:45px;'>Rank</th>";
+          html += "<th>Staff Name</th>";
+          html += "<th>Role</th>";
+          html += "<th style='text-align:center;'>Assigned</th>";
+          html += "<th style='text-align:center;'>Done</th>";
+          html += "<th style='text-align:center;'>Score %</th>";
+          html += "<th style='text-align:right;'>Points</th>";
+          html += "</tr></thead><tbody>";
+          
           for(var i=0; i<list.length; i++) {
             var s = list[i];
             var rankBadge = "#" + (i + 1);
@@ -543,35 +626,49 @@
             else if(i === 1) rankBadge = "🥈 #2";
             else if(i === 2) rankBadge = "🥉 #3";
             
+            var pctColor = (s.percentage >= 85) ? "#2ea043" : ((s.percentage >= 60) ? "#ffd33d" : "#da3633");
+            
             html += "<tr>";
             html += "<td style='font-weight:bold; color:#ffd33d;'>" + rankBadge + "</td>";
             html += "<td style='color:#c9d1d9; font-weight:bold;'>" + s.name + "</td>";
-            html += "<td style='color:#8b949e; font-size:12px;'>" + s.role + "</td>";
-            html += "<td style='text-align:right; font-weight:bold; color:#58a6ff; font-size:15px;'>" + s.score + " Pts</td>";
+            html += "<td style='color:#8b949e; font-size:11px;'>" + s.role + "</td>";
+            html += "<td style='text-align:center; color:#c9d1d9;'>" + s.assigned + "</td>";
+            html += "<td style='text-align:center; color:#2ea043; font-weight:bold;'>" + s.completed + "</td>";
+            html += "<td style='text-align:center;'><span class='badge-rate' style='background:rgba(46,160,67,0.2); color:" + pctColor + "; border:1px solid " + pctColor + ";'>" + s.percentage + "%</span></td>";
+            html += "<td style='text-align:right; font-weight:bold; color:#58a6ff; font-size:14px;'>" + s.points + " Pts</td>";
             html += "</tr>";
           }
-          html += "</tbody></table>";
+          html += "</tbody></table></div>";
           container.innerHTML = html;
         }).getStaffLeaderboard(currentAdminScorePeriod);
       }
 
       // ==========================================
-      // STAFF SCORE & TABS
+      // STAFF PERFORMANCE SCORE ENGINE
       // ==========================================
       function loadStaffScores() {
         google.script.run.withSuccessHandler(function(scores) {
           staffScoresCache = scores || {};
-          document.getElementById('lblRewardPoints').innerText = (staffScoresCache.daily || 0) + " Pts";
+          renderStaffScoreUI();
         }).getStaffScoreMetrics(loggedInUser.name);
       }
 
       function switchStaffScorePeriod(periodKey, labelText, el) {
+        currentStaffScorePeriod = periodKey;
         var pills = document.getElementById("staffScorePillBar").querySelectorAll(".score-pill");
         for(var i=0; i<pills.length; i++) pills[i].classList.remove("active");
         if(el) el.classList.add("active");
-        document.getElementById("staffScoreLabel").innerText = "🏆 " + labelText;
-        var scoreVal = staffScoresCache[periodKey] || 0;
-        document.getElementById("lblRewardPoints").innerText = scoreVal + " Pts";
+        document.getElementById("staffScoreTimeframeTitle").innerText = "🏆 " + labelText;
+        renderStaffScoreUI();
+      }
+
+      function renderStaffScoreUI() {
+        var periodData = (staffScoresCache && staffScoresCache[currentStaffScorePeriod]) ? staffScoresCache[currentStaffScorePeriod] : { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 };
+        document.getElementById("lblRewardPoints").innerText = (periodData.points || 0) + " Pts";
+        document.getElementById("metricAssigned").innerText = periodData.assigned || 0;
+        document.getElementById("metricCompleted").innerText = periodData.completed || 0;
+        document.getElementById("metricDelayed").innerText = periodData.delayed || 0;
+        document.getElementById("metricPercentage").innerText = (periodData.percentage || 100) + "%";
       }
 
       function switchTab(tabName, el) {
@@ -646,13 +743,14 @@
 
       // ==========================================
       // COMBINED & NORMALIZED TASK RENDERING
+      // Daily, Weekly, Monthly, Extra, & Orders Tabs
       // ==========================================
       function renderStaffContent() {
         var isOwner = (loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin");
         
         var counts = { Daily: {t:0, d:0}, Weekly: {t:0, d:0}, Monthly: {t:0, d:0} };
 
-        // 1. Role routine tasks
+        // 1. Count Role Routine Tasks
         for(var k=0; k<roleTasks.length; k++) {
             var tItem = roleTasks[k];
             var normType = (tItem.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
@@ -663,7 +761,7 @@
             }
         }
 
-        // 2. Owner Assigned tasks belonging to Daily, Weekly, Monthly
+        // 2. Count Owner-Assigned Recurring Tasks (Daily, Weekly, Monthly)
         for(var a=0; a<extraTasks.length; a++) {
             var aItem = extraTasks[a];
             var aNormType = (aItem.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
@@ -696,6 +794,7 @@
         var html = "";
         var count = 0;
 
+        // ORDERS TAB (STORE MANAGER)
         if (currentActiveTab === 'Orders') {
           if(orderTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Aaj ke saare Orders process ho gaye hain! 🎉</div>"; updateLiveTimers(); return; }
           for(var i=0; i<orderTasks.length; i++) {
@@ -710,11 +809,12 @@
             html += "</div>";
           }
         } 
+        // EXTRA (ONE-TIME) TASKS TAB
         else if (currentActiveTab === 'Adhoc') {
-          // Extra (One Time) Tasks
           var filteredAdhocs = [];
           for(var a=0; a<extraTasks.length; a++) {
-            var atType = (extraTasks[a].type || "").replace(/\s*Task/i, '').trim();
+            var atType = (extraTasks[a].type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
+            atType = atType.charAt(0).toUpperCase() + atType.slice(1).toLowerCase();
             if (atType !== "Daily" && atType !== "Weekly" && atType !== "Monthly") {
               filteredAdhocs.push({ task: extraTasks[a], index: a });
             }
@@ -756,8 +856,8 @@
             html += "</div></div>";
           }
         }
+        // RECURRING TABS: DAILY, WEEKLY, OR MONTHLY
         else {
-          // DAILY, WEEKLY, OR MONTHLY TAB
           var currentTabClean = currentActiveTab.toLowerCase().trim();
 
           // 1. Group Routine Tasks
@@ -772,7 +872,7 @@
             }
           }
 
-          // 2. Render Owner-Assigned Tasks for this Frequency (e.g. Daily assigned to Rekha or Vrushali)
+          // 2. Render Owner-Assigned Recurring Tasks (e.g. Daily assigned to Rekha, Vrushali, or All Staff)
           var assignedForThisTab = [];
           for(var a = 0; a < extraTasks.length; a++) {
             var at = extraTasks[a];
@@ -783,7 +883,7 @@
             }
           }
 
-          // Display Owner Assigned Tasks Section if any
+          // A) Display Owner Assigned Section
           if (assignedForThisTab.length > 0) {
             html += "<div style='background:#1c2128; border:1px solid #ffd33d; border-radius:8px; padding:12px; margin-bottom:15px;'>";
             html += "<h4 style='margin:0 0 10px 0; color:#ffd33d;'>⭐ Owner Assigned " + currentActiveTab + " Tasks (" + assignedForThisTab.length + ")</h4>";
@@ -812,7 +912,7 @@
             html += "</div>";
           }
 
-          // Display Routine Tasks
+          // B) Display Routine Tasks
           for (var mainTask in groupedTasks) {
             var group = groupedTasks[mainTask];
             var firstTask = group[0].data;
@@ -876,15 +976,13 @@
         btn.innerText = "Processing...";
         btn.disabled = true;
         google.script.run.withSuccessHandler(function(res) {
-          orderTasks[index].status = "Completed";
+          orderTasks[index].status = "Dispatched (Completed)";
           renderStaffContent();
         }).completeStoreManagerOrder(rowIndex);
       }
 
       function updatePointsUI(pts) {
-        if (pts > 0) {
-           loadStaffScores();
-        }
+        loadStaffScores();
       }
 
       function skipTask(index, btn) {
@@ -900,7 +998,7 @@
       }
 
       function skipAdhocTask(index, btn) {
-        if(confirm("Kya aap is extra task ko 'Skip' karna chahte hain?")) {
+        if(confirm("Kya aap is task ko 'Skip' karna chahte hain?")) {
            var t = extraTasks[index];
            btn.innerText = "..."; btn.disabled = true;
            google.script.run.withSuccessHandler(function(res) { 
@@ -1027,33 +1125,22 @@
         
         for(var i=0; i<roleTasks.length; i++) {
           var t = roleTasks[i];
-          var name = (t.subTask ? t.subTask : t.task) + " (" + t.type + ")";
-          if(t.status.includes("Uploaded") || t.status.includes("Completed")) completedList.push(name);
-          else pendingList.push(name);
+          var title = (t.subTask ? (t.task + " - " + t.subTask) : t.task);
+          if(t.status.includes("Uploaded") || t.status.includes("Completed")) completedList.push("✅ " + title);
+          else pendingList.push("⏳ " + title);
         }
-
         for(var a=0; a<extraTasks.length; a++) {
           var at = extraTasks[a];
-          var atName = at.task + " (" + (at.type || 'Extra') + ")";
-          if(at.status.includes("Uploaded") || at.status.includes("Completed")) completedList.push(atName);
-          else pendingList.push(atName);
+          if(at.status.includes("Uploaded") || at.status.includes("Completed")) completedList.push("✅ [Assigned] " + at.task);
+          else pendingList.push("⏳ [Assigned] " + at.task);
         }
 
-        var text = "*--- End of Day (EOD) Report ---*\n";
-        text += "*Staff:* " + loggedInUser.name + " (" + loggedInUser.role + ")\n";
-        text += "*Date:* " + new Date().toLocaleDateString() + "\n";
-        text += "*Daily Points:* " + (staffScoresCache.daily || 0) + " Pts\n\n";
-
-        text += "✅ *COMPLETED TASKS (" + completedList.length + "):*\n";
-        if(completedList.length === 0) text += "None\n";
-        for(var c=0; c<completedList.length; c++) text += "• " + completedList[c] + "\n";
-
-        text += "\n⏳ *PENDING TASKS (" + pendingList.length + "):*\n";
-        if(pendingList.length === 0) text += "All Tasks Completed! 🎉\n";
-        for(var p=0; p<pendingList.length; p++) text += "• " + pendingList[p] + "\n";
-
-        var url = "https://wa.me/?text=" + encodeURIComponent(text);
-        window.open(url, "_blank");
+        var text = "Hello Sir, meri EOD Report - " + loggedInUser.name + " (" + loggedInUser.role + "):\n\n";
+        text += "Completed Tasks (" + completedList.length + "):\n" + (completedList.length > 0 ? completedList.join("\n") : "None") + "\n\n";
+        text += "Pending Tasks (" + pendingList.length + "):\n" + (pendingList.length > 0 ? pendingList.join("\n") : "None") + "\n\n";
+        text += "Total Points: " + (document.getElementById('lblRewardPoints').innerText || "0 Pts");
+        
+        window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
       }
     </script>
   </body>
