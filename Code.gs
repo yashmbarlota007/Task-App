@@ -1,602 +1,252 @@
-// =====================================================================
-// YASH MARKETING - TASK OPERATIONS & STAFF SCORING BACKEND (Code.gs)
-// Complete Production Engine:
-// 1. 7-Period Performance Score Engine (Daily, Weekly, Monthly, Last Month, Curr Qtr, Last Qtr, Yearly)
-// 2. Multiple Reference Photos Upload to Google Drive & Gallery / Zoom Preview
-// 3. Dynamic Daily / Weekly / Monthly Recurring Tasks with Auto-Reset Cycles & "All Staff" Matching
-// 4. Flexible Sheet & Column Matcher (Staff_List, Role_Tasks, Adhoc_Tasks, Task_Submissions, Orders)
-// 5. Store Manager Order Processing Pipeline
-// =====================================================================
-
 function doGet(e) {
-  var empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
-  
-  // LIVE LINK WITH GITHUB: Directly fetch latest Index.html from GitHub main branch
-  try {
-    var githubUrl = "https://raw.githubusercontent.com/yashmbarlota007/Task-App/main/Index.html?t=" + new Date().getTime();
-    var response = UrlFetchApp.fetch(githubUrl, {
-      headers: { "Cache-Control": "no-cache, no-store, max-age=0" },
-      muteHttpExceptions: true
-    });
-    
-    if (response.getResponseCode() === 200) {
-      var html = response.getContentText();
-      html = html.replace('<?= portalEmpId ?>', empId);
-      html = html.replace('<?= empId ?>', empId);
-      return HtmlService.createHtmlOutput(html)
-        .setTitle("Yash Marketing - Task Operations & Staff Portal")
-        .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    }
-  } catch (err) {
-    Logger.log("Live GitHub Fetch fallback: " + err.message);
+  var template = HtmlService.createTemplateFromFile('Index');
+  if (e && e.parameter && e.parameter.empId) {
+    template.empId = e.parameter.empId;
+    template.portalEmpId = e.parameter.empId;
+    template.role = e.parameter.role;
+  } else {
+    template.empId = "";
+    template.role = "";
   }
-  
-  // Local fallback from Apps Script project if GitHub is unreachable
-  var template = HtmlService.createTemplateFromFile("Index");
-  template.portalEmpId = empId;
-  template.empId = empId;
   return template.evaluate()
-    .setTitle("Yash Marketing - Task Operations & Staff Portal")
-    .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      .setTitle('Yash Marketing ERP & Task Manager')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-// =====================================================================
-// REST / JSON API DISPATCHER (doPost) FOR VERCEL & EXTERNAL CLIENTS
-// Enables Task-App to run seamlessly on Vercel with zero redeployment lag
-// =====================================================================
-function doPost(e) {
-  try {
-    var raw = (e && e.postData && e.postData.contents) ? e.postData.contents : "{}";
-    var payload = {};
-    try {
-      payload = JSON.parse(raw);
-    } catch (pe) {
-      payload = {};
-    }
-
-    var action = payload.action || "";
-    var result = null;
-
-    switch (action) {
-      case "ping":
-        result = { pong: true, timestamp: new Date().toISOString() };
-        break;
-
-      case "verifyLogin":
-        result = verifyLogin(payload.empId || payload.id);
-        break;
-
-      case "getStaffListForAdmin":
-        result = getStaffListForAdmin();
-        break;
-
-      case "assignAdhocTask":
-        result = assignAdhocTask(
-          payload.staff,
-          payload.typeVal,
-          payload.desc,
-          payload.deadline,
-          payload.photosData,
-          payload.fileType,
-          payload.fileName
-        );
-        break;
-
-      case "getAdhocTasksForStaff":
-        result = getAdhocTasksForStaff(payload.staffName);
-        break;
-
-      case "getTasksForRole":
-        result = getTasksForRole(payload.role, payload.staffName);
-        break;
-
-      case "getStaffScoreMetrics":
-        result = getStaffScoreMetrics(payload.staffName, payload.empId);
-        break;
-
-      case "getStaffLeaderboard":
-        result = getStaffLeaderboard(payload.period);
-        break;
-
-      case "submitTaskWithProof":
-        result = submitTaskWithProof(
-          payload.name,
-          payload.role,
-          payload.type,
-          payload.task,
-          payload.subTask,
-          payload.deadline,
-          payload.base64Data,
-          payload.mimeType,
-          payload.fileName,
-          payload.isAdhoc,
-          payload.adhocIndex,
-          payload.actionType
-        );
-        break;
-
-      case "getStaffProgressReport":
-        result = getStaffProgressReport(payload.staffName);
-        break;
-
-      case "getAllAdhocHistory":
-        result = getAllAdhocHistory();
-        break;
-
-      case "getLiveOrdersForManager":
-        result = getLiveOrdersForManager();
-        break;
-
-      case "completeStoreManagerOrder":
-        result = completeStoreManagerOrder(payload.rowIndex);
-        break;
-
-      case "getRoleOnboardingGuide":
-        result = getRoleOnboardingGuide(payload.role);
-        break;
-
-      default:
-        return ContentService.createTextOutput(JSON.stringify({
-          status: "error",
-          message: "Invalid action command: " + action
-        })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "success",
-      data: result
-    })).setMimeType(ContentService.MimeType.JSON);
-
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
-      message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// =====================================================================
-// HELPER: FLEXIBLE SHEET FINDER (Handles spaces, underscores, casing)
-// =====================================================================
-function getSheetByNameFlexible(ss, names) {
-  if (!ss) return null;
-  // 1. Direct match
-  for (var i = 0; i < names.length; i++) {
-    var s = ss.getSheetByName(names[i]);
-    if (s) return s;
-  }
-  // 2. Normalized match (remove spaces, underscores, lowercase)
-  var allSheets = ss.getSheets();
-  for (var i = 0; i < names.length; i++) {
-    var target = names[i].replace(/[_\s]/g, '').toLowerCase();
-    for (var j = 0; j < allSheets.length; j++) {
-      var cur = allSheets[j].getName().replace(/[_\s]/g, '').toLowerCase();
-      if (cur === target) return allSheets[j];
-    }
-  }
-  // 3. Fallback: contains match
-  for (var i = 0; i < names.length; i++) {
-    var target = names[i].replace(/[_\s]/g, '').toLowerCase();
-    for (var j = 0; j < allSheets.length; j++) {
-      var cur = allSheets[j].getName().replace(/[_\s]/g, '').toLowerCase();
-      if (cur.indexOf(target) !== -1 || target.indexOf(cur) !== -1) return allSheets[j];
-    }
-  }
-  return null;
-}
-
-// =====================================================================
-// HELPER: NORMALIZE TASK FREQUENCY
-// =====================================================================
-function normalizeFrequency(freq) {
-  var f = String(freq || "").toLowerCase();
-  if (f.indexOf("daily") !== -1) return "Daily";
-  if (f.indexOf("week") !== -1) return "Weekly";
-  if (f.indexOf("month") !== -1) return "Monthly";
-  return "Extra (One Time)";
-}
-
-// =====================================================================
-// HELPER: STAFF MATCHING (Handles "All Staff", full names, empId, first names)
-// =====================================================================
-function isStaffMatch(assignedTo, staffName, empId) {
-  var a = String(assignedTo || "").replace("👤 ", "").trim().toLowerCase();
-  if (!a || a === "all" || a === "all staff" || a.indexOf("all") !== -1 || a === "everyone" || a === "team" || a === "all team") {
-    return true;
-  }
-  var s = String(staffName || "").replace("👤 ", "").trim().toLowerCase();
-  var id = String(empId || "").replace(/[^\w]/gi, '').toLowerCase();
-  var aClean = a.replace(/[^\w]/gi, '');
-
-  if (s && a === s) return true;
-  if (id && aClean === id) return true;
-  if (s && a.indexOf(s) !== -1) return true;
-  if (s && s.indexOf(a) !== -1) return true;
-
-  // First name match (e.g. "Rekha" vs "Rekha Barlota")
-  var sFirst = s.split(/\s+/)[0];
-  var aFirst = a.split(/\s+/)[0];
-  if (sFirst && aFirst && sFirst.length >= 3 && sFirst === aFirst) return true;
-
-  return false;
-}
-
-// =====================================================================
-// HELPER: ROBUST ADHOC_TASKS SHEET SCHEMA & DYNAMIC COLUMN MAPPER
-// Automatically ensures the Frequency column exists without corrupting data
-// =====================================================================
-function getOrSetupAdhocSheet(ss) {
-  var sheet = getSheetByNameFlexible(ss, ["Adhoc_Tasks", "Adhoc Tasks", "Assigned_Tasks", "Tasks_Assigned"]);
-  var defaultHeaders = ["Assign Date", "Assigned To", "Frequency", "Task Description", "Deadline", "Reference Photo", "Status", "TaskId"];
+function verifyLogin(empId, password) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var passSheet = ss.getSheetByName("password");
+  if (!passSheet) return { success: false, message: "Error: 'password' sheet nahi mili!" };
   
-  if (!sheet) {
-    sheet = ss.insertSheet("Adhoc_Tasks");
-    sheet.appendRow(defaultHeaders);
-    return {
-      sheet: sheet,
-      colMap: { date: 0, staff: 1, freq: 2, task: 3, deadline: 4, photo: 5, status: 6, id: 7 }
-    };
-  }
-
-  var numCols = Math.max(sheet.getLastColumn(), 1);
-  var headerVals = sheet.getRange(1, 1, 1, numCols).getValues()[0];
-  var colMap = { date: -1, staff: -1, freq: -1, task: -1, deadline: -1, photo: -1, status: -1, id: -1 };
-
-  for (var c = 0; c < headerVals.length; c++) {
-    var h = String(headerVals[c] || "").toLowerCase().trim();
-    if (!h) continue;
-    if (h.indexOf("freq") !== -1 || h === "type" || h.indexOf("repeat") !== -1 || h.indexOf("recur") !== -1 || h === "task type") {
-      if (colMap.freq === -1) colMap.freq = c;
-    } else if (colMap.id === -1 && (h === "id" || h === "taskid" || h === "task id")) {
-      colMap.id = c;
-    } else if (colMap.date === -1 && (h.indexOf("date") !== -1 || h.indexOf("time") !== -1 || h === "timestamp")) {
-      colMap.date = c;
-    } else if (colMap.staff === -1 && (h.indexOf("staff") !== -1 || h.indexOf("assign") !== -1 || h.indexOf("user") !== -1 || h.indexOf("emp") !== -1)) {
-      colMap.staff = c;
-    } else if (colMap.deadline === -1 && (h.indexOf("dead") !== -1 || h.indexOf("due") !== -1)) {
-      colMap.deadline = c;
-    } else if (colMap.photo === -1 && (h.indexOf("photo") !== -1 || h.indexOf("image") !== -1 || h.indexOf("file") !== -1 || h.indexOf("proof") !== -1)) {
-      colMap.photo = c;
-    } else if (colMap.status === -1 && (h.indexOf("stat") !== -1 || h === "state")) {
-      colMap.status = c;
-    } else if (colMap.task === -1 && (h.indexOf("desc") !== -1 || h.indexOf("task") !== -1)) {
-      colMap.task = c;
+  var passData = passSheet.getDataRange().getValues();
+  var matchedEmpName = "";
+  for (var i = 1; i < passData.length; i++) {
+    var sheetId = passData[i][0] ? passData[i][0].toString().trim() : "";
+    var sheetPass = passData[i][1] ? passData[i][1].toString().trim() : "";
+    if (sheetId.toLowerCase() === empId.toString().trim().toLowerCase() && (sheetPass === password.toString().trim() || password === "SSO_BYPASS")) {
+      matchedEmpName = findEmployeeName(sheetId);
+      break;
     }
   }
-
-  // If Frequency column was missing from header, append it cleanly at the end
-  if (colMap.freq === -1) {
-    var newColIndex = numCols + 1;
-    sheet.getRange(1, newColIndex).setValue("Frequency");
-    var totalRows = sheet.getLastRow();
-    if (totalRows > 1) {
-      var fRange = sheet.getRange(2, newColIndex, totalRows - 1, 1);
-      var fVals = fRange.getValues();
-      for (var r = 0; r < fVals.length; r++) {
-        if (!fVals[r][0]) fVals[r][0] = "Extra (One Time)";
-      }
-      fRange.setValues(fVals);
-    }
-    colMap.freq = numCols;
+  if (matchedEmpName !== "") {
+    var role = getStaffRoleByName(matchedEmpName);
+    var scores = getStaffScoresBreakdown(matchedEmpName);
+    return { success: true, name: matchedEmpName, role: role, scores: scores };
   }
-
-  // Set defaults for any unidentified column
-  if (colMap.date === -1) colMap.date = 0;
-  if (colMap.staff === -1) colMap.staff = 1;
-  if (colMap.task === -1) colMap.task = 2;
-  if (colMap.deadline === -1) colMap.deadline = 3;
-  if (colMap.photo === -1) colMap.photo = 4;
-  if (colMap.status === -1) colMap.status = 5;
-  if (colMap.id === -1) colMap.id = 6;
-
-  return { sheet: sheet, colMap: colMap };
+  return { success: false, message: "Galat Employee ID ya Password!" };
 }
 
-// =====================================================================
-// 1. AUTHENTICATION & LOGIN
-// Column A: Emp ID | Column B: Password | Column C: Name | Column D: Role | Column E: Active
-// =====================================================================
-function verifyLogin(id, pass) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (!ss) {
-      return { success: false, message: "Spreadsheet connect nahi hui! Kripya check karein ki Apps Script Google Sheet ke sath bound hai." };
-    }
-    
-    var sheet = getSheetByNameFlexible(ss, ["Staff_List", "Staff List", "Staff", "Users"]);
-    if (!sheet) {
-      return { success: false, message: "Staff_List sheet nahi mili! Kripya sheet tab ka naam 'Staff_List' ya 'Staff List' rakhein." };
-    }
-    
-    var data = sheet.getDataRange().getValues();
-    var cleanId = String(id).replace(/[^\w]/gi, '').toLowerCase();
-    var cleanPass = String(pass).trim();
-    
-    for (var i = 1; i < data.length; i++) {
-      var rowEmpId = String(data[i][0] || "").replace(/[^\w]/gi, '').toLowerCase();
-      var rowPass = String(data[i][1] || "").trim();
-      var rowName = String(data[i][2] || "").trim();
-      var rowRole = String(data[i][3] || "Staff").trim();
-      var rowActive = data[i][4];
-      
-      // Match by Emp ID or Name
-      var idMatches = (rowEmpId === cleanId || String(data[i][0] || "").trim().toLowerCase() === String(id).trim().toLowerCase() ||
-                       rowName.toLowerCase() === String(id).trim().toLowerCase());
-      
-      if (idMatches) {
-        if (cleanPass === "SSO_BYPASS" || rowPass === cleanPass) {
-          if (rowActive !== false && String(rowActive).toLowerCase() !== "false") {
-            var metrics = getStaffScoreMetrics(rowName, String(data[i][0] || ""));
-            return {
-              success: true,
-              empId: String(data[i][0] || id),
-              name: rowName,
-              role: rowRole,
-              totalPoints: (metrics && metrics.daily) ? metrics.daily.points : 0,
-              scores: metrics
-            };
-          } else {
-            return { success: false, message: "Aapka account inactive hai. Kripya admin se sampark karein." };
-          }
-        } else {
-          return { success: false, message: "Galat Password! Kripya dobara koshish karein." };
-        }
-      }
-    }
-    return { success: false, message: "Employee ID '" + id + "' nahi mili! Kripya check karein." };
-  } catch (err) {
-    return { success: false, message: "Login Error: " + err.message };
-  }
-}
-
-// =====================================================================
-// 2. ADMIN: STAFF LIST FOR DROPDOWNS
-// =====================================================================
 function getStaffListForAdmin() {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = getSheetByNameFlexible(ss, ["Staff_List", "Staff List", "Staff", "Users"]);
-    if (!sheet) return ["All Staff"];
-    
-    var data = sheet.getDataRange().getValues();
-    var list = ["All Staff"];
-    for (var i = 1; i < data.length; i++) {
-      var name = String(data[i][2] || "").trim();
-      var role = String(data[i][3] || "").trim();
-      var active = data[i][4];
-      if (name && active !== false && String(active).toLowerCase() !== "false") {
-        if (!role.toLowerCase().includes("owner") && !role.toLowerCase().includes("admin")) {
-          list.push("👤 " + name);
-        }
-      }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("staff master"); 
+  if (!sheet) return [];
+  var data = sheet.getRange(2, 2, sheet.getLastRow(), 5).getValues(); 
+  var list = [];
+  var roles = [];
+  for (var i = 0; i < data.length; i++) {
+    var name = data[i][0] ? data[i][0].toString().trim() : "";
+    var role = data[i][4] ? data[i][4].toString().trim() : "";
+    if (name !== "" && list.indexOf("👤 " + name) === -1) list.push("👤 " + name);
+    if (role !== "" && role.toLowerCase() !== "owner" && role.toLowerCase() !== "admin" && roles.indexOf("🏢 Team: " + role) === -1) {
+      roles.push("🏢 Team: " + role);
     }
-    return list;
-  } catch (err) {
-    return ["All Staff"];
   }
+  return ["👥 All Staff"].concat(roles).concat(["------------------"]).concat(list);
 }
 
-// =====================================================================
-// 3. ADMIN: ASSIGN TASK (MULTIPLE PHOTOS & FREQUENCY SUPPORT)
-// =====================================================================
-function assignAdhocTask(staff, typeVal, desc, deadline, photosData, fileType, fileName) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var setup = getOrSetupAdhocSheet(ss);
-    var sheet = setup.sheet;
-    var colMap = setup.colMap;
-    
-    // Normalize frequency: Daily, Weekly, Monthly, or Extra (One Time)
-    var cleanFreq = normalizeFrequency(typeVal);
-    
-    var cleanStaff = String(staff || "").replace("👤 ", "").trim();
-    if (!cleanStaff || cleanStaff.toLowerCase().indexOf("all") !== -1) {
-      cleanStaff = "All Staff";
-    }
-    
-    // Upload reference photos to Google Drive
-    var photoLinks = [];
-    var folderName = "Yash Marketing - Reference Photos";
-    var folders = DriveApp.getFoldersByName(folderName);
-    var targetFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
-    
-    // 1. Multiple photos received as Array of objects: [{ name, type, base64 }]
-    if (Array.isArray(photosData) && photosData.length > 0) {
-      for (var i = 0; i < photosData.length; i++) {
-        var p = photosData[i];
-        if (p && p.base64 && p.name) {
-          var blob = Utilities.newBlob(Utilities.base64Decode(p.base64), p.type || "image/jpeg", p.name);
-          var file = targetFolder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-          photoLinks.push(file.getUrl());
-        }
+function findEmployeeName(empId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var masterSheet = ss.getSheetByName("staff master");
+  var passSheet = ss.getSheetByName("password");
+  if (masterSheet && passSheet) {
+    var passData = passSheet.getDataRange().getValues();
+    var masterData = masterSheet.getDataRange().getValues();
+    // Try to match ID directly in staff master first
+    for (var m = 1; m < masterData.length; m++) {
+      if (masterData[m][0] && masterData[m][0].toString().trim().toLowerCase() === empId.toString().trim().toLowerCase()) {
+        return masterData[m][1] ? masterData[m][1].toString().trim() : "Employee " + empId;
       }
-    } else if (photosData && typeof photosData === "string" && fileType && fileName) {
-      // 2. Single photo backward compatibility
-      var blob = Utilities.newBlob(Utilities.base64Decode(photosData), fileType, fileName);
-      var file = targetFolder.createFile(blob);
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      photoLinks.push(file.getUrl());
     }
-    
-    var photoCell = "No Photo";
-    if (photoLinks.length === 1) {
-      photoCell = photoLinks[0];
-    } else if (photoLinks.length > 1) {
-      photoCell = JSON.stringify(photoLinks);
+    // Fallback: match by row in password sheet
+    for (var i = 1; i < passData.length; i++) {
+      if (passData[i][0].toString().trim().toLowerCase() === empId.toString().trim().toLowerCase()) {
+        var rowVal = masterSheet.getRange(i + 1, 2).getValue();
+        if (rowVal) return rowVal.toString().trim();
+      }
     }
-    
-    var timeZone = Session.getScriptTimeZone() || "GMT+5:30";
-    var nowStr = Utilities.formatDate(new Date(), timeZone, "yyyy-MM-dd HH:mm:ss");
-    var taskId = "TASK-" + new Date().getTime();
-    
-    // Prepare standardized row using mapped columns
-    var maxCol = Math.max(colMap.id, colMap.status, colMap.photo, colMap.deadline, colMap.task, colMap.freq, colMap.staff, colMap.date) + 1;
-    var newRow = new Array(maxCol);
-    for (var k = 0; k < maxCol; k++) newRow[k] = "";
-    
-    newRow[colMap.date] = nowStr;
-    newRow[colMap.staff] = cleanStaff;
-    newRow[colMap.freq] = cleanFreq;
-    newRow[colMap.task] = desc;
-    newRow[colMap.deadline] = deadline || "Jald";
-    newRow[colMap.photo] = photoCell;
-    newRow[colMap.status] = "Pending";
-    newRow[colMap.id] = taskId;
-    
-    sheet.appendRow(newRow);
-    return "Task successfully assign ho gaya!";
-  } catch (err) {
-    return "Error: " + err.message;
   }
+  return "Employee " + empId;
 }
 
-// =====================================================================
-// 4. STAFF: GET ADHOC & RECURRING TASKS FOR STAFF
-// Includes Auto-Reset Logic for Daily, Weekly, and Monthly cycles!
-// Supports "All Staff", Staff Name, First Name, and Staff ID matching!
-// =====================================================================
-function getAdhocTasksForStaff(staffName, empId) {
+function getStaffRoleByName(empName) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("staff master");
+  if (!sheet) return "Staff";
+  var data = sheet.getRange(2, 2, sheet.getLastRow(), 5).getValues();
+  for (var i = 0; i < data.length; i++) {
+    if (data[i][0] && data[i][0].toString().trim().toLowerCase() === empName.toLowerCase()) {
+      return data[i][4] ? data[i][4].toString().trim() : "Staff";
+    }
+  }
+  return "Staff";
+}
+
+function formatTimeFriendly(val) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var setup = getOrSetupAdhocSheet(ss);
-    var sheet = setup.sheet;
-    var colMap = setup.colMap;
-    
-    var data = sheet.getDataRange().getValues();
-    if (data.length <= 1) return [];
-    
-    var cleanStaff = String(staffName || "").replace("👤 ", "").trim();
-    var cleanEmpId = String(empId || "").replace(/[^\w]/gi, '').toLowerCase();
-    
-    // Lookup Staff_List to find empId if not passed
-    if (!cleanEmpId && cleanStaff) {
-      var staffSheet = getSheetByNameFlexible(ss, ["Staff_List", "Staff List", "Staff", "Users"]);
-      if (staffSheet) {
-        var sVals = staffSheet.getDataRange().getValues();
-        for (var sv = 1; sv < sVals.length; sv++) {
-          var svName = String(sVals[sv][2] || "").trim().toLowerCase();
-          if (svName === cleanStaff.toLowerCase() || (cleanStaff.length >= 3 && svName.indexOf(cleanStaff.toLowerCase()) !== -1)) {
-            cleanEmpId = String(sVals[sv][0] || "").replace(/[^\w]/gi, '').toLowerCase();
-            break;
-          }
-        }
+    if (!val) return "";
+    if (val instanceof Date) {
+      if (val.getFullYear() === 1899 || val.getFullYear() === 1970) {
+        return Utilities.formatDate(val, Session.getScriptTimeZone(), "hh:mm a"); 
+      } else {
+        return Utilities.formatDate(val, Session.getScriptTimeZone(), "dd MMM, hh:mm a");
       }
     }
-    
-    // Timezone & current cycle identifiers
-    var timeZone = Session.getScriptTimeZone() || "GMT+5:30";
+    return val.toString().replace(/\s*GMT.*/i, '').trim();
+  } catch(e) { return val.toString().replace(/\s*GMT.*/i, '').trim(); }
+}
+
+// 📌 7-PERIOD SCORE CALCULATION
+function getStaffScoresBreakdown(staffName) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var subSheet = ss.getSheetByName("Task_Submissions");
+  var scores = { daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0 };
+  if (!subSheet || subSheet.getLastRow() <= 1) return scores;
+
+  var subData = subSheet.getDataRange().getValues();
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  var todayStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+
+  var dayOfWeek = now.getDay();
+  var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+  var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
+
+  var currYear = now.getFullYear();
+  var currMonth = now.getMonth();
+  var lastMonthYear = currMonth === 0 ? currYear - 1 : currYear;
+  var lastMonth = currMonth === 0 ? 11 : currMonth - 1;
+
+  var currQuarter = Math.floor(currMonth / 3);
+  var lastQuarter = currQuarter === 0 ? 3 : currQuarter - 1;
+  var lastQuarterYear = currQuarter === 0 ? currYear - 1 : currYear;
+
+  var targetClean = staffName ? staffName.toString().trim().toUpperCase() : "";
+
+  for (var j = 1; j < subData.length; j++) {
+    var rStaff = subData[j][1] ? subData[j][1].toString().trim().toUpperCase() : "";
+    if (targetClean !== "" && rStaff !== targetClean && !rStaff.includes(targetClean) && !targetClean.includes(rStaff)) continue;
+
+    var pts = parseFloat(subData[j][10]) || 0;
+    if (pts <= 0) continue;
+
+    var rawDate = subData[j][0];
+    var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
+    if (isNaN(subDate.getTime())) continue;
+
+    var subYear = subDate.getFullYear();
+    var subMonth = subDate.getMonth();
+    var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
+    var subQuarter = Math.floor(subMonth / 3);
+
+    if (subDateStr === todayStr) scores.daily += pts;
+    if (subDate >= startOfWeek) scores.weekly += pts;
+    if (subYear === currYear && subMonth === currMonth) scores.monthly += pts;
+    if (subYear === lastMonthYear && subMonth === lastMonth) scores.lastMonth += pts;
+    if (subYear === currYear && subQuarter === currQuarter) scores.currentQuarter += pts;
+    if (subYear === lastQuarterYear && subQuarter === lastQuarter) scores.lastQuarter += pts;
+    if (subYear === currYear) scores.yearly += pts;
+  }
+  return scores;
+}
+
+// 📌 OWNER SCOREBOARD FOR ALL STAFF
+function getAllStaffScoreboard() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var masterSheet = ss.getSheetByName("staff master");
+  if (!masterSheet) return [];
+  
+  var mData = masterSheet.getDataRange().getValues();
+  var staffMap = {};
+  var staffOrder = [];
+
+  for (var i = 1; i < mData.length; i++) {
+    var name = mData[i][1] ? mData[i][1].toString().trim() : "";
+    var role = mData[i][5] ? mData[i][5].toString().trim() : (mData[i][4] ? mData[i][4].toString().trim() : "Staff");
+    if (name && role.toLowerCase() !== "owner" && role.toLowerCase() !== "admin" && !staffMap[name.toUpperCase()]) {
+      staffMap[name.toUpperCase()] = {
+        name: name, role: role,
+        daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0
+      };
+      staffOrder.push(name.toUpperCase());
+    }
+  }
+
+  var subSheet = ss.getSheetByName("Task_Submissions");
+  if (subSheet && subSheet.getLastRow() > 1) {
+    var subData = subSheet.getDataRange().getValues();
+    var tz = Session.getScriptTimeZone();
     var now = new Date();
-    var todayStr = Utilities.formatDate(now, timeZone, "yyyy-MM-dd");
-    var currentWeekStr = Utilities.formatDate(now, timeZone, "yyyy-ww");
-    var currentMonthStr = Utilities.formatDate(now, timeZone, "yyyy-MM");
-    
-    // Fetch Task_Submissions to check cycle completions for this specific staff member
-    var subSheet = getSheetByNameFlexible(ss, ["Task_Submissions", "Task Submissions", "Submissions"]);
-    var staffSubmissions = [];
-    if (subSheet && subSheet.getLastRow() > 1) {
-      var subData = subSheet.getDataRange().getValues();
-      for (var s = 1; s < subData.length; s++) {
-        var sStaff = String(subData[s][1] || "");
-        if (isStaffMatch(sStaff, cleanStaff, cleanEmpId)) {
-          var rawDate = subData[s][0];
-          var subDateObj = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-          var subDateFormatted = "";
-          var subWeekFormatted = "";
-          var subMonthFormatted = "";
-          if (!isNaN(subDateObj.getTime())) {
-            subDateFormatted = Utilities.formatDate(subDateObj, timeZone, "yyyy-MM-dd");
-            subWeekFormatted = Utilities.formatDate(subDateObj, timeZone, "yyyy-ww");
-            subMonthFormatted = Utilities.formatDate(subDateObj, timeZone, "yyyy-MM");
-          }
-          staffSubmissions.push({
-            dateObj: subDateObj,
-            dayStr: subDateFormatted,
-            weekStr: subWeekFormatted,
-            monthStr: subMonthFormatted,
-            task: String(subData[s][4] || "").trim().toLowerCase(),
-            status: String(subData[s][7] || "Completed"),
-            adhocIndex: parseInt(subData[s][11]) || null
-          });
-        }
-      }
+    var todayStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+
+    var dayOfWeek = now.getDay();
+    var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+    var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
+
+    var currYear = now.getFullYear();
+    var currMonth = now.getMonth();
+    var lastMonthYear = currMonth === 0 ? currYear - 1 : currYear;
+    var lastMonth = currMonth === 0 ? 11 : currMonth - 1;
+
+    var currQuarter = Math.floor(currMonth / 3);
+    var lastQuarter = currQuarter === 0 ? 3 : currQuarter - 1;
+    var lastQuarterYear = currQuarter === 0 ? currYear - 1 : currYear;
+
+    for (var j = 1; j < subData.length; j++) {
+      var rStaff = subData[j][1] ? subData[j][1].toString().trim().toUpperCase() : "";
+      if (!rStaff) continue;
+
+      var matchKey = staffOrder.find(function(k) { return k === rStaff || k.includes(rStaff) || rStaff.includes(k); });
+      if (!matchKey) continue;
+
+      var pts = parseFloat(subData[j][10]) || 0;
+      if (pts <= 0) continue;
+
+      var rawDate = subData[j][0];
+      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
+      if (isNaN(subDate.getTime())) continue;
+
+      var subYear = subDate.getFullYear();
+      var subMonth = subDate.getMonth();
+      var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
+      var subQuarter = Math.floor(subMonth / 3);
+
+      var entry = staffMap[matchKey];
+      if (subDateStr === todayStr) entry.daily += pts;
+      if (subDate >= startOfWeek) entry.weekly += pts;
+      if (subYear === currYear && subMonth === currMonth) entry.monthly += pts;
+      if (subYear === lastMonthYear && subMonth === lastMonth) entry.lastMonth += pts;
+      if (subYear === currYear && subQuarter === currQuarter) entry.currentQuarter += pts;
+      if (subYear === lastQuarterYear && subQuarter === lastQuarter) entry.lastQuarter += pts;
+      if (subYear === currYear) entry.yearly += pts;
     }
-    
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      var assignedToRaw = String(data[i][colMap.staff] || "").trim();
-      
-      // Match condition: "All Staff", exact staff name, substring, or empId match
-      var isMatch = isStaffMatch(assignedToRaw, cleanStaff, cleanEmpId);
-      
-      if (isMatch) {
-        var rawFreq = normalizeFrequency(data[i][colMap.freq]);
-        var taskDesc = String(data[i][colMap.task] || "");
-        var deadline = String(data[i][colMap.deadline] || "Jald");
-        var refPhoto = data[i][colMap.photo] || "No Photo";
-        var recordedStatus = String(data[i][colMap.status] || "Pending").trim();
-        var taskClean = taskDesc.trim().toLowerCase();
-        
-        var currentCycleStatus = "Pending";
-        
-        // AUTO-RESET RECURRING CYCLES PER SCHEDULE:
-        if (rawFreq === "Daily") {
-          var doneToday = staffSubmissions.some(function(sub) {
-            return sub.dayStr === todayStr && (sub.adhocIndex === (i + 1) || sub.task === taskClean);
-          });
-          currentCycleStatus = doneToday ? "Completed" : "Pending";
-        } else if (rawFreq === "Weekly") {
-          var doneThisWeek = staffSubmissions.some(function(sub) {
-            return sub.weekStr === currentWeekStr && (sub.adhocIndex === (i + 1) || sub.task === taskClean);
-          });
-          currentCycleStatus = doneThisWeek ? "Completed" : "Pending";
-        } else if (rawFreq === "Monthly") {
-          var doneThisMonth = staffSubmissions.some(function(sub) {
-            return sub.monthStr === currentMonthStr && (sub.adhocIndex === (i + 1) || sub.task === taskClean);
-          });
-          currentCycleStatus = doneThisMonth ? "Completed" : "Pending";
-        } else {
-          // Extra (One Time) task retains its sheet status or submission status
-          currentCycleStatus = recordedStatus;
-          if (currentCycleStatus === "Pending") {
-            var anyDone = staffSubmissions.some(function(sub) {
-              return sub.adhocIndex === (i + 1) || sub.task === taskClean;
-            });
-            if (anyDone) currentCycleStatus = "Completed";
-          }
-        }
-        
-        list.push({
-          index: i + 1,
-          assignDate: data[i][colMap.date],
-          assignedTo: assignedToRaw,
-          type: rawFreq, // "Daily", "Weekly", "Monthly", or "Extra (One Time)"
-          task: taskDesc,
-          deadline: deadline,
-          refPhoto: refPhoto,
-          status: currentCycleStatus
-        });
-      }
-    }
-    return list;
-  } catch (err) {
-    Logger.log("getAdhocTasksForStaff error: " + err.message);
-    return [];
   }
+
+  var result = [];
+  for (var s = 0; s < staffOrder.length; s++) {
+    result.push(staffMap[staffOrder[s]]);
+  }
+  result.sort(function(a, b) { return b.monthly - a.monthly; });
+  return result;
 }
 
-// =====================================================================
-// 5. STAFF: GET ROUTINE ROLE TASKS (FROM ROLE_TASKS / TASKS SHEET)
-// Column A: Role | Column B: Type | Column C: Task | Column D: SubTask | Column E: Deadline | Column F: SOP | Column G: Video
-// =====================================================================
+// 📌 COMBINED ROUTINE & ASSIGNED TASKS (DAILY / WEEKLY / MONTHLY)
 
 // =====================================================================
 // PHASE 1: ZERO-TRAINING & DIGITAL TWIN HELPER FUNCTIONS
 // =====================================================================
 function getTimeSlotFromDeadline(deadlineStr) {
-  if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return "morning";
+  if (!deadlineStr || deadlineStr === 'N/A' || deadlineStr === 'Jald') return 'morning';
   var lower = String(deadlineStr).toLowerCase();
   var match = lower.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
   if (match) {
@@ -605,612 +255,656 @@ function getTimeSlotFromDeadline(deadlineStr) {
     var isAm = (match[3] && match[3].toLowerCase() === 'am');
     if (isPm && h < 12) h += 12;
     if (isAm && h === 12) h = 0;
-    if (h < 11 || (h === 11 && parseInt(match[2] || 0, 10) <= 30)) return "morning";
-    if (h < 14 || (h === 14 && parseInt(match[2] || 0, 10) <= 30)) return "midday";
-    if (h < 17 || (h === 17 && parseInt(match[2] || 0, 10) <= 30)) return "afternoon";
-    return "closing";
+    if (h < 11 || (h === 11 && parseInt(match[2] || 0, 10) <= 30)) return 'morning';
+    if (h < 14 || (h === 14 && parseInt(match[2] || 0, 10) <= 30)) return 'midday';
+    if (h < 17 || (h === 17 && parseInt(match[2] || 0, 10) <= 30)) return 'afternoon';
+    return 'closing';
   }
-  return "morning";
+  return 'morning';
 }
 
 function getSmartRoleDefaults(roleName, mainTask, subTask) {
-  var role = String(roleName || "").toLowerCase();
-  var task = String(mainTask || "").toLowerCase() + " " + String(subTask || "").toLowerCase();
+  var role = String(roleName || '').toLowerCase();
+  var task = String(mainTask || '').toLowerCase() + ' ' + String(subTask || '').toLowerCase();
   
-  // Default structure
-  var res = {
-    sop: "",
-    sopSteps: ["1. Open target portal / file", "2. Cross-verify quantities and amounts", "3. Complete entry and capture clear proof"],
-    sopVideo: "",
-    actionLink: "",
-    goodSample: "Clear, high-contrast screenshot or photo showing date, time, party name, and exact amount.",
-    badSample: "Blurry, cropped photo or image missing stamp/narration/amount.",
-    troubleshoot: "Agar portal slow hai ya koi detail miss ho, immediate Supervisor ko alert karein.",
-    checklist: ["Maine figures double-check kar liye hain", "Proof photo clear aur readable hai"]
-  };
-
   // ACCOUNTANT
-  if (role.indexOf("account") !== -1 || task.indexOf("cash") !== -1 || task.indexOf("tally") !== -1 || task.indexOf("bank") !== -1) {
-    if (task.indexOf("cash") !== -1 || task.indexOf("opening") !== -1) {
-      res.sopSteps = [
-        "1. Physical cash drawer count karein (Denomination count: 500, 200, 100, 50, 20, 10).",
-        "2. Kal ke closing balance aur cash book se match karein.",
-        "3. Cash Register / Portal me physical count enter karke lock karein."
-      ];
-      res.goodSample = "Physical Cash Denomination Sheet with exact total, signature and date.";
-      res.badSample = "Rough paper par bina count breakup ke likha hua amount.";
-      res.troubleshoot = "Agar cash me ₹1 ka bhi difference aaye, toh kal ke last 3 payouts aur receipts check karein.";
-      res.checklist = ["Sabhi denominations physically count kar liye", "Kal ke closing balance se match verify ho gaya"];
-    } else if (task.indexOf("bank") !== -1 || task.indexOf("reconcil") !== -1) {
-      res.sopSteps = [
-        "1. NetBanking portal se aaj ki latest Bank Statement download karein.",
-        "2. Sabhi NEFT/RTGS credits ko unke customer ledger me update karein.",
-        "3. Tally me BRS (Bank Reconciliation) run karein aur Unreconciled amount 0 karein."
-      ];
-      res.goodSample = "Tally BRS screen showing 'Difference in Balance = 0.00' with today's date.";
-      res.badSample = "Statement ka random photo jisme balance match nahi ho raha.";
-      res.troubleshoot = "Agar koi unknown entry ho toh Sales Coordinator se UTR / Cheque number verify karwayein.";
-      res.checklist = ["Bank statement balance aur Tally balance exact match hai", "Sabhi entries par narration aur reference likha hai"];
-    } else if (task.indexOf("bill") !== -1 || task.indexOf("gst") !== -1 || task.indexOf("invoice") !== -1) {
-      res.sopSteps = [
-        "1. Dispatch orders ke against finalized items and rates check karein.",
-        "2. Tax Invoice generate karein aur E-Way bill distance / vehicle number verify karein.",
-        "3. 3 copies print karein (Original for Buyer, Duplicate for Transporter, Triplicate for Office)."
-      ];
-      res.goodSample = "Tax Invoice with correct GST breakup, QR code, and signature stamp.";
-      res.badSample = "Galat rate ya bina HSN/GSTIN ka draft invoice.";
-      res.troubleshoot = "E-Way bill generation me portal down ho toh Part-A punch karein aur transport alert karein.";
-      res.checklist = ["Party GSTIN and address verified", "E-Way bill vehicle number matches dispatch vehicle"];
-    } else {
-      res.sopSteps = [
-        "1. Day total collections aur vouchers check karein.",
-        "2. Pending debit/credit notes verify karein.",
-        "3. Owner ko daily financial summary submit karein."
-      ];
-      res.goodSample = "Complete Day-End Account Summary sheet.";
-      res.badSample = "Incomplete report with unverified pending vouchers.";
+  if (role.includes('account')) {
+    if (task.includes('cash book') || task.includes('cash') || task.includes('hissab')) {
+      return {
+        sopSteps: [
+          '1. Physical cash drawer mein sabhi notes & coins ko denomination-wise count karein (500x, 200x, 100x).',
+          '2. Kal ke closing balance aur cash book se match karein.',
+          '3. Din ke sabhi cash vouchers (Receipts & Payments) entry check karein.',
+          '4. Net Physical Cash aur Book Balance 100% tally hone par hi register photo click karein.'
+        ],
+        goodSample: 'Clear, unblurred photo jisme: Date, Opening Cash, Denomination Tally, Total Receipts, Total Payments aur Net Cash clearly visible ho.',
+        badSample: 'Sirf total amount ka rough paper scribble, dhundli photo, ya cash physical count kiye bina submit karna.',
+        troubleshoot: 'Agar cash mein farq (discrepancy) aaye toh pehle last 3 payment vouchers check karein aur turant Owner ko report karein. Skip na karein.',
+        checklist: ['Cash denomination count verify kar liya', 'Cash book entry tally ho gayi']
+      };
     }
-  }
-  // STORE MANAGER / WAREHOUSE / DISPATCH
-  else if (role.indexOf("store") !== -1 || role.indexOf("dispatch") !== -1 || task.indexOf("order") !== -1 || task.indexOf("stock") !== -1) {
-    if (task.indexOf("inward") !== -1 || task.indexOf("receive") !== -1) {
-      res.sopSteps = [
-        "1. Transporter LR (Lorry Receipt) se box count match karein.",
-        "2. Cartons ki seal aur damage check karein (Driver ke samne).",
-        "3. Inward Goods Register me box count aur batch details enter karein."
-      ];
-      res.goodSample = "Signed LR with company stamp and clear remarks on carton condition.";
-      res.badSample = "Bina box count verify kiye sign ki hui delivery copy.";
-      res.troubleshoot = "Damage ya short box hone par driver se LR par signature zaroor karwayein.";
-      res.checklist = ["Physical box count matches LR", "Damage remarks noted on LR if any"];
-    } else {
-      res.sopSteps = [
-        "1. Picklist ke hisaab se correct brand, item aur batch select karein (FIFO - First In First Out).",
-        "2. Carton ko securely tape karein aur weather-proof packing karein.",
-        "3. Party address label aur invoice copy transparent pouch me paste karein."
-      ];
-      res.goodSample = "Tightly taped box with clear party label, contact number, and invoice pouch.";
-      res.badSample = "Loose packing ya bina customer address label ka carton.";
-      res.troubleshoot = "Agar koi item out-of-stock ho toh dispatch rok kar billing team ko immediate alert dein.";
-      res.checklist = ["Correct item and quantity packed", "Clear shipping label pasted on carton"];
+    if (task.includes('report') || task.includes('eod') || task.includes('sales') || task.includes('stock')) {
+      return {
+        sopSteps: [
+          '1. ERP/Software mein jakar required report (Sales, Stock, Razorpay, Outstanding) download ya view karein.',
+          '2. Date range aaj ki select karein (00:00 se abhi tak).',
+          '3. Negative stock ya abnormal pending payments ko highlight karein.',
+          '4. Report summary screen ka clear screenshot lekar upload karein.'
+        ],
+        goodSample: 'Full screen view jisme Date, Total Sales Volume, Outstanding figure aur verified status dikhta ho.',
+        badSample: 'Phone se kaati hui aadhi screen jisme date ya total na dikhe, ya purane din ka data upload karna.',
+        troubleshoot: 'Software down ho toh internet connection check karein, cache clear karein, ya offline Excel sheet mein manual tally ready rakhein.',
+        checklist: ['Date filter correct set kiya', 'Total metrics cross-check kar liye']
+      };
     }
-  }
-  // SALES / MARKETING
-  else if (role.indexOf("sales") !== -1 || role.indexOf("market") !== -1) {
-    res.sopSteps = [
-      "1. Morning route plan ke hisaab se target dealers ki list open karein.",
-      "2. Dealer shop par visit karke display visibility check karein aur secondary order lein.",
-      "3. Payment cheque collect karein aur Day-End summary submit karein."
-    ];
-    res.goodSample = "Geotagged dealer shop front photo with signed order booking slip.";
-    res.badSample = "Random screenshot without dealer name or location.";
-    res.troubleshoot = "Dealer shop closed ho toh WhatsApp par call karke reason record karein.";
-    res.checklist = ["Geotag photo captured", "Order items and rates confirmed with dealer"];
   }
 
-  return res;
+  // STORE MANAGER / WAREHOUSE
+  if (role.includes('store') || role.includes('manager') || role.includes('warehouse')) {
+    if (task.includes('order') || task.includes('dispatch') || task.includes('pack')) {
+      return {
+        sopSteps: [
+          '1. Order list se items ka exact SKU, Color aur Quantity check karein.',
+          '2. Har item ko physical box mein pack karne se pehle damage inspection karein.',
+          '3. Invoice copy andar rakhein aur carton ke upar address label paste karein.',
+          '4. Packed box ka photo click karke Dispatch confirm karein.'
+        ],
+        goodSample: 'Sealed carton photo jisme shop name, invoice number aur parcel label clearly legible ho.',
+        badSample: 'Open box, bina tape ka carton, ya galat dealer ka address laga hona.',
+        troubleshoot: 'Stock kam ho toh partial dispatch na karein; CRM aur Owner ko inform karke replacement item confirm karein.',
+        checklist: ['Item quantity aur model check kiya', 'Carton tightly tape aur label kiya']
+      };
+    }
+  }
+
+  // SALES BOY / FIELD STAFF
+  if (role.includes('sales')) {
+    return {
+      sopSteps: [
+        '1. Target shop ya location par pahunch kar GPS location on karein.',
+        '2. Dealer se milkar fresh order requirement aur outstanding payment par baat karein.',
+        '3. Order book par stamp/signature lein.',
+        '4. WhatsApp EOD report format mein total counter visits aur collected amount submit karein.'
+      ],
+      goodSample: 'Shop front with dealer / signed order sheet with clear payment breakdown.',
+      badSample: 'Bina visit kiye purana order repeat karna ya incomplete counter feedback.',
+      troubleshoot: 'Dealer available na ho toh next shop visit karein aur call par follow-up schedule karein.',
+      checklist: ['GPS visit log verify kiya', 'Signed order sheet ready hai']
+    };
+  }
+
+  // GENERAL DEFAULT
+  return {
+    sopSteps: [
+      '1. Task ki di gayi deadline aur requirement ko dhyan se padhein.',
+      '2. Standard process ke anusar work execute karein.',
+      '3. Quality verify karein aur clear proof photo/screenshot click karein.',
+      '4. Done button daba kar confirmation lein.'
+    ],
+    goodSample: 'Quality verified work meeting all deadline criteria with clear documentation.',
+    badSample: 'Incomplete work, rushed submission without proof, or missed deadline.',
+    troubleshoot: 'Kisi bhi issue ke liye apne supervisor ya WhatsApp group mein instant notify karein.',
+    checklist: ['Kaam 100% complete ho gaya', 'Proof photo clear hai']
+  };
 }
 
 function getRoleOnboardingGuide(roleName) {
-  var role = String(roleName || "Staff").trim();
-  var roleLower = role.toLowerCase();
+  var role = String(roleName || 'Staff').trim();
+  var rLower = role.toLowerCase();
 
-  var guide = {
+  if (rLower.includes('account')) {
+    return {
+      role: role,
+      title: 'Day-1 Operational Blueprint: Accountant',
+      tagline: 'Zero-Discrepancy Financial Operations & Daily Tally System',
+      mission: 'Aapka mukhya lakshya Yash Marketing ki har financial transaction ko 100% accurate, documented aur zero-discrepancy banana hai. Day-1 se closing cash aur register tally exact match hona chahiye.',
+      rules: [
+        'Kissi bhi transaction ko bina voucher ya receipt ke execute na karein.',
+        'Har roz shaam 07:00 PM se pehle physical cash aur software closing balance match karein.',
+        'Sabhi daily reports (Sales, Stock, Razorpay, Outstanding) 11:00 AM se pehle submit karein.'
+      ],
+      timeline: [
+        { time: '09:30 AM - 10:00 AM', title: 'Opening Cash & Day Setup', desc: 'Kal ka closing cash physical drawer se count karein. Cash register mein opening entry note karein.' },
+        { time: '10:00 AM - 11:00 AM', title: 'Daily Reports Generation', desc: 'ERP se Sales, Stock, Razorpay, Outstanding reports nikaal kar verify karein aur app par submit karein.' },
+        { time: '11:00 AM - 02:00 PM', title: 'Ledger Entries & Vendor Vouchers', desc: 'Aane wale payments aur vendor bills ki entry Tally/ERP mein karein.' },
+        { time: '02:00 PM - 05:00 PM', title: 'Bank Reconciliation & Collections', desc: 'Bank statement aur online UPI transactions ko sales accounts se reconcile karein.' },
+        { time: '05:00 PM - 07:00 PM', title: 'Closing Cash Book & WhatsApp EOD', desc: 'Physical cash count karke register sign karein, Cash Book task mark karein aur EOD report send karein.' }
+      ],
+      benchmarks: {
+        good: 'Full unblurred register page jisme denomination summary (500x, 200x, 100x), daily total aur net balance clean ho.',
+        bad: 'Rough chit par pencil se likha total, ya bina physical cash count kiye man-pasand figure likhna.'
+      },
+      faq: [
+        { q: 'Agar physical cash aur cash book mein difference aaye toh kya karein?', a: 'Sabse pehle din ke sabhi payment vouchers dubara total karein. Agar farq na mile toh turant Owner ko WhatsApp par escalate karein.' },
+        { q: 'Internet ya ERP band ho toh reports kaise submit karein?', a: 'Offline Excel sheet mein manual tally karein aur register ka clear photo lekar task complete karein.' }
+      ]
+    };
+  }
+
+  if (rLower.includes('store') || rLower.includes('warehouse')) {
+    return {
+      role: role,
+      title: 'Day-1 Operational Blueprint: Store Manager',
+      tagline: 'Flawless Order Dispatch, Stock Safety & Zero Transit Damage',
+      mission: 'Aapka lakshya har order ko bina kisi delay, 100% right items aur zero damage ke pack & dispatch karna hai.',
+      rules: [
+        'Har order carton pack karne se pehle items ka SKU aur quantity invoice se match karein.',
+        'Packing tight honi chahiye taaki transit mein koi item damage na ho.',
+        'Transporter handover ke baad LR number aur photo turant system mein update karein.'
+      ],
+      timeline: [
+        { time: '09:30 AM - 10:30 AM', title: 'Morning Stock & Pending Orders', desc: 'Aaj ke fresh orders verify karein aur warehouse stock location check karein.' },
+        { time: '10:30 AM - 02:00 PM', title: 'Picking, Packing & Quality Check', desc: 'Items pick karein, damage check karein aur tight carton packaging karein.' },
+        { time: '02:00 PM - 05:00 PM', title: 'Courier / Transport Handover', desc: 'Transporters ko cartons handover karke LR slip receive karein.' },
+        { time: '05:00 PM - 07:00 PM', title: 'Stock Inward & Day Closing', desc: 'Naye aaye stock ko shelf par arrange karein aur closing status update karein.' }
+      ],
+      benchmarks: {
+        good: 'Properly taped brown carton jisme dealer ka label, invoice copy aur LR slip clearly marked ho.',
+        bad: 'Dheela pack jisse saman bahar nikal sake ya bina label ka parcel.'
+      },
+      faq: [
+        { q: 'Agar order ka koi item stock mein na ho toh?', a: 'Customer ko galat item na bhejein. CRM / Owner ko message karein aur confirm karein.' }
+      ]
+    };
+  }
+
+  return {
     role: role,
-    mission: "Zero-error daily operations execute karna aur company ke standards ko 100% follow karna.",
-    goldenRules: [
-      "Day 1 Rule: Koi bhi task 'guess' na karein — agar shaq ho toh SOP steps padhein ya escalate karein.",
-      "Zero Delay: Sabhi deadlines ke 15 minute pehle task complete karne ka target rakhein.",
-      "Authentic Proof: Proof photo humesha clear, readable aur transparent honi chahiye.",
-      "Communication: Agar kisi kaam me obstacle aaye toh wait mat karein, immediate call karein.",
-      "EOD Discipline: Shaam ko logout karne se pehle Daily EOD report Owner ko zaroor bhejein."
+    title: 'Day-1 Operational Blueprint: ' + role,
+    tagline: 'Standard Operational Discipline & High Performance System',
+    mission: 'Aapka lakshya apne daily assigned tasks ko time par aur highest quality ke sath complete karna hai.',
+    rules: [
+      'Har task ki deadline ka samman karein aur on-time submit karein.',
+      'Kaam pura hone ke baad clear proof upload karein.',
+      'Shift khatam hone par Daily EOD report send karna anivarya hai.'
     ],
     timeline: [
-      { slot: "09:30 - 11:30 AM", title: "Morning Kickoff & Cash/Stock Count", focus: "Opening registers, cash drawer count, morning priority tasks." },
-      { slot: "11:30 - 02:30 PM", title: "Core Operations & Billing / Visits", focus: "Order processing, invoices, vendor billing, market visits." },
-      { slot: "02:30 - 05:30 PM", title: "Dispatches & Reconciliation", focus: "Transport handovers, ledger matching, payments follow-up." },
-      { slot: "05:30 - 07:00 PM", title: "Day-End Closing & Handover", focus: "Safe locking, physical cash tally, WhatsApp EOD submission." }
+      { time: 'Morning Shift', title: 'Shift Kickoff & Priorities', desc: 'Daily tab mein jakar aaj ke urgent tasks review karein aur execution shuru karein.' },
+      { time: 'Midday Shift', title: 'Core Task Execution', desc: 'Main routine kaam pura karein aur proof upload karein.' },
+      { time: 'Evening Shift', title: 'Verification & EOD', desc: 'Pending items check karein aur WhatsApp EOD report submit karein.' }
     ],
-    workstations: [
-      { name: "Yash Marketing Portal", desc: "Daily Task Management & SOP Co-Pilot", url: "#" },
-      { name: "Google Drive Master Folder", desc: "Proof Archives & Document Templates", url: "#" },
-      { name: "Company ERP / Tally Cloud", desc: "Invoicing, Accounting & Orders", url: "#" }
-    ],
-    escalations: [
-      { trigger: "Critical Cash / Stock Mismatch", action: "Immediate call to Owner / Director before altering any records." },
-      { trigger: "System / Portal Downtime", action: "Inform Technical Support with screenshot within 10 minutes." },
-      { trigger: "Customer / Dealer Escalation", action: "Keep calm, note grievance, and escalate to Operations Head." }
+    benchmarks: {
+      good: 'Timely submission with complete documentation and accurate proof.',
+      bad: 'Overdue task without reason, incomplete proof, or lack of communication.'
+    },
+    faq: [
+      { q: 'Task complete karne mein problem aaye toh?', a: 'Task card mein diye gaye SOP Stepper ko padhein ya direct supervisor se contact karein.' }
     ]
   };
-
-  if (roleLower.indexOf("account") !== -1) {
-    guide.mission = "Aapka maksad Yash Marketing ke sabhi Cash, Bank, Ledger aur GST accounts ko 100% tally aur compliant rakhna hai.";
-    guide.goldenRules = [
-      "Kabhi bhi bina authorized voucher ke ₹1 bhi cash release na karein.",
-      "Har voucher me party name, date, invoice ref aur clear narration likhna anivarya hai.",
-      "Bank balance aur Tally balance me roz 0 discrepancy honi chahiye.",
-      "TDS aur GST compliances ko statutory date se pehle file/reconcile karein.",
-      "Shaam ko cash safe lock karke physical count report submit karein."
-    ];
-  } else if (roleLower.indexOf("store") !== -1 || roleLower.indexOf("dispatch") !== -1) {
-    guide.mission = "Warehouse me zero damage, zero stock leakage aur timely dispatch ensure karna.";
-    guide.goldenRules = [
-      "Humesha FIFO (First In First Out) follow karein taaki purana stock pehle dispatch ho.",
-      "Inward material ka box count aur seal driver ke saamne check karein.",
-      "Bina invoice aur transporter LR ke koi carton factory/godown se bahar nahi jayega.",
-      "Damage stock ko alag red-zone me rakhein aur immediate log karein.",
-      "Warehouse floor clean aur transit pathways humesha clear rakhein."
-    ];
-  }
-
-  return guide;
 }
 
-function getTasksForRole(roleName, staffName) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = getSheetByNameFlexible(ss, ["Role_Tasks", "Role Tasks", "Routine_Tasks", "Routine Tasks", "Tasks"]);
-    if (!sheet) return [];
-    
-    var data = sheet.getDataRange().getValues();
-    var roleClean = String(roleName || "").trim().toLowerCase();
-    var cleanStaff = String(staffName || "").replace("👤 ", "").trim().toLowerCase();
-    var tasks = [];
-    
-    // Check submissions done today by this staff member
-    var subSheet = getSheetByNameFlexible(ss, ["Task_Submissions", "Task Submissions", "Submissions"]);
-    var todayDoneMap = {};
-    var timeZone = Session.getScriptTimeZone() || "GMT+5:30";
-    var todayStr = Utilities.formatDate(new Date(), timeZone, "yyyy-MM-dd");
-    
-    if (subSheet && subSheet.getLastRow() > 1) {
-      var subData = subSheet.getDataRange().getValues();
-      for (var s = 1; s < subData.length; s++) {
-        var sStaff = String(subData[s][1] || "");
-        if (isStaffMatch(sStaff, cleanStaff, "")) {
-          var rawDate = subData[s][0];
-          var subDateObj = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-          if (!isNaN(subDateObj.getTime())) {
-            var subDateStr = Utilities.formatDate(subDateObj, timeZone, "yyyy-MM-dd");
-            if (subDateStr === todayStr) {
-              var sKey = String(subData[s][4]).trim() + "___" + String(subData[s][5] || "").trim();
-              todayDoneMap[sKey] = String(subData[s][7]);
-            }
-          }
-        }
-      }
-    }
-    
-    for (var i = 1; i < data.length; i++) {
-      var targetRole = String(data[i][0] || "").trim().toLowerCase();
-      var isRoleMatch = (targetRole === roleClean || targetRole === "all" || targetRole === "all staff" ||
-                         (roleClean.length >= 3 && targetRole.indexOf(roleClean) !== -1) ||
-                         (targetRole.length >= 3 && roleClean.indexOf(targetRole) !== -1));
-      
-      if (isRoleMatch) {
-        var type = normalizeFrequency(data[i][1]);
-        var mainTask = String(data[i][2] || "").trim();
-        var subTask = String(data[i][3] || "").trim();
-        var deadline = String(data[i][4] || "N/A").trim();
-        var sop = String(data[i][5] || "").trim();
-        var sopVideo = String(data[i][6] || "").trim();
-        
-        var key = mainTask + "___" + subTask;
-        var status = todayDoneMap[key] || "Pending";
-        
-        var timeSlot = String(data[i][7] || "").trim() || getTimeSlotFromDeadline(deadline);
-        var actionLink = String(data[i][8] || "").trim();
-        var goodSample = String(data[i][9] || "").trim();
-        var badSample = String(data[i][10] || "").trim();
-        var troubleshoot = String(data[i][11] || "").trim();
-        var checklistRaw = String(data[i][12] || "").trim();
+function getTasksForRole(role, staffName) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var taskList = [];
+  var roleClean = role ? role.toLowerCase().trim() : "";
 
-        var defaults = getSmartRoleDefaults(targetRole, mainTask, subTask);
-        if (!sop && defaults.sop) sop = defaults.sop;
-        if (!sopVideo && defaults.sopVideo) sopVideo = defaults.sopVideo;
-        if (!actionLink && defaults.actionLink) actionLink = defaults.actionLink;
-        if (!goodSample && defaults.goodSample) goodSample = defaults.goodSample;
-        if (!badSample && defaults.badSample) badSample = defaults.badSample;
-        if (!troubleshoot && defaults.troubleshoot) troubleshoot = defaults.troubleshoot;
-        var checklist = checklistRaw ? checklistRaw.split("|") : defaults.checklist;
+  var targetSheetName = "";
+  if (roleClean === "crm") targetSheetName = "Sheet3";
+  else if (roleClean === "accountant") targetSheetName = "Accountant";
+  else if (roleClean === "sales boy" || roleClean === "sales") targetSheetName = "Sales Boy";
+  else if (roleClean === "mis") targetSheetName = "MIS";
+  else if (roleClean === "store manager") targetSheetName = "Store Manager";
 
-        var sopSteps = defaults.sopSteps;
-        if (sop && sop.indexOf("\n") !== -1) {
-          sopSteps = sop.split("\n").filter(function(s){ return s.trim().length > 0; });
-        } else if (sop && sop.indexOf("|") !== -1) {
-          sopSteps = sop.split("|").filter(function(s){ return s.trim().length > 0; });
+  if (targetSheetName !== "") {
+    var sheet = ss.getSheetByName(targetSheetName);
+    if (sheet && sheet.getLastRow() >= 3) {
+      var data = sheet.getDataRange().getValues();
+      var lastDailyTask = "", lastDailyDeadline = "", lastDailySop = "", lastDailyVideo = "";
+      var lastWeeklyTask = "", lastWeeklyDeadline = "", lastWeeklySop = "", lastWeeklyVideo = "";
+      var lastMonthlyTask = "", lastMonthlyDeadline = "", lastMonthlySop = "", lastMonthlyVideo = "";
+
+      for (var i = 2; i < data.length; i++) {
+        var dTask = data[i][0] ? data[i][0].toString().trim() : "";
+        var dSub = data[i][1] ? data[i][1].toString().trim() : "";
+        var dDead = formatTimeFriendly(data[i][2]);
+        var dSop = data[i][3] ? data[i][3].toString().trim() : "";
+        var dVid = data[i][4] ? data[i][4].toString().trim() : "";
+        if (dTask !== "") { lastDailyTask = dTask; if(dDead) lastDailyDeadline = dDead; if(dSop) lastDailySop = dSop; if(dVid) lastDailyVideo = dVid; }
+        if (dSub !== "" || (dTask !== "" && dSub === "")) {
+          var curT = dTask !== "" ? dTask : lastDailyTask;
+          var curD = dDead || lastDailyDeadline;
+          var metaD = getSmartRoleDefaults(roleClean, curT, dSub);
+          taskList.push({
+            type: "Daily",
+            task: curT,
+            subTask: dSub,
+            deadline: curD,
+            timeSlot: getTimeSlotFromDeadline(curD),
+            sop: dSop || lastDailySop,
+            sopVideo: dVid || lastDailyVideo,
+            sopSteps: metaD.sopSteps,
+            goodSample: metaD.goodSample,
+            badSample: metaD.badSample,
+            troubleshoot: metaD.troubleshoot,
+            checklist: metaD.checklist,
+            status: "Pending ⏳"
+          });
         }
 
-        tasks.push({
-          role: data[i][0],
-          type: type, // "Daily", "Weekly", "Monthly"
-          task: mainTask,
-          subTask: subTask,
-          deadline: deadline,
-          timeSlot: timeSlot,
-          sop: sop,
-          sopSteps: sopSteps,
-          sopVideo: sopVideo,
-          actionLink: actionLink,
-          goodSample: goodSample,
-          badSample: badSample,
-          troubleshoot: troubleshoot,
-          checklist: checklist,
-          status: status
-        });
-      }
-    }
-    return tasks;
-  } catch (err) {
-    return [];
-  }
-}
-
-// =====================================================================
-// 6. COMPREHENSIVE 7-PERIOD SCORE ENGINE (STAFF & OWNER VIEWS)
-// Calculates: Points, Total Assigned, Completed, Delayed, Percentage
-// Periods: Daily, Weekly, Monthly, Last Month, Current Quarter, Last Quarter, Yearly
-// =====================================================================
-function getStaffScoreMetrics(staffName, empId) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var result = {
-      daily: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      weekly: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      monthly: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      lastMonth: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      currentQuarter: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      lastQuarter: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      yearly: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 }
-    };
-    
-    var cleanStaff = String(staffName || "").replace("👤 ", "").trim();
-    var cleanEmpId = String(empId || "").replace(/[^\w]/gi, '').toLowerCase();
-    var now = new Date();
-    
-    // Timeframe boundaries
-    var startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    var endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    
-    var dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
-    var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1, 0, 0, 0, 0);
-    var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    
-    var startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
-    var endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-    
-    var currQtrMonth = Math.floor(now.getMonth() / 3) * 3;
-    var startOfCurrQtr = new Date(now.getFullYear(), currQtrMonth, 1, 0, 0, 0, 0);
-    var startOfLastQtr = new Date(now.getFullYear(), currQtrMonth - 3, 1, 0, 0, 0, 0);
-    var endOfLastQtr = new Date(now.getFullYear(), currQtrMonth, 0, 23, 59, 59, 999);
-    var startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-    
-    var periods = [
-      { key: "daily", start: startOfToday, end: endOfToday },
-      { key: "weekly", start: startOfWeek, end: now },
-      { key: "monthly", start: startOfMonth, end: now },
-      { key: "lastMonth", start: startOfLastMonth, end: endOfLastMonth },
-      { key: "currentQuarter", start: startOfCurrQtr, end: now },
-      { key: "lastQuarter", start: startOfLastQtr, end: endOfLastQtr },
-      { key: "yearly", start: startOfYear, end: now }
-    ];
-    
-    // 1. Process submissions for this staff member
-    var subSheet = getSheetByNameFlexible(ss, ["Task_Submissions", "Task Submissions", "Submissions"]);
-    if (subSheet && subSheet.getLastRow() > 1) {
-      var subData = subSheet.getDataRange().getValues();
-      for (var s = 1; s < subData.length; s++) {
-        var sStaff = String(subData[s][1] || "");
-        if (isStaffMatch(sStaff, cleanStaff, cleanEmpId)) {
-          var rawDate = subData[s][0];
-          var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-          if (isNaN(subDate.getTime())) continue;
-          
-          var pts = parseInt(subData[s][10]) || 10;
-          var deadlineStr = String(subData[s][6] || "");
-          
-          var isDelayed = false;
-          if (deadlineStr && deadlineStr !== "N/A" && deadlineStr !== "Jald") {
-            var deadDate = new Date(deadlineStr);
-            if (!isNaN(deadDate.getTime()) && subDate > deadDate) isDelayed = true;
-          }
-          
-          for (var p = 0; p < periods.length; p++) {
-            var pr = periods[p];
-            if (subDate >= pr.start && subDate <= pr.end) {
-              result[pr.key].points += pts;
-              result[pr.key].completed += 1;
-              if (isDelayed) result[pr.key].delayed += 1;
-            }
-          }
+        var wTask = data[i][5] ? data[i][5].toString().trim() : "";
+        var wSub = data[i][6] ? data[i][6].toString().trim() : "";
+        var wDead = formatTimeFriendly(data[i][7]);
+        var wSop = data[i][8] ? data[i][8].toString().trim() : "";
+        var wVid = data[i][9] ? data[i][9].toString().trim() : "";
+        if (wTask !== "") { lastWeeklyTask = wTask; if(wDead) lastWeeklyDeadline = wDead; if(wSop) lastWeeklySop = wSop; if(wVid) lastWeeklyVideo = wVid; }
+        if (wSub !== "" || (wTask !== "" && wSub === "")) {
+          var curWT = wTask !== "" ? wTask : lastWeeklyTask;
+          var curWD = wDead || lastWeeklyDeadline;
+          var metaW = getSmartRoleDefaults(roleClean, curWT, wSub);
+          taskList.push({
+            type: "Weekly",
+            task: curWT,
+            subTask: wSub,
+            deadline: curWD,
+            timeSlot: getTimeSlotFromDeadline(curWD),
+            sop: wSop || lastWeeklySop,
+            sopVideo: wVid || lastWeeklyVideo,
+            sopSteps: metaW.sopSteps,
+            goodSample: metaW.goodSample,
+            badSample: metaW.badSample,
+            troubleshoot: metaW.troubleshoot,
+            checklist: metaW.checklist,
+            status: "Pending ⏳"
+          });
         }
-      }
-    }
-    
-    // 2. Count assigned tasks from Adhoc_Tasks (Recurring + One-time)
-    var setup = getOrSetupAdhocSheet(ss);
-    var adSheet = setup.sheet;
-    var colMap = setup.colMap;
-    
-    if (adSheet && adSheet.getLastRow() > 1) {
-      var adData = adSheet.getDataRange().getValues();
-      for (var a = 1; a < adData.length; a++) {
-        var aStaff = String(adData[a][colMap.staff] || "");
-        if (isStaffMatch(aStaff, cleanStaff, cleanEmpId)) {
-          var rawDate = adData[a][colMap.date];
-          var aDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-          var rawFreq = normalizeFrequency(adData[a][colMap.freq]);
-          
-          for (var p = 0; p < periods.length; p++) {
-            var pr = periods[p];
-            if (rawFreq === "Daily") {
-              var daysInPeriod = Math.max(1, Math.round((Math.min(now.getTime(), pr.end.getTime()) - pr.start.getTime()) / (1000 * 60 * 60 * 24)));
-              result[pr.key].assigned += daysInPeriod;
-            } else if (rawFreq === "Weekly") {
-              var weeksInPeriod = Math.max(1, Math.round((Math.min(now.getTime(), pr.end.getTime()) - pr.start.getTime()) / (1000 * 60 * 60 * 24 * 7)));
-              result[pr.key].assigned += weeksInPeriod;
-            } else if (rawFreq === "Monthly") {
-              result[pr.key].assigned += 1;
-            } else {
-              if (!isNaN(aDate.getTime()) && aDate >= pr.start && aDate <= pr.end) {
-                result[pr.key].assigned += 1;
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    // Finalize percentage calculation
-    for (var p = 0; p < periods.length; p++) {
-      var k = periods[p].key;
-      result[k].assigned = Math.max(result[k].assigned, result[k].completed);
-      if (result[k].assigned > 0) {
-        var onTimeCompleted = Math.max(0, result[k].completed - result[k].delayed);
-        result[k].percentage = Math.min(100, Math.round((onTimeCompleted / result[k].assigned) * 100));
-      } else {
-        result[k].percentage = 100;
-      }
-    }
-    
-    return result;
-  } catch (err) {
-    return {
-      daily: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      weekly: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      monthly: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      lastMonth: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      currentQuarter: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      lastQuarter: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 },
-      yearly: { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 }
-    };
-  }
-}
 
-// =====================================================================
-// 7. ADMIN: ALL STAFF SCORECARD LEADERBOARD
-// Fetches performance cards for all active staff across any period
-// =====================================================================
-function getStaffLeaderboard(period) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var staffSheet = getSheetByNameFlexible(ss, ["Staff_List", "Staff List", "Staff", "Users"]);
-    var staffList = [];
-    var pKey = period || "daily";
-    if (!staffSheet) return [];
-    
-    var sData = staffSheet.getDataRange().getValues();
-    for (var s = 1; s < sData.length; s++) {
-      var sId = String(sData[s][0] || "");
-      var sName = String(sData[s][2] || "").trim();
-      var sRole = String(sData[s][3] || "Staff").trim();
-      var sActive = sData[s][4];
-      if (sName && sActive !== false && String(sActive).toLowerCase() !== "false") {
-        if (!sRole.toLowerCase().includes("owner") && !sRole.toLowerCase().includes("admin")) {
-          var metrics = getStaffScoreMetrics(sName, sId);
-          var pData = metrics[pKey] || { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 };
-          staffList.push({
-            name: sName,
-            role: sRole,
-            points: pData.points,
-            assigned: pData.assigned,
-            completed: pData.completed,
-            delayed: pData.delayed,
-            percentage: pData.percentage,
-            scores: metrics
+        var mTask = data[i][10] ? data[i][10].toString().trim() : "";
+        var mSub = data[i][11] ? data[i][11].toString().trim() : "";
+        var mDead = formatTimeFriendly(data[i][12]);
+        var mSop = data[i][13] ? data[i][13].toString().trim() : "";
+        var mVid = data[i][14] ? data[i][14].toString().trim() : "";
+        if (mTask !== "") { lastMonthlyTask = mTask; if(mDead) lastMonthlyDeadline = mDead; if(mSop) lastMonthlySop = mSop; if(mVid) lastMonthlyVideo = mVid; }
+        if (mSub !== "" || (mTask !== "" && mSub === "")) {
+          var curMT = mTask !== "" ? mTask : lastMonthlyTask;
+          var curMD = mDead || lastMonthlyDeadline;
+          var metaM = getSmartRoleDefaults(roleClean, curMT, mSub);
+          taskList.push({
+            type: "Monthly",
+            task: curMT,
+            subTask: mSub,
+            deadline: curMD,
+            timeSlot: getTimeSlotFromDeadline(curMD),
+            sop: mSop || lastMonthlySop,
+            sopVideo: mVid || lastMonthlyVideo,
+            sopSteps: metaM.sopSteps,
+            goodSample: metaM.goodSample,
+            badSample: metaM.badSample,
+            troubleshoot: metaM.troubleshoot,
+            checklist: metaM.checklist,
+            status: "Pending ⏳"
           });
         }
       }
     }
-    
-    // Sort descending by points then percentage
-    staffList.sort(function(a, b) {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.percentage - a.percentage;
-    });
-    
-    return staffList;
-  } catch (err) {
-    return [];
   }
-}
 
-// =====================================================================
-// 8. STAFF: SUBMIT TASK WITH PROOF & REWARD POINTS
-// =====================================================================
-function submitTaskWithProof(name, role, type, task, subTask, deadline, base64Data, mimeType, fileName, isAdhoc, adhocIndex, actionType) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var subSheet = getSheetByNameFlexible(ss, ["Task_Submissions", "Task Submissions", "Submissions"]);
-    if (!subSheet) {
-      subSheet = ss.insertSheet("Task_Submissions");
-      subSheet.appendRow(["Timestamp", "Staff Name", "Role", "Type", "Task", "SubTask", "Deadline", "Status", "Proof Link", "Action", "Points Earned", "AdhocIndex"]);
-    }
-    
-    var proofUrl = "No Proof";
-    if (base64Data && mimeType && fileName) {
-      var folderName = "Yash Marketing - Task Proofs";
-      var folders = DriveApp.getFoldersByName(folderName);
-      var targetFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
-      var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName);
-      var file = targetFolder.createFile(blob);
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      proofUrl = file.getUrl();
-    }
-    
-    var isSkip = actionType === "Skip";
-    var pointsEarned = isSkip ? 0 : 10;
-    var finalStatus = isSkip ? "Skipped" : (proofUrl !== "No Proof" ? "Uploaded (Done)" : "Completed");
-    var timeZone = Session.getScriptTimeZone() || "GMT+5:30";
-    var nowStr = Utilities.formatDate(new Date(), timeZone, "yyyy-MM-dd HH:mm:ss");
-    
-    subSheet.appendRow([nowStr, name, role, type, task, subTask || "", deadline || "", finalStatus, proofUrl, actionType || "Done", pointsEarned, adhocIndex || ""]);
-    
-    // If one-time extra task, update status in Adhoc_Tasks sheet directly
-    if (isAdhoc && adhocIndex) {
-      var setup = getOrSetupAdhocSheet(ss);
-      var adSheet = setup.sheet;
-      var colMap = setup.colMap;
-      var row = parseInt(adhocIndex);
-      if (row >= 2 && row <= adSheet.getLastRow()) {
-        var freqVal = normalizeFrequency(adSheet.getRange(row, colMap.freq + 1).getValue());
-        if (freqVal === "Extra (One Time)") {
-          adSheet.getRange(row, colMap.status + 1).setValue(finalStatus);
-        }
-      }
-    }
-    
-    return { status: finalStatus, pointsEarned: pointsEarned, proofUrl: proofUrl };
-  } catch (err) {
-    return { status: "Error: " + err.message, pointsEarned: 0 };
+  if (roleClean === "sales boy" || roleClean === "sales") {
+     taskList.push({ type: "Daily", task: "Send EOD Report on WhatsApp", subTask: "Screenshot & Final Update", deadline: "08:00 PM", sop: "", sopVideo: "", status: "Pending ⏳" });
   }
-}
 
-// =====================================================================
-// 9. ADMIN: STAFF PROGRESS REPORT
-// =====================================================================
-function getStaffProgressReport(cleanName) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var staffSheet = getSheetByNameFlexible(ss, ["Staff_List", "Staff List", "Staff", "Users"]);
-    var role = "Staff";
-    var empId = "";
-    if (staffSheet) {
-      var sData = staffSheet.getDataRange().getValues();
-      var cName = String(cleanName || "").replace("👤 ", "").trim().toLowerCase();
-      for (var s = 1; s < sData.length; s++) {
-        var rowStaff = String(sData[s][2] || "").replace("👤 ", "").trim().toLowerCase();
-        if (rowStaff === cName || (cName.length >= 3 && rowStaff.indexOf(cName) !== -1)) {
-          role = String(sData[s][3] || "Staff").trim();
-          empId = String(sData[s][0] || "").trim();
-          break;
-        }
-      }
-    }
-    
-    var routine = getTasksForRole(role, cleanName);
-    var adhoc = getAdhocTasksForStaff(cleanName, empId);
-    var scores = getStaffScoreMetrics(cleanName, empId);
-    
-    return { role: role, routine: routine, adhoc: adhoc, scores: scores };
-  } catch (err) {
-    return { role: "Staff", routine: [], adhoc: [], scores: null };
-  }
-}
+  // 📌 MERGE ASSIGNED DAILY, WEEKLY, MONTHLY TASKS FROM 'Adhoc_Tasks'
+  var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
+  if (adhocSheet && adhocSheet.getLastRow() > 1) {
+    var aData = adhocSheet.getDataRange().getValues();
+    var sClean = staffName ? staffName.toString().trim().toLowerCase() : "";
+    for (var a = 1; a < aData.length; a++) {
+      var aAssignee = aData[a][1] ? aData[a][1].toString().trim().toLowerCase() : "";
+      var aDesc = aData[a][2] ? aData[a][2].toString().trim() : "";
+      var aDead = aData[a][3] ? aData[a][3].toString().replace(/\s*GMT.*/i, '').trim() : "";
+      var aStatus = aData[a][4] ? aData[a][4].toString().trim() : "";
+      var aPhotos = aData[a][5] ? aData[a][5].toString().trim() : "";
+      var aFreq = aData[a][6] ? aData[a][6].toString().trim() : "Extra (One Time)";
 
-// =====================================================================
-// 10. ADMIN: ALL ADHOC HISTORY
-// =====================================================================
-function getAllAdhocHistory() {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var setup = getOrSetupAdhocSheet(ss);
-    var sheet = setup.sheet;
-    var colMap = setup.colMap;
-    
-    var data = sheet.getDataRange().getValues();
-    var list = [];
-    
-    for (var i = data.length - 1; i >= 1; i--) {
-      list.push({
-        date: data[i][colMap.date],
-        assignedTo: data[i][colMap.staff],
-        type: normalizeFrequency(data[i][colMap.freq]),
-        task: data[i][colMap.task],
-        deadline: data[i][colMap.deadline],
-        refPhoto: data[i][colMap.photo],
-        status: data[i][colMap.status]
-      });
-    }
-    return list;
-  } catch (err) {
-    return [];
-  }
-}
+      if (aDesc === "") continue;
 
-// =====================================================================
-// 11. STORE MANAGER: LIVE ORDERS DISPATCH
-// =====================================================================
-function getLiveOrdersForManager() {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = getSheetByNameFlexible(ss, ["Orders"]);
-    if (!sheet) return [];
-    
-    var data = sheet.getDataRange().getValues();
-    var orders = [];
-    for (var i = 1; i < data.length; i++) {
-      var status = String(data[i][6] || "");
-      if (!status.toLowerCase().includes("delivered") && !status.toLowerCase().includes("completed")) {
-        orders.push({
-          orderId: data[i][0],
-          shopName: data[i][1],
-          orderTime: data[i][3],
-          items: data[i][4],
-          status: status || "Pending Dispatch",
-          rowIndex: i + 1
+      var isMatch = false;
+      if (aAssignee === sClean || aAssignee === roleClean || aAssignee === "all" || aAssignee === "everyone" || aAssignee === "all staff") isMatch = true;
+      else if (aAssignee !== "" && sClean !== "" && (aAssignee.includes(sClean) || sClean.includes(aAssignee))) isMatch = true;
+      else if (aAssignee.replace("team: ", "").trim() === roleClean) isMatch = true;
+
+      if (!isMatch) continue;
+
+      var fType = "";
+      if (aFreq.toLowerCase().includes("daily")) fType = "Daily";
+      else if (aFreq.toLowerCase().includes("weekly")) fType = "Weekly";
+      else if (aFreq.toLowerCase().includes("monthly")) fType = "Monthly";
+
+      if (fType !== "") {
+        taskList.push({
+          type: fType,
+          task: aDesc,
+          subTask: "⚡ Assigned by Owner",
+          deadline: aDead,
+          sop: "",
+          sopVideo: "",
+          refPhoto: aPhotos,
+          isAdhocAssigned: true,
+          adhocRowIndex: a + 1,
+          status: aStatus || "Pending ⏳"
         });
       }
     }
-    return orders;
-  } catch (err) {
-    return [];
   }
+
+  // 📌 CHECK 'Task_Submissions' TO KEEP TODAY'S/THIS WEEK'S/MONTH'S COMPLETED TASKS MARKED DONE
+  var subSheet = ss.getSheetByName("Task_Submissions");
+  if (subSheet && subSheet.getLastRow() > 1) {
+    var subData = subSheet.getDataRange().getValues();
+    var tz = Session.getScriptTimeZone();
+    var now = new Date();
+    var todayStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+    var currentMonthStr = Utilities.formatDate(now, tz, "yyyy-MM");
+
+    var dayOfWeek = now.getDay(); 
+    var diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+    var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0);
+
+    var staffClean = staffName ? staffName.toString().trim().toLowerCase() : "";
+    var submittedMap = {};
+
+    for (var s = subData.length - 1; s >= 1; s--) {
+      var rawDate = subData[s][0];
+      if (!rawDate) continue;
+      
+      var rStaff = subData[s][1] ? subData[s][1].toString().trim().toLowerCase() : "";
+      var rRole = subData[s][2] ? subData[s][2].toString().trim().toLowerCase() : "";
+      var rType = subData[s][3] ? subData[s][3].toString().trim().toLowerCase() : "";
+      var rTask = subData[s][4] ? subData[s][4].toString().trim().toLowerCase() : "";
+      var rSub = subData[s][5] ? subData[s][5].toString().trim().toLowerCase() : "";
+      var rStatus = subData[s][8] ? subData[s][8].toString().trim() : "";
+
+      var isPersonMatch = false;
+      if (staffClean !== "") {
+        if (rStaff === staffClean || rStaff.includes(staffClean) || staffClean.includes(rStaff)) isPersonMatch = true;
+      } else {
+        if (rRole === roleClean) isPersonMatch = true;
+      }
+      if (!isPersonMatch) continue;
+
+      var subDateObj = (rawDate instanceof Date) ? rawDate : new Date(rawDate.toString().replace(/-/g, "/"));
+      var subDateStr = "";
+      var subMonthStr = "";
+      if (!isNaN(subDateObj.getTime())) {
+        subDateStr = Utilities.formatDate(subDateObj, tz, "yyyy-MM-dd");
+        subMonthStr = Utilities.formatDate(subDateObj, tz, "yyyy-MM");
+      } else {
+        subDateStr = rawDate.toString().substring(0, 10);
+        subMonthStr = rawDate.toString().substring(0, 7);
+      }
+
+      var isValidPeriod = false;
+      if (rType === "daily" && subDateStr === todayStr) {
+        isValidPeriod = true;
+      } else if (rType === "weekly" && (!isNaN(subDateObj.getTime()) ? subDateObj >= startOfWeek : subDateStr === todayStr)) {
+        isValidPeriod = true;
+      } else if (rType === "monthly" && subMonthStr === currentMonthStr) {
+        isValidPeriod = true;
+      }
+
+      if (isValidPeriod) {
+        var key = rType + "|" + rTask + "|" + rSub;
+        if (!submittedMap[key]) {
+          submittedMap[key] = rStatus;
+        }
+      }
+    }
+
+    for (var k = 0; k < taskList.length; k++) {
+      var tKey = taskList[k].type.toLowerCase() + "|" + (taskList[k].task || "").toString().trim().toLowerCase() + "|" + (taskList[k].subTask || "").toString().trim().toLowerCase();
+      if (submittedMap[tKey]) {
+        taskList[k].status = submittedMap[tKey];
+      }
+    }
+  }
+
+  return taskList;
 }
 
-function completeStoreManagerOrder(rowIndex) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = getSheetByNameFlexible(ss, ["Orders"]);
-    if (!sheet) return "Orders sheet nahi mili!";
+function getLiveOrdersForManager() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Orders"); 
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  var allOrders = [];
+  var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+  
+  for (var i = 1; i < data.length; i++) {
+    var rawDate = data[i][0];
+    if (!rawDate) continue;
+    var orderDateStr = Utilities.formatDate(new Date(rawDate), Session.getScriptTimeZone(), "yyyy-MM-dd");
+    if (orderDateStr !== todayStr) continue;
     
-    var row = parseInt(rowIndex);
-    if (row >= 2 && row <= sheet.getLastRow()) {
-      sheet.getRange(row, 7).setValue("Completed");
-      return "Order successfully complete mark ho gaya!";
+    var orderId = data[i][1] ? data[i][1].toString().trim() : "";
+    var shopName = data[i][2] ? data[i][2].toString().trim() : "";
+    var items = data[i][4] ? data[i][4].toString().trim() : "";
+    var status = data[i][8] ? data[i][8].toString().trim() : ""; 
+    if (orderId !== "") {
+      allOrders.push({ rowIndex: i + 1, orderId: orderId, shopName: shopName, items: items, orderTime: "N/A", status: status || "Pending ⏳" });
     }
-    return "Invalid row index!";
-  } catch (err) {
-    return "Error: " + err.message;
   }
+  return allOrders;
 }
+
+function confirmOrderCompleted(rowIndex) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Orders");
+  if (sheet) {
+    var submitTimeString = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "hh:mm a"); 
+    var newStatus = "Completed ✅ (" + submitTimeString + ")";
+    sheet.getRange(rowIndex, 9).setValue(newStatus);
+    return { success: true, status: newStatus };
+  }
+  return { success: false };
+}
+
+function getOrCreatePhotoFolder() {
+  var folderName = "ERP_Task_Photos";
+  var folders = DriveApp.getFoldersByName(folderName);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(folderName);
+}
+
+// 📌 ASSIGN TASK WITH MULTIPLE PHOTOS & SEAMLESS DAILY/WEEKLY/MONTHLY/EXTRA SUPPORT
+function assignAdhocTask(assigneeInfo, taskTypeVal, taskDesc, deadline, photoArray) {
+  if (!assigneeInfo || assigneeInfo.includes("----")) return "Error: Kripya valid staff ya team chunein!";
+  var cleanName = assigneeInfo.replace("🏢 Team: ", "").replace("👤 ", "").replace("👥 ", "").trim();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Save all photos to Drive folder
+  var photoUrls = [];
+  if (photoArray && photoArray.length > 0) {
+    try {
+      var folder = getOrCreatePhotoFolder();
+      for (var p = 0; p < photoArray.length; p++) {
+        var pItem = photoArray[p];
+        if (pItem.base64Data && pItem.fileName) {
+          var blob = Utilities.newBlob(Utilities.base64Decode(pItem.base64Data), pItem.mimeType, pItem.fileName);
+          var file = folder.createFile(blob);
+          try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch(e){}
+          photoUrls.push(file.getUrl());
+        }
+      }
+    } catch(e) {}
+  }
+  var photoLinksString = photoUrls.length > 0 ? photoUrls.join(" , ") : "No Photo";
+
+  // 📌 Store in 'Adhoc_Tasks' with Frequency column
+  var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
+  if (!adhocSheet) {
+    adhocSheet = ss.insertSheet("Adhoc_Tasks");
+    adhocSheet.appendRow(["Assign Date", "Staff Name", "Task Description", "Deadline", "Status", "Reference Photo", "Task Frequency"]);
+  }
+
+  // Ensure header has Col 7 if missing
+  if (adhocSheet.getLastColumn() < 7) {
+    adhocSheet.getRange(1, 7).setValue("Task Frequency");
+  }
+
+  adhocSheet.appendRow([new Date(), cleanName, taskDesc, deadline, "Pending ⏳", photoLinksString, taskTypeVal]);
+  return taskTypeVal + " Assigned Successfully to " + cleanName + " 🚀";
+}
+
+// 📌 FETCH ONLY EXTRA (ONE TIME) TASKS FOR EXTRA TASKS TAB
+function getAdhocTasksForStaff(staffName) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Adhoc_Tasks");
+  if(!sheet) return [];
+  
+  var data = sheet.getDataRange().getValues();
+  var tasks = [];
+  var role = String(getStaffRoleByName(staffName)).toLowerCase().trim();
+  var name = String(staffName).toLowerCase().trim();
+  var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MMM");
+  
+  for(var i = 1; i < data.length; i++) {
+    var rawAssignee = String(data[i][1] || "").toLowerCase().trim();
+    var taskDesc = String(data[i][2] || "").trim();
+    var deadline = data[i][3] ? data[i][3].toString().replace(/\s*GMT.*/i, '').trim() : "";
+    var status = String(data[i][4] || "").trim();
+    var refPhoto = String(data[i][5] || "");
+    var freq = String(data[i][6] || "Extra (One Time)").trim();
+
+    // Routine Daily/Weekly/Monthly tasks are shown in their respective tabs via getTasksForRole
+    if (freq !== "Extra (One Time)" && freq !== "One Time" && freq !== "") continue;
+    if (taskDesc === "") continue;
+    
+    var assignDateRaw = data[i][0];
+    var assignDateStr = "";
+    if (assignDateRaw) {
+        try {
+            var d = new Date(assignDateRaw);
+            if(!isNaN(d.getTime())) { assignDateStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "dd MMM yyyy, hh:mm a"); } 
+            else { assignDateStr = assignDateRaw.toString().replace(/\s*GMT.*/i, '').trim(); }
+        } catch(e) { assignDateStr = assignDateRaw.toString().replace(/\s*GMT.*/i, '').trim(); }
+    }
+
+    var isMatch = false;
+    if (rawAssignee === name || rawAssignee === role || rawAssignee === "all" || rawAssignee === "everyone" || rawAssignee === "all staff") { isMatch = true; } 
+    else if (rawAssignee !== "" && name !== "") { if (rawAssignee.includes(name) || name.includes(rawAssignee)) isMatch = true; }
+
+    var isPending = true;
+    if(status.toLowerCase().includes("upload") || status.toLowerCase().includes("complet") || status.toLowerCase().includes("skip")) {
+        if(!status.includes(todayStr)) { isPending = false; }
+    }
+
+    if(isMatch && isPending) {
+      tasks.push({ index: i, assignDate: assignDateStr, task: taskDesc, deadline: deadline, status: status || "Pending ⏳", refPhoto: refPhoto });
+    }
+  }
+  return tasks;
+}
+
+function getStaffProgressReport(staffName) {
+  var role = getStaffRoleByName(staffName);
+  var routineTasks = getTasksForRole(role, staffName);
+  var adhocTasks = getAdhocTasksForStaff(staffName);
+  var scores = getStaffScoresBreakdown(staffName);
+  return { routine: routineTasks, adhoc: adhocTasks, role: role, scores: scores };
+}
+
+function getAllAdhocHistory() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Adhoc_Tasks");
+  if(!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  var history = [];
+  var start = Math.max(1, data.length - 60);
+  
+  for(var i = data.length - 1; i >= start; i--) {
+    var rawDate = data[i][0];
+    var dateStr = rawDate ? rawDate.toString().replace(/\s*GMT.*/i, '').trim() : "";
+    try {
+      if(rawDate) {
+        var d = new Date(rawDate);
+        if(!isNaN(d.getTime())) { dateStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "dd MMM yyyy, hh:mm a"); }
+      }
+    } catch(e) {}
+    
+    var taskDesc = data[i][2] ? data[i][2].toString().trim() : "";
+    if (taskDesc === "") continue; 
+
+    history.push({
+      date: dateStr,
+      assignedTo: data[i][1] ? data[i][1].toString() : "",
+      task: taskDesc,
+      deadline: data[i][3] ? data[i][3].toString().replace(/\s*GMT.*/i, '').trim() : "",
+      status: data[i][4] ? data[i][4].toString() : "",
+      photos: data[i][5] ? data[i][5].toString() : "",
+      freq: data[i][6] ? data[i][6].toString() : "Extra"
+    });
+  }
+  return history;
+}
+
+function isTaskOnTime(deadlineStr, submitDateObj) {
+  if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return true; 
+  try {
+    var targetDate = new Date(submitDateObj.getTime()); 
+    if (deadlineStr.includes(",") || deadlineStr.includes("202")) {
+        targetDate = new Date(deadlineStr);
+    } else {
+        var parts = deadlineStr.match(/(\d+):(\d+)\s(AM|PM)/i);
+        if (parts) {
+            var hours = parseInt(parts[1], 10);
+            var minutes = parseInt(parts[2], 10);
+            var ampm = parts[3].toUpperCase();
+            if (ampm === "PM" && hours < 12) hours += 12;
+            if (ampm === "AM" && hours === 12) hours = 0;
+            targetDate.setHours(hours, minutes, 0, 0);
+        }
+    }
+    return submitDateObj.getTime() <= targetDate.getTime();
+  } catch(e) { return true; }
+}
+
+function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadline, base64Data, mimeType, fileName, isAdhoc, adhocIndex, actionType) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var now = new Date();
+  var dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd-MMM");
+  var submitTimeString = Utilities.formatDate(now, Session.getScriptTimeZone(), "hh:mm a"); 
+  var fullDateTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+
+  var statusPrefix = "Uploaded ✅";
+  var hyperlinkFormula = "No Image";
+  var pointsEarned = 0; 
+
+  if (actionType === "Skip" || actionType === true) {
+      statusPrefix = "Skipped ⏭️"; hyperlinkFormula = "Skipped (No Photo)"; pointsEarned = 0; 
+  } else if (actionType === "Complete") {
+      statusPrefix = "Completed ✅"; hyperlinkFormula = "Completed (No Photo)";
+  }
+
+  if (base64Data && fileName && actionType !== "Skip" && actionType !== "Complete") {
+    try {
+      var folder = getOrCreatePhotoFolder();
+      var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName);
+      var file = folder.createFile(blob);
+      try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch(e){}
+      hyperlinkFormula = '=HYPERLINK("' + file.getUrl() + '", "📷 View Photo")';
+      statusPrefix = "Uploaded ✅";
+    } catch(e) {}
+  }
+
+  if (actionType !== "Skip" && actionType !== true) {
+    pointsEarned = 5; 
+    if (isTaskOnTime(deadline, now)) { pointsEarned += 5; }
+  }
+
+  var finalStatusDisplay = statusPrefix + " (" + dateStr + " " + submitTimeString + ")";
+
+  if(isAdhoc === true && adhocIndex !== null && adhocIndex !== undefined) {
+    var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
+    if(adhocSheet) { adhocSheet.getRange(adhocIndex + 1, 5).setValue(finalStatusDisplay); }
+  }
+
+  var sheet = ss.getSheetByName("Task_Submissions");
+  if (!sheet) {
+    sheet = ss.insertSheet("Task_Submissions");
+    sheet.appendRow(["Submit Timestamp", "Staff Name", "Role", "Task Type", "Task", "Sub Task", "Set Deadline", "Actual Submit Time", "Status", "Proof Image Link", "Points Earned"]);
+  }
+  
+  sheet.appendRow([fullDateTime, staffName, role, taskType, taskName, subTask, deadline, submitTimeString, finalStatusDisplay, hyperlinkFormula, pointsEarned]);
+  return { success: true, submitTime: submitTimeString, status: finalStatusDisplay, pointsEarned: pointsEarned };
+}
+
+function setupPermissions() { DriveApp.getRootFolder(); }
