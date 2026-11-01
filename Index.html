@@ -241,7 +241,127 @@
         text-align: left;
       }
       .preflight-item input[type="checkbox"] { width: auto; margin: 0; }
-    </style>
+    
+    /* PHASE 2: CEO RADAR, QUALITY GATE & HANDOVER STYLES */
+    .radar-pulse-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .pulse-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .pulse-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #58a6ff;
+      margin-top: 2px;
+    }
+    .pulse-lbl {
+      font-size: 10px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .pulse-card.alert {
+      border-color: #da3633;
+      background: rgba(218, 54, 51, 0.08);
+    }
+    .pulse-card.alert .pulse-val {
+      color: #f85149;
+    }
+    .pulse-card.success {
+      border-color: #238636;
+      background: rgba(35, 134, 54, 0.08);
+    }
+    .pulse-card.success .pulse-val {
+      color: #3fb950;
+    }
+    .radar-filter-ribbon {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .radar-filter-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .radar-filter-btn.active {
+      background: #1f6feb;
+      border-color: #388bfd;
+      color: white;
+    }
+    .staff-radar-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+    .staff-radar-card.has-overdue {
+      border-left: 4px solid #da3633;
+    }
+    .staff-radar-card.all-done {
+      border-left: 4px solid #238636;
+    }
+    .radar-progress-bg {
+      background: #21262d;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .radar-progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .btn-wa-nudge {
+      background: #25d366;
+      color: #0d1117 !important;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+    }
+    .btn-wa-nudge:hover {
+      background: #1ebc59;
+    }
+    .radar-task-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 12px;
+    }
+    .radar-task-row:last-child {
+      border-bottom: none;
+    }
+
+  </style>
 
   </head>
   <body>
@@ -258,22 +378,60 @@
 
       <!-- ADMIN PORTAL -->
       <div id="adminPortal" class="hidden">
-        <div class="profile-header">
+        <div class="profile-header" style="background: linear-gradient(135deg, #161b22, #0d1117); border: 1px solid #30363d; border-radius: 10px; padding: 14px 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin:0; color:white;">👑 Owner Dashboard</h2>
-            <button onclick="logout()" style="width: auto; padding: 4px 8px; font-size: 11px; background: rgba(0,0,0,0.3);">Logout</button>
+            <div>
+              <h2 style="margin:0; color:white; font-size:18px;">👑 CEO Operations Cockpit</h2>
+              <p style="margin:4px 0 0 0; font-size:11px; color:#58a6ff; font-weight:600;">⚡ Real-time Team Compliance & Quality Radar</p>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button onclick="loadAdminRadar()" style="width: auto; padding: 6px 10px; font-size: 11px; background: #238636; border:none; border-radius:6px; color:white; cursor:pointer; font-weight:600;">🔄 Refresh Radar</button>
+              <button onclick="logout()" style="width: auto; padding: 6px 10px; font-size: 11px; background: rgba(218,54,51,0.2); border:1px solid #da3633; color:#f85149; border-radius:6px; cursor:pointer;">Logout</button>
+            </div>
           </div>
         </div>
 
         <div class="admin-tabs">
-          <div class="admin-tab active" id="tabBtnAssign" onclick="switchAdminTab('Assign')">➕ Assign Task</div>
+          <div class="admin-tab active" id="tabBtnRadar" onclick="switchAdminTab('Radar')">📡 Operations Radar</div>
+          <div class="admin-tab" id="tabBtnAssign" onclick="switchAdminTab('Assign')">➕ Assign Task</div>
           <div class="admin-tab" id="tabBtnScoreboard" onclick="switchAdminTab('Scoreboard')">🏆 Scoreboard</div>
-          <div class="admin-tab" id="tabBtnProgress" onclick="switchAdminTab('Progress')">📊 Staff Progress</div>
+          <div class="admin-tab" id="tabBtnProgress" onclick="switchAdminTab('Progress')">📊 Staff Inspection</div>
           <div class="admin-tab" id="tabBtnHistory" onclick="switchAdminTab('History')">📜 Task History</div>
         </div>
 
+        <!-- 0. CEO LIVE OPERATIONS RADAR TAB -->
+        <div id="adminTabRadar" class="card">
+          <!-- PULSE STATS BAR -->
+          <div class="radar-pulse-bar" id="radarPulseBar">
+            <div class="pulse-card"><div class="pulse-lbl">Team Active</div><div class="pulse-val" id="pulseTotalStaff">--</div></div>
+            <div class="pulse-card"><div class="pulse-lbl">Today's Tasks</div><div class="pulse-val" id="pulseTotalTasks">--</div></div>
+            <div class="pulse-card success"><div class="pulse-lbl">Completed</div><div class="pulse-val" id="pulseCompleted">--</div></div>
+            <div class="pulse-card alert"><div class="pulse-lbl">Overdue</div><div class="pulse-val" id="pulseOverdue">--</div></div>
+            <div class="pulse-card"><div class="pulse-lbl">Efficiency</div><div class="pulse-val" id="pulseEfficiency">--%</div></div>
+          </div>
+
+          <!-- RADAR FILTER RIBBON -->
+          <div class="radar-filter-ribbon">
+            <button class="radar-filter-btn active" onclick="filterRadarView('all', this)">👥 All Staff</button>
+            <button class="radar-filter-btn" onclick="filterRadarView('overdue', this)">🚨 Overdue Alert</button>
+            <button class="radar-filter-btn" onclick="filterRadarView('pending', this)">⏳ In Progress</button>
+            <button class="radar-filter-btn" onclick="filterRadarView('completed', this)">✅ 100% Done</button>
+          </div>
+
+          <!-- RADAR CARDS CONTAINER -->
+          <div id="radarCardsContainer">
+            <p style="color:#8b949e; text-align:center; padding:20px 0;">📡 Loading Live Operations Radar...</p>
+          </div>
+        </div>
+
         <!-- 1. ASSIGN TASK TAB -->
-        <div id="adminTabAssign" class="card">
+        <div id="adminTabAssign" class="card hidden">
+          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Task Priority Level:</label>
+          <select id="adminTaskPriority" style="margin-bottom:10px;">
+            <option value="🔴 High (Urgent)">🔴 Urgent / High Priority</option>
+            <option value="🟡 Normal" selected>🟡 Standard Routine</option>
+            <option value="🟢 Low">🟢 Flexible / Low Priority</option>
+          </select>
           <label style="color:#8b949e; font-size:13px;">Team ya Staff ko Task dein:</label>
           <select id="adminStaffSelect"><option>Loading...</option></select>
           
@@ -300,7 +458,7 @@
         <!-- 2. OWNER ALL-STAFF SCOREBOARD TAB -->
         <div id="adminTabScoreboard" class="card hidden">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h3 style="margin:0; font-size:16px;">🏆 All Staff Performance Scoreboard</h3>
+            <h3 style="margin:0; font-size:16px;">🏆 All Staff Performance Scoreboard (CEO View)</h3>
             <button onclick="loadAdminScoreboard()" style="width:auto; padding:5px 10px; font-size:11px; background:#30363d; margin:0;">🔄 Refresh</button>
           </div>
           <div style="overflow-x:auto;">
@@ -395,7 +553,7 @@
         <div id="tabContentArea"></div>
 
         <div style="text-align: center; margin-top: 20px;">
-          <button onclick="sendEOD()" style="background: #30363d; color: #c9d1d9;">📱 Send WhatsApp EOD</button>
+          <button onclick="openShiftHandoverModal()" style="background: linear-gradient(135deg, #1f6feb, #238636); color: #ffffff; font-weight: bold; padding: 13px; border-radius: 8px; font-size: 14px; border:none; cursor:pointer; width:100%; box-shadow: 0 4px 14px rgba(35,134,54,0.3); margin-top:15px;">📋 Daily Shift Handover & EOD Report</button>
         </div>
       </div>
     </div>
@@ -460,9 +618,10 @@
             loggedInUser = { name: res.name, role: res.role };
             document.getElementById("loginScreen").classList.add("hidden");
             var roleClean = res.role.toLowerCase().trim();
-            if (roleClean === "admin" || roleClean === "owner") {
+            if (roleClean === "ceo" || roleClean === "owner" || roleClean === "admin") {
               document.getElementById("adminPortal").classList.remove("hidden");
               loadAdminDropdown();
+              loadAdminRadar();
               loadAdminScoreboard();
               loadAdminHistory();
             } else {
@@ -507,15 +666,20 @@
       }
 
       function switchAdminTab(tabName) {
-        var tabs = ['Assign', 'Scoreboard', 'Progress', 'History'];
+        var tabs = ['Radar', 'Assign', 'Scoreboard', 'Progress', 'History'];
         tabs.forEach(function(t) {
-          document.getElementById('tabBtn' + t).classList.remove('active');
-          document.getElementById('adminTab' + t).classList.add('hidden');
+          var btn = document.getElementById('tabBtn' + t);
+          var tabEl = document.getElementById('adminTab' + t);
+          if (btn) btn.classList.remove('active');
+          if (tabEl) tabEl.classList.add('hidden');
         });
-        document.getElementById('tabBtn' + tabName).classList.add('active');
-        document.getElementById('adminTab' + tabName).classList.remove('hidden');
+        var activeBtn = document.getElementById('tabBtn' + tabName);
+        var activeTab = document.getElementById('adminTab' + tabName);
+        if (activeBtn) activeBtn.classList.add('active');
+        if (activeTab) activeTab.classList.remove('hidden');
 
-        if(tabName === 'Scoreboard') loadAdminScoreboard();
+        if (tabName === 'Radar') loadAdminRadar();
+        else if (tabName === 'Scoreboard') loadAdminScoreboard();
       }
 
       function loadAdminDropdown() {
@@ -682,7 +846,12 @@
              html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:#58a6ff;'>[" + st.type + "]</span><span style='font-size:11px; color:#ffd33d;'>⏰ " + (st.deadline || "N/A") + "</span></div>";
              html += "<div class='subtask-name' style='font-size:13px; margin:4px 0; " + (isDone ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + st.task + (st.subTask ? " - " + st.subTask : "") + "</div>";
              if(st.refPhoto) html += renderPhotoPills(st.refPhoto);
+             html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:4px;'>";
              html += "<div class='status-text' style='font-size:11px; color:" + cColor + "; text-align:left;'>" + st.status + "</div>";
+             if (!isDone) {
+               html += "<button class='btn-wa-nudge' onclick='nudgeStaffOnWhatsapp(\"" + cleanName + "\", \"\", \"" + encodeURIComponent(st.task + (st.subTask ? " - " + st.subTask : "")) + "\", \"" + (st.deadline || "Today") + "\")'>📲 Nudge on WA</button>";
+             }
+             html += "</div>";
              html += "</div>";
           }
 
@@ -951,7 +1120,7 @@
       }
 
       function renderStaffContent() {
-        var isOwner = (loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin");
+        var isOwner = (loggedInUser.role.toLowerCase().trim() === "ceo" || loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin");
         
         var counts = { Daily: {t:0, d:0}, Weekly: {t:0, d:0}, Monthly: {t:0, d:0} };
         for(var k=0; k<roleTasks.length; k++) {
@@ -1019,7 +1188,7 @@
             } else {
               html += "<div class='subtask-name' style='font-size:13px; color:#c9d1d9; margin-bottom:6px;'>👉 Action:</div>";
               html += "<div class='subtask-actions'>";
-              html += "<button class='btn-complete' onclick='directCompleteAdhoc(" + i + ", this)'>✅ Done</button>";
+              html += "<button class='btn-complete' onclick='triggerSelfAuditCheck(" + i + ", true, this)'>✅ Done</button>";
               html += "<button class='btn-capture' onclick='openAdhocProofModal(" + i + ")'>📸 Photo</button>";
               if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + i + ", this)'>⏭️ Skip</button>";
               html += "</div>";
@@ -1109,7 +1278,7 @@
 
             // SOURCE SHEET INDICATOR
             if (firstTask.sourceSheet) {
-              html += "<div style='font-size:9px; color:#8b949e; margin-bottom:8px;'>📊 Sheet: <b>" + firstTask.sourceSheet + "</b> (Owner can edit here)</div>";
+              html += "<div style='font-size:9px; color:#8b949e; margin-bottom:8px;'>📊 Sheet: <b>" + firstTask.sourceSheet + "</b> (CEO can edit here)</div>";
             }
 
             if(firstTask.sop || firstTask.sopVideo) {
@@ -1136,7 +1305,7 @@
               } else {
                 html += "<div class='subtask-name'>" + displayName + "</div>";
                 html += "<div class='subtask-actions'>";
-                html += "<button class='btn-complete' onclick='directCompleteRoutine(" + stIndex + ", this)'>✅ Done</button>";
+                html += "<button class='btn-complete' onclick='triggerSelfAuditCheck(" + stIndex + ", false, this)'>✅ Done</button>";
                 html += "<button class='btn-capture' onclick='openStandardProofModal(" + stIndex + ")'>📸 Photo</button>";
                 if (isOwner) html += "<button class='btn-skip' onclick='skipTask(" + stIndex + ", this)'>⏭️ Skip</button>";
                 html += "</div>";
@@ -1281,8 +1450,331 @@
         var text = "Hello Sir, meri EOD Report - " + loggedInUser.name + " (" + loggedInUser.role + "). Aaj ke saare task update kar diye hain.";
         window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
       }
+    
+      // =====================================================================
+      // 📡 PHASE 2: CEO LIVE OPERATIONS RADAR LOGIC
+      // =====================================================================
+      var cachedRadarData = null;
+      var activeRadarFilter = 'all';
+
+      function loadAdminRadar() {
+        var container = document.getElementById("radarCardsContainer");
+        container.innerHTML = "<p style='color:#8b949e; text-align:center; padding:20px 0;'>📡 Scanning live team operations...</p>";
+        
+        google.script.run.withSuccessHandler(function(radar) {
+          cachedRadarData = radar;
+          if (!radar || !radar.pulse) {
+            container.innerHTML = "<p style='color:#8b949e; text-align:center;'>No live radar data available.</p>";
+            return;
+          }
+
+          // Update Pulse Stats
+          document.getElementById("pulseTotalStaff").innerText = radar.pulse.totalStaff;
+          document.getElementById("pulseTotalTasks").innerText = radar.pulse.totalTasksDue;
+          document.getElementById("pulseCompleted").innerText = radar.pulse.totalCompleted;
+          document.getElementById("pulseOverdue").innerText = radar.pulse.totalOverdue;
+          document.getElementById("pulseEfficiency").innerText = radar.pulse.executionRate + "%";
+
+          renderRadarCards();
+        }).getCeoOperationsRadar();
+      }
+
+      function filterRadarView(filterType, btn) {
+        activeRadarFilter = filterType;
+        var btns = document.querySelectorAll('.radar-filter-btn');
+        btns.forEach(function(b) { b.classList.remove('active'); });
+        if (btn) btn.classList.add('active');
+        renderRadarCards();
+      }
+
+      function renderRadarCards() {
+        var container = document.getElementById("radarCardsContainer");
+        if (!cachedRadarData || !cachedRadarData.staffList) {
+          container.innerHTML = "<p style='color:#8b949e; text-align:center;'>No staff records found.</p>";
+          return;
+        }
+
+        var list = cachedRadarData.staffList;
+        var filtered = list.filter(function(s) {
+          if (activeRadarFilter === 'overdue') return s.overdue > 0;
+          if (activeRadarFilter === 'pending') return s.pending > 0;
+          if (activeRadarFilter === 'completed') return s.total > 0 && s.completed === s.total;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = "<div style='text-align:center; padding:25px; color:#8b949e;'><p style='font-size:14px; margin:0;'>✨ Is category mein koi record nahi hai!</p></div>";
+          return;
+        }
+
+        var html = "";
+        for (var i = 0; i < filtered.length; i++) {
+          var s = filtered[i];
+          var cardClass = s.overdue > 0 ? "staff-radar-card has-overdue" : (s.completed === s.total && s.total > 0 ? "staff-radar-card all-done" : "staff-radar-card");
+          var progressColor = s.overdue > 0 ? "#da3633" : (s.rate === 100 ? "#238636" : "#1f6feb");
+
+          html += "<div class='" + cardClass + "'>";
+          html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
+          html += "  <div>";
+          html += "    <b style='color:#ffffff; font-size:14px;'>👤 " + s.name + "</b>";
+          html += "    <span style='background:#21262d; color:#58a6ff; font-size:11px; padding:2px 8px; border-radius:4px; margin-left:6px; font-weight:600;'>" + s.role + "</span>";
+          html += "  </div>";
+          html += "  <div style='text-align:right;'>";
+          html += "    <span style='font-size:12px; font-weight:bold; color:" + progressColor + ";'>" + s.completed + "/" + s.total + " Done (" + s.rate + "%)</span>";
+          html += "  </div>";
+          html += "</div>";
+
+          html += "<div class='radar-progress-bg'><div class='radar-progress-fill' style='width:" + s.rate + "%; background:" + progressColor + ";'></div></div>";
+
+          // Task details
+          var pendingTasks = s.tasks.filter(function(t) { return !t.isDone; });
+          if (pendingTasks.length === 0) {
+            html += "<p style='margin:4px 0 0 0; font-size:12px; color:#3fb950;'>✨ Aaj ke sabhi daily tasks complete kar liye hain!</p>";
+          } else {
+            html += "<div style='margin-top:6px;'>";
+            for (var p = 0; p < pendingTasks.length; p++) {
+              var pt = pendingTasks[p];
+              var deadBadge = pt.isOverdue ? "<span style='color:#f85149; font-weight:bold; font-size:11px;'>🚨 " + pt.overdueText + "</span>" : "<span style='color:#e3b341; font-size:11px;'>⏰ " + pt.deadline + "</span>";
+              var fullTitle = pt.task + (pt.subTask ? " - " + pt.subTask : "");
+
+              html += "<div class='radar-task-row'>";
+              html += "  <div style='flex:1; padding-right:8px;'>";
+              html += "    <span style='color:#c9d1d9;'>" + fullTitle + "</span> ";
+              html += "    <div>" + deadBadge + "</div>";
+              html += "  </div>";
+              html += "  <div>";
+              html += "    <button class='btn-wa-nudge' onclick=\"nudgeStaffOnWhatsapp('" + s.name + "', '" + (s.phone || "") + "', '" + encodeURIComponent(fullTitle) + "', '" + (pt.deadline || "Today") + "')\">📲 Nudge</button>";
+              html += "  </div>";
+              html += "</div>";
+            }
+            html += "</div>";
+          }
+
+          html += "</div>";
+        }
+
+        container.innerHTML = html;
+      }
+
+      function nudgeStaffOnWhatsapp(staffName, staffPhone, taskTitleEncoded, deadline) {
+        var taskTitle = decodeURIComponent(taskTitleEncoded);
+        var msg = "⚠️ *TASK REMINDER - YASH MARKETING*\n";
+        msg += "From: *CEO Office*\n";
+        msg += "To: *" + staffName + "*\n\n";
+        msg += "Aapka scheduled task:\n";
+        msg += "📌 *" + taskTitle + "*\n";
+        msg += "⏰ Expected Deadline: *" + deadline + "*\n\n";
+        msg += "Kripya is task ko turant complete karke Task App mein proof upload karein.\n";
+        msg += "Agar koi issue ya blocker hai toh app mein Troubleshoot guide check karein ya inform karein.";
+
+        var cleanPhone = (staffPhone || "").replace(/[^0-9]/g, '');
+        if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
+
+        var waUrl = cleanPhone ? ("https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(msg)) : ("https://wa.me/?text=" + encodeURIComponent(msg));
+        window.open(waUrl, "_blank");
+      }
+
+      // =====================================================================
+      // ⚡ PHASE 2: PRE-FLIGHT SELF-AUDIT QUALITY GATE LOGIC
+      // =====================================================================
+      var pendingAuditData = null;
+
+      function triggerSelfAuditCheck(index, isAdhoc, btn) {
+        var t = isAdhoc ? extraTasks[index] : roleTasks[index];
+        var title = t.subTask || t.task;
+        var dead = t.deadline || "Today";
+
+        pendingAuditData = { index: index, isAdhoc: isAdhoc, btn: btn };
+
+        document.getElementById("selfAuditTaskName").innerText = title;
+        document.getElementById("selfAuditDeadline").innerText = "⏰ Expected by: " + dead;
+        document.getElementById("auditCheck1").checked = true;
+        document.getElementById("auditCheck2").checked = true;
+
+        document.getElementById("selfAuditModal").style.display = "block";
+      }
+
+      function closeSelfAuditModal() {
+        document.getElementById("selfAuditModal").style.display = "none";
+        pendingAuditData = null;
+      }
+
+      function executeSelfAuditedSubmission() {
+        var c1 = document.getElementById("auditCheck1").checked;
+        var c2 = document.getElementById("auditCheck2").checked;
+
+        if (!c1 || !c2) {
+          alert("Kripya dono self-verification checks tick karein!");
+          return;
+        }
+
+        if (!pendingAuditData) return;
+        var data = pendingAuditData;
+        closeSelfAuditModal();
+
+        if (data.isAdhoc) {
+          directCompleteAdhoc(data.index, data.btn);
+        } else {
+          directCompleteRoutine(data.index, data.btn);
+        }
+      }
+
+      // =====================================================================
+      // 📋 PHASE 2: AUTOMATED SHIFT HANDOVER REPORT LOGIC
+      // =====================================================================
+      function openShiftHandoverModal() {
+        var completedList = [];
+        var pendingList = [];
+
+        for (var i = 0; i < roleTasks.length; i++) {
+          var t = roleTasks[i];
+          if (t.type !== 'Daily') continue;
+          var title = t.task + (t.subTask ? " - " + t.subTask : "");
+          var isDone = t.status && (t.status.indexOf("Uploaded") !== -1 || t.status.indexOf("Completed") !== -1 || t.status.indexOf("Skipped") !== -1);
+          if (isDone) completedList.push(title);
+          else pendingList.push({ title: title, deadline: t.deadline || "07:00 PM" });
+        }
+
+        var total = completedList.length + pendingList.length;
+        var rate = total > 0 ? Math.round((completedList.length / total) * 100) : 100;
+
+        var html = "<div style='display:flex; justify-content:space-between; margin-bottom:8px;'>";
+        html += "<b style='color:#58a6ff;'>👤 " + loggedInUser.name + " (" + loggedInUser.role + ")</b>";
+        html += "<b style='color:" + (rate === 100 ? "#3fb950" : "#ffd33d") + ";'>" + completedList.length + "/" + total + " Done (" + rate + "%)</b>";
+        html += "</div>";
+
+        if (completedList.length > 0) {
+          html += "<div style='margin-bottom:8px;'><b style='color:#3fb950;'>✅ Completed Tasks (" + completedList.length + "):</b><ul style='margin:4px 0 0 16px; padding:0; color:#c9d1d9;'>";
+          for (var c = 0; c < completedList.length; c++) html += "<li>" + completedList[c] + "</li>";
+          html += "</ul></div>";
+        }
+
+        if (pendingList.length > 0) {
+          html += "<div><b style='color:#e3b341;'>⏳ Pending / Carried Forward (" + pendingList.length + "):</b><ul style='margin:4px 0 0 16px; padding:0; color:#c9d1d9;'>";
+          for (var p = 0; p < pendingList.length; p++) html += "<li>" + pendingList[p].title + " (Due: " + pendingList[p].deadline + ")</li>";
+          html += "</ul></div>";
+        } else {
+          html += "<p style='color:#3fb950; margin:6px 0 0 0;'>✨ All daily scheduled tasks 100% completed!</p>";
+        }
+
+        document.getElementById("handoverSummaryCard").innerHTML = html;
+        document.getElementById("shiftHandoverModal").style.display = "block";
+      }
+
+      function closeHandoverModal() {
+        document.getElementById("shiftHandoverModal").style.display = "none";
+      }
+
+      function dispatchShiftHandoverWhatsapp() {
+        var completedList = [];
+        var pendingList = [];
+
+        for (var i = 0; i < roleTasks.length; i++) {
+          var t = roleTasks[i];
+          if (t.type !== 'Daily') continue;
+          var title = t.task + (t.subTask ? " - " + t.subTask : "");
+          var isDone = t.status && (t.status.indexOf("Uploaded") !== -1 || t.status.indexOf("Completed") !== -1 || t.status.indexOf("Skipped") !== -1);
+          if (isDone) completedList.push(title);
+          else pendingList.push(title + " (Due: " + (t.deadline || "07:00 PM") + ")");
+        }
+
+        var total = completedList.length + pendingList.length;
+        var rate = total > 0 ? Math.round((completedList.length / total) * 100) : 100;
+        var notes = document.getElementById("handoverNotesInput").value.trim();
+
+        var msg = "📊 *DAILY SHIFT HANDOVER & EOD REPORT*\n";
+        msg += "👤 *Staff:* " + loggedInUser.name + " (" + loggedInUser.role + ")\n";
+        msg += "📅 *Date:* " + (new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + "\n";
+        msg += "🎯 *Shift Score:* " + completedList.length + "/" + total + " Tasks (" + rate + "% Complete)\n\n";
+
+        if (completedList.length > 0) {
+          msg += "✅ *Completed Tasks (" + completedList.length + "):*\n";
+          for (var c = 0; c < completedList.length; c++) msg += "• " + completedList[c] + "\n";
+          msg += "\n";
+        }
+
+        if (pendingList.length > 0) {
+          msg += "⏳ *Pending / Carried Forward (" + pendingList.length + "):*\n";
+          for (var p = 0; p < pendingList.length; p++) msg += "• " + pendingList[p] + "\n";
+          msg += "\n";
+        }
+
+        msg += "📝 *Staff Handover Remarks:*\n";
+        msg += (notes || "Saare daily routine tasks complete aur verify kar diye gaye hain.") + "\n\n";
+        msg += "🚀 *Verified & Dispatched via Yash Marketing Task App*";
+
+        // Save in Google Sheet backend
+        google.script.run.saveShiftHandover(
+          loggedInUser.name,
+          loggedInUser.role,
+          completedList.length,
+          total,
+          pendingList.join("; "),
+          notes
+        );
+
+        closeHandoverModal();
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
+
     </script>
   
+    
+    <!-- PHASE 2: PRE-FLIGHT SELF-AUDIT QUALITY GATE MODAL -->
+    <div id="selfAuditModal" class="modal">
+      <div class="modal-content" style="max-width: 440px; text-align: left; padding: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:8px; margin-bottom:14px;">
+          <h3 style="color:#58a6ff; margin:0; font-size:16px;">⚡ Pre-Flight Self-Audit Quality Gate</h3>
+          <button onclick="closeSelfAuditModal()" style="width:auto; padding:2px 8px; font-size:14px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
+        </div>
+
+        <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid #30363d; margin-bottom:14px;">
+          <span style="font-size:11px; color:#8b949e; text-transform:uppercase; font-weight:bold;">Task Verification:</span>
+          <div id="selfAuditTaskName" style="color:#ffd33d; font-weight:bold; font-size:14px; margin-top:3px;">Task Name</div>
+          <div id="selfAuditDeadline" style="color:#8b949e; font-size:12px; margin-top:2px;">⏰ Expected by: --</div>
+        </div>
+
+        <div style="font-size:13px; color:#c9d1d9; margin-bottom:16px;">
+          <p style="margin:0 0 10px 0; font-weight:bold; color:#58a6ff; font-size:12px;">Final Submission Check (Self-Verification):</p>
+          <label style="display:flex; align-items:flex-start; gap:8px; margin-bottom:10px; cursor:pointer; font-size:12px; line-height:1.4;">
+            <input type="checkbox" id="auditCheck1" checked style="margin-top:2px; transform:scale(1.2);">
+            <span>Meine actual physical stock / registers / digital entries cross-check kar li hain.</span>
+          </label>
+          <label style="display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; cursor:pointer; font-size:12px; line-height:1.4;">
+            <input type="checkbox" id="auditCheck2" checked style="margin-top:2px; transform:scale(1.2);">
+            <span>SOP standard ke mutabik kaam 100% complete hai aur koi pending mistake nahi hai.</span>
+          </label>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button onclick="executeSelfAuditedSubmission()" id="btnConfirmSelfAudit" style="flex:1; background:#2ea043; color:white; padding:12px; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;">✅ 100% Verified - Submit Task</button>
+          <button onclick="closeSelfAuditModal()" style="width:auto; background:#30363d; color:#c9d1d9; padding:12px; border:none; border-radius:6px; font-size:13px; cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 2: AUTOMATED SHIFT HANDOVER & EOD REPORT MODAL -->
+    <div id="shiftHandoverModal" class="modal">
+      <div class="modal-content" style="max-width: 520px; text-align: left; padding: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:10px; margin-bottom:12px;">
+          <h3 style="color:#58a6ff; margin:0; font-size:16px;">📋 Daily Shift Handover & EOD Report</h3>
+          <button onclick="closeHandoverModal()" style="width:auto; padding:2px 8px; font-size:14px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
+        </div>
+
+        <div id="handoverSummaryCard" style="background:#161b22; padding:12px; border-radius:8px; border:1px solid #30363d; margin-bottom:12px; font-size:12px;">
+          Loading shift summary...
+        </div>
+
+        <label style="color:#8b949e; font-size:12px; display:block; margin-bottom:4px; font-weight:bold;">📝 Handover Notes for CEO / Next Shift:</label>
+        <textarea id="handoverNotesInput" rows="3" placeholder="Closing remarks, cash tally, ya kal subah ka koi pending task..." style="width:100%; box-sizing:border-box; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; padding:10px; font-size:12px; resize:vertical; margin-bottom:14px;"></textarea>
+
+        <div style="display:flex; gap:10px;">
+          <button onclick="dispatchShiftHandoverWhatsapp()" style="flex:1; background:#25d366; color:#0d1117; padding:12px; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;">📲 Dispatch Handover to CEO via WhatsApp</button>
+          <button onclick="closeHandoverModal()" style="width:auto; background:#30363d; color:#c9d1d9; padding:12px; border:none; border-radius:6px; font-size:13px; cursor:pointer;">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- DAY-1 ONBOARDING BLUEPRINT MODAL -->
     <div id="onboardingModal" class="modal">
       <div class="modal-content" style="max-width: 600px; text-align: left; padding: 20px;">
@@ -1338,7 +1830,7 @@
         </div>
 
         <div style="background:#161b22; padding:8px 10px; border-radius:6px; border:1px solid #30363d; font-size:11px; color:#8b949e; margin-bottom:12px;">
-          💡 <b>Owner Live Control:</b> Ye samples aap Google Sheet mein Column H, I, J, K mein direct change kar sakte hain.
+          💡 <b>CEO Live Control:</b> Ye samples aap Google Sheet mein Column H, I, J, K mein direct change kar sakte hain.
         </div>
 
         <button onclick="closeBenchmarkModal()" style="background:#30363d; color:#c9d1d9; width:100%; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Close Benchmark</button>
