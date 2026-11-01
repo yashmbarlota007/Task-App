@@ -133,6 +133,10 @@ function doPost(e) {
         result = completeStoreManagerOrder(payload.rowIndex);
         break;
 
+      case "getRoleOnboardingGuide":
+        result = getRoleOnboardingGuide(payload.role);
+        break;
+
       default:
         return ContentService.createTextOutput(JSON.stringify({
           status: "error",
@@ -587,6 +591,181 @@ function getAdhocTasksForStaff(staffName, empId) {
 // 5. STAFF: GET ROUTINE ROLE TASKS (FROM ROLE_TASKS / TASKS SHEET)
 // Column A: Role | Column B: Type | Column C: Task | Column D: SubTask | Column E: Deadline | Column F: SOP | Column G: Video
 // =====================================================================
+
+// =====================================================================
+// PHASE 1: ZERO-TRAINING & DIGITAL TWIN HELPER FUNCTIONS
+// =====================================================================
+function getTimeSlotFromDeadline(deadlineStr) {
+  if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return "morning";
+  var lower = String(deadlineStr).toLowerCase();
+  var match = lower.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+  if (match) {
+    var h = parseInt(match[1], 10);
+    var isPm = (match[3] && match[3].toLowerCase() === 'pm');
+    var isAm = (match[3] && match[3].toLowerCase() === 'am');
+    if (isPm && h < 12) h += 12;
+    if (isAm && h === 12) h = 0;
+    if (h < 11 || (h === 11 && parseInt(match[2] || 0, 10) <= 30)) return "morning";
+    if (h < 14 || (h === 14 && parseInt(match[2] || 0, 10) <= 30)) return "midday";
+    if (h < 17 || (h === 17 && parseInt(match[2] || 0, 10) <= 30)) return "afternoon";
+    return "closing";
+  }
+  return "morning";
+}
+
+function getSmartRoleDefaults(roleName, mainTask, subTask) {
+  var role = String(roleName || "").toLowerCase();
+  var task = String(mainTask || "").toLowerCase() + " " + String(subTask || "").toLowerCase();
+  
+  // Default structure
+  var res = {
+    sop: "",
+    sopSteps: ["1. Open target portal / file", "2. Cross-verify quantities and amounts", "3. Complete entry and capture clear proof"],
+    sopVideo: "",
+    actionLink: "",
+    goodSample: "Clear, high-contrast screenshot or photo showing date, time, party name, and exact amount.",
+    badSample: "Blurry, cropped photo or image missing stamp/narration/amount.",
+    troubleshoot: "Agar portal slow hai ya koi detail miss ho, immediate Supervisor ko alert karein.",
+    checklist: ["Maine figures double-check kar liye hain", "Proof photo clear aur readable hai"]
+  };
+
+  // ACCOUNTANT
+  if (role.indexOf("account") !== -1 || task.indexOf("cash") !== -1 || task.indexOf("tally") !== -1 || task.indexOf("bank") !== -1) {
+    if (task.indexOf("cash") !== -1 || task.indexOf("opening") !== -1) {
+      res.sopSteps = [
+        "1. Physical cash drawer count karein (Denomination count: 500, 200, 100, 50, 20, 10).",
+        "2. Kal ke closing balance aur cash book se match karein.",
+        "3. Cash Register / Portal me physical count enter karke lock karein."
+      ];
+      res.goodSample = "Physical Cash Denomination Sheet with exact total, signature and date.";
+      res.badSample = "Rough paper par bina count breakup ke likha hua amount.";
+      res.troubleshoot = "Agar cash me ₹1 ka bhi difference aaye, toh kal ke last 3 payouts aur receipts check karein.";
+      res.checklist = ["Sabhi denominations physically count kar liye", "Kal ke closing balance se match verify ho gaya"];
+    } else if (task.indexOf("bank") !== -1 || task.indexOf("reconcil") !== -1) {
+      res.sopSteps = [
+        "1. NetBanking portal se aaj ki latest Bank Statement download karein.",
+        "2. Sabhi NEFT/RTGS credits ko unke customer ledger me update karein.",
+        "3. Tally me BRS (Bank Reconciliation) run karein aur Unreconciled amount 0 karein."
+      ];
+      res.goodSample = "Tally BRS screen showing 'Difference in Balance = 0.00' with today's date.";
+      res.badSample = "Statement ka random photo jisme balance match nahi ho raha.";
+      res.troubleshoot = "Agar koi unknown entry ho toh Sales Coordinator se UTR / Cheque number verify karwayein.";
+      res.checklist = ["Bank statement balance aur Tally balance exact match hai", "Sabhi entries par narration aur reference likha hai"];
+    } else if (task.indexOf("bill") !== -1 || task.indexOf("gst") !== -1 || task.indexOf("invoice") !== -1) {
+      res.sopSteps = [
+        "1. Dispatch orders ke against finalized items and rates check karein.",
+        "2. Tax Invoice generate karein aur E-Way bill distance / vehicle number verify karein.",
+        "3. 3 copies print karein (Original for Buyer, Duplicate for Transporter, Triplicate for Office)."
+      ];
+      res.goodSample = "Tax Invoice with correct GST breakup, QR code, and signature stamp.";
+      res.badSample = "Galat rate ya bina HSN/GSTIN ka draft invoice.";
+      res.troubleshoot = "E-Way bill generation me portal down ho toh Part-A punch karein aur transport alert karein.";
+      res.checklist = ["Party GSTIN and address verified", "E-Way bill vehicle number matches dispatch vehicle"];
+    } else {
+      res.sopSteps = [
+        "1. Day total collections aur vouchers check karein.",
+        "2. Pending debit/credit notes verify karein.",
+        "3. Owner ko daily financial summary submit karein."
+      ];
+      res.goodSample = "Complete Day-End Account Summary sheet.";
+      res.badSample = "Incomplete report with unverified pending vouchers.";
+    }
+  }
+  // STORE MANAGER / WAREHOUSE / DISPATCH
+  else if (role.indexOf("store") !== -1 || role.indexOf("dispatch") !== -1 || task.indexOf("order") !== -1 || task.indexOf("stock") !== -1) {
+    if (task.indexOf("inward") !== -1 || task.indexOf("receive") !== -1) {
+      res.sopSteps = [
+        "1. Transporter LR (Lorry Receipt) se box count match karein.",
+        "2. Cartons ki seal aur damage check karein (Driver ke samne).",
+        "3. Inward Goods Register me box count aur batch details enter karein."
+      ];
+      res.goodSample = "Signed LR with company stamp and clear remarks on carton condition.";
+      res.badSample = "Bina box count verify kiye sign ki hui delivery copy.";
+      res.troubleshoot = "Damage ya short box hone par driver se LR par signature zaroor karwayein.";
+      res.checklist = ["Physical box count matches LR", "Damage remarks noted on LR if any"];
+    } else {
+      res.sopSteps = [
+        "1. Picklist ke hisaab se correct brand, item aur batch select karein (FIFO - First In First Out).",
+        "2. Carton ko securely tape karein aur weather-proof packing karein.",
+        "3. Party address label aur invoice copy transparent pouch me paste karein."
+      ];
+      res.goodSample = "Tightly taped box with clear party label, contact number, and invoice pouch.";
+      res.badSample = "Loose packing ya bina customer address label ka carton.";
+      res.troubleshoot = "Agar koi item out-of-stock ho toh dispatch rok kar billing team ko immediate alert dein.";
+      res.checklist = ["Correct item and quantity packed", "Clear shipping label pasted on carton"];
+    }
+  }
+  // SALES / MARKETING
+  else if (role.indexOf("sales") !== -1 || role.indexOf("market") !== -1) {
+    res.sopSteps = [
+      "1. Morning route plan ke hisaab se target dealers ki list open karein.",
+      "2. Dealer shop par visit karke display visibility check karein aur secondary order lein.",
+      "3. Payment cheque collect karein aur Day-End summary submit karein."
+    ];
+    res.goodSample = "Geotagged dealer shop front photo with signed order booking slip.";
+    res.badSample = "Random screenshot without dealer name or location.";
+    res.troubleshoot = "Dealer shop closed ho toh WhatsApp par call karke reason record karein.";
+    res.checklist = ["Geotag photo captured", "Order items and rates confirmed with dealer"];
+  }
+
+  return res;
+}
+
+function getRoleOnboardingGuide(roleName) {
+  var role = String(roleName || "Staff").trim();
+  var roleLower = role.toLowerCase();
+
+  var guide = {
+    role: role,
+    mission: "Zero-error daily operations execute karna aur company ke standards ko 100% follow karna.",
+    goldenRules: [
+      "Day 1 Rule: Koi bhi task 'guess' na karein — agar shaq ho toh SOP steps padhein ya escalate karein.",
+      "Zero Delay: Sabhi deadlines ke 15 minute pehle task complete karne ka target rakhein.",
+      "Authentic Proof: Proof photo humesha clear, readable aur transparent honi chahiye.",
+      "Communication: Agar kisi kaam me obstacle aaye toh wait mat karein, immediate call karein.",
+      "EOD Discipline: Shaam ko logout karne se pehle Daily EOD report Owner ko zaroor bhejein."
+    ],
+    timeline: [
+      { slot: "09:30 - 11:30 AM", title: "Morning Kickoff & Cash/Stock Count", focus: "Opening registers, cash drawer count, morning priority tasks." },
+      { slot: "11:30 - 02:30 PM", title: "Core Operations & Billing / Visits", focus: "Order processing, invoices, vendor billing, market visits." },
+      { slot: "02:30 - 05:30 PM", title: "Dispatches & Reconciliation", focus: "Transport handovers, ledger matching, payments follow-up." },
+      { slot: "05:30 - 07:00 PM", title: "Day-End Closing & Handover", focus: "Safe locking, physical cash tally, WhatsApp EOD submission." }
+    ],
+    workstations: [
+      { name: "Yash Marketing Portal", desc: "Daily Task Management & SOP Co-Pilot", url: "#" },
+      { name: "Google Drive Master Folder", desc: "Proof Archives & Document Templates", url: "#" },
+      { name: "Company ERP / Tally Cloud", desc: "Invoicing, Accounting & Orders", url: "#" }
+    ],
+    escalations: [
+      { trigger: "Critical Cash / Stock Mismatch", action: "Immediate call to Owner / Director before altering any records." },
+      { trigger: "System / Portal Downtime", action: "Inform Technical Support with screenshot within 10 minutes." },
+      { trigger: "Customer / Dealer Escalation", action: "Keep calm, note grievance, and escalate to Operations Head." }
+    ]
+  };
+
+  if (roleLower.indexOf("account") !== -1) {
+    guide.mission = "Aapka maksad Yash Marketing ke sabhi Cash, Bank, Ledger aur GST accounts ko 100% tally aur compliant rakhna hai.";
+    guide.goldenRules = [
+      "Kabhi bhi bina authorized voucher ke ₹1 bhi cash release na karein.",
+      "Har voucher me party name, date, invoice ref aur clear narration likhna anivarya hai.",
+      "Bank balance aur Tally balance me roz 0 discrepancy honi chahiye.",
+      "TDS aur GST compliances ko statutory date se pehle file/reconcile karein.",
+      "Shaam ko cash safe lock karke physical count report submit karein."
+    ];
+  } else if (roleLower.indexOf("store") !== -1 || roleLower.indexOf("dispatch") !== -1) {
+    guide.mission = "Warehouse me zero damage, zero stock leakage aur timely dispatch ensure karna.";
+    guide.goldenRules = [
+      "Humesha FIFO (First In First Out) follow karein taaki purana stock pehle dispatch ho.",
+      "Inward material ka box count aur seal driver ke saamne check karein.",
+      "Bina invoice aur transporter LR ke koi carton factory/godown se bahar nahi jayega.",
+      "Damage stock ko alag red-zone me rakhein aur immediate log karein.",
+      "Warehouse floor clean aur transit pathways humesha clear rakhein."
+    ];
+  }
+
+  return guide;
+}
+
 function getTasksForRole(roleName, staffName) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -639,14 +818,44 @@ function getTasksForRole(roleName, staffName) {
         var key = mainTask + "___" + subTask;
         var status = todayDoneMap[key] || "Pending";
         
+        var timeSlot = String(data[i][7] || "").trim() || getTimeSlotFromDeadline(deadline);
+        var actionLink = String(data[i][8] || "").trim();
+        var goodSample = String(data[i][9] || "").trim();
+        var badSample = String(data[i][10] || "").trim();
+        var troubleshoot = String(data[i][11] || "").trim();
+        var checklistRaw = String(data[i][12] || "").trim();
+
+        var defaults = getSmartRoleDefaults(targetRole, mainTask, subTask);
+        if (!sop && defaults.sop) sop = defaults.sop;
+        if (!sopVideo && defaults.sopVideo) sopVideo = defaults.sopVideo;
+        if (!actionLink && defaults.actionLink) actionLink = defaults.actionLink;
+        if (!goodSample && defaults.goodSample) goodSample = defaults.goodSample;
+        if (!badSample && defaults.badSample) badSample = defaults.badSample;
+        if (!troubleshoot && defaults.troubleshoot) troubleshoot = defaults.troubleshoot;
+        var checklist = checklistRaw ? checklistRaw.split("|") : defaults.checklist;
+
+        var sopSteps = defaults.sopSteps;
+        if (sop && sop.indexOf("\n") !== -1) {
+          sopSteps = sop.split("\n").filter(function(s){ return s.trim().length > 0; });
+        } else if (sop && sop.indexOf("|") !== -1) {
+          sopSteps = sop.split("|").filter(function(s){ return s.trim().length > 0; });
+        }
+
         tasks.push({
           role: data[i][0],
           type: type, // "Daily", "Weekly", "Monthly"
           task: mainTask,
           subTask: subTask,
           deadline: deadline,
+          timeSlot: timeSlot,
           sop: sop,
+          sopSteps: sopSteps,
           sopVideo: sopVideo,
+          actionLink: actionLink,
+          goodSample: goodSample,
+          badSample: badSample,
+          troubleshoot: troubleshoot,
+          checklist: checklist,
           status: status
         });
       }
