@@ -120,10 +120,10 @@ function formatTimeFriendly(val) {
 function getStaffScoresBreakdown(staffName) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var subSheet = ss.getSheetByName("Task_Submissions");
-  var scores = { daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0 };
-  if (!subSheet || subSheet.getLastRow() <= 1) return scores;
+  var role = getStaffRoleByName(staffName);
 
-  var subData = subSheet.getDataRange().getValues();
+  var rawPts = { daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0 };
+  
   var tz = Session.getScriptTimeZone();
   var now = new Date();
   var todayStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
@@ -143,31 +143,82 @@ function getStaffScoresBreakdown(staffName) {
 
   var targetClean = staffName ? staffName.toString().trim().toUpperCase() : "";
 
-  for (var j = 1; j < subData.length; j++) {
-    var rStaff = subData[j][1] ? subData[j][1].toString().trim().toUpperCase() : "";
-    if (targetClean !== "" && rStaff !== targetClean && !rStaff.includes(targetClean) && !targetClean.includes(rStaff)) continue;
+  if (subSheet && subSheet.getLastRow() > 1) {
+    var subData = subSheet.getDataRange().getValues();
+    for (var j = 1; j < subData.length; j++) {
+      var rStaff = subData[j][1] ? subData[j][1].toString().trim().toUpperCase() : "";
+      if (targetClean !== "" && rStaff !== targetClean && !rStaff.includes(targetClean) && !targetClean.includes(rStaff)) continue;
 
-    var pts = parseFloat(subData[j][10]) || 0;
-    if (pts <= 0) continue;
+      var pts = parseFloat(subData[j][10]) || 0;
+      if (pts <= 0) continue;
 
-    var rawDate = subData[j][0];
-    var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-    if (isNaN(subDate.getTime())) continue;
+      var rawDate = subData[j][0];
+      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
+      if (isNaN(subDate.getTime())) continue;
 
-    var subYear = subDate.getFullYear();
-    var subMonth = subDate.getMonth();
-    var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
-    var subQuarter = Math.floor(subMonth / 3);
+      var subYear = subDate.getFullYear();
+      var subMonth = subDate.getMonth();
+      var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
+      var subQuarter = Math.floor(subMonth / 3);
 
-    if (subDateStr === todayStr) scores.daily += pts;
-    if (subDate >= startOfWeek) scores.weekly += pts;
-    if (subYear === currYear && subMonth === currMonth) scores.monthly += pts;
-    if (subYear === lastMonthYear && subMonth === lastMonth) scores.lastMonth += pts;
-    if (subYear === currYear && subQuarter === currQuarter) scores.currentQuarter += pts;
-    if (subYear === lastQuarterYear && subQuarter === lastQuarter) scores.lastQuarter += pts;
-    if (subYear === currYear) scores.yearly += pts;
+      if (subDateStr === todayStr) rawPts.daily += pts;
+      if (subDate >= startOfWeek) rawPts.weekly += pts;
+      if (subYear === currYear && subMonth === currMonth) rawPts.monthly += pts;
+      if (subYear === lastMonthYear && subMonth === lastMonth) rawPts.lastMonth += pts;
+      if (subYear === currYear && subQuarter === currQuarter) rawPts.currentQuarter += pts;
+      if (subYear === lastQuarterYear && subQuarter === lastQuarter) rawPts.lastQuarter += pts;
+      if (subYear === currYear) rawPts.yearly += pts;
+    }
   }
-  return scores;
+
+  // Count routine tasks for realistic target calculation
+  var routineDaily = 0;
+  var routineWeekly = 0;
+  var routineMonthly = 0;
+  try {
+    var rTasks = getTasksForRole(role, staffName);
+    routineDaily = rTasks.filter(function(t) { return t.type === 'Daily'; }).length;
+    routineWeekly = rTasks.filter(function(t) { return t.type === 'Weekly'; }).length;
+    routineMonthly = rTasks.filter(function(t) { return t.type === 'Monthly'; }).length;
+  } catch(e) {}
+
+  if (routineDaily === 0) routineDaily = Math.max(1, Math.ceil(rawPts.daily / 10));
+
+  var dailyMax = Math.max(rawPts.daily, routineDaily * 10, 10);
+  var dailyPct = Math.min(100, Math.round((rawPts.daily / dailyMax) * 100));
+
+  var dayOfWeekNum = (dayOfWeek === 0 ? 7 : dayOfWeek);
+  var weeklyExpected = (routineDaily * dayOfWeekNum) + routineWeekly;
+  var weeklyMax = Math.max(rawPts.weekly, weeklyExpected * 10, 10);
+  var weeklyPct = Math.min(100, Math.round((rawPts.weekly / weeklyMax) * 100));
+
+  var dayOfMonth = now.getDate();
+  var monthlyExpected = (routineDaily * dayOfMonth) + (routineWeekly * Math.ceil(dayOfMonth / 7)) + routineMonthly;
+  var monthlyMax = Math.max(rawPts.monthly, monthlyExpected * 10, 10);
+  var monthlyPct = Math.min(100, Math.round((rawPts.monthly / monthlyMax) * 100));
+
+  var lastMoExpected = (routineDaily * 30) + (routineWeekly * 4) + routineMonthly;
+  var lastMoMax = Math.max(rawPts.lastMonth, lastMoExpected * 10, 10);
+  var lastMoPct = Math.min(100, Math.round((rawPts.lastMonth / lastMoMax) * 100));
+
+  var qtrMax = Math.max(rawPts.currentQuarter, monthlyExpected * 3 * 10, 10);
+  var qtrPct = Math.min(100, Math.round((rawPts.currentQuarter / qtrMax) * 100));
+
+  var lastQtrMax = Math.max(rawPts.lastQuarter, lastMoExpected * 3 * 10, 10);
+  var lastQtrPct = Math.min(100, Math.round((rawPts.lastQuarter / lastQtrMax) * 100));
+
+  var yrMax = Math.max(rawPts.yearly, lastMoExpected * 12 * 10, 10);
+  var yrPct = Math.min(100, Math.round((rawPts.yearly / yrMax) * 100));
+
+  return {
+    daily: { percentage: dailyPct, earned: rawPts.daily, max: dailyMax },
+    weekly: { percentage: weeklyPct, earned: rawPts.weekly, max: weeklyMax },
+    monthly: { percentage: monthlyPct, earned: rawPts.monthly, max: monthlyMax },
+    lastMonth: { percentage: lastMoPct, earned: rawPts.lastMonth, max: lastMoMax },
+    currentQuarter: { percentage: qtrPct, earned: rawPts.currentQuarter, max: qtrMax },
+    lastQuarter: { percentage: lastQtrPct, earned: rawPts.lastQuarter, max: lastQtrMax },
+    yearly: { percentage: yrPct, earned: rawPts.yearly, max: yrMax }
+  };
 }
 
 // 📌 CEO SCOREBOARD FOR ALL STAFF
@@ -244,9 +295,28 @@ function getAllStaffScoreboard() {
 
   var result = [];
   for (var s = 0; s < staffOrder.length; s++) {
-    result.push(staffMap[staffOrder[s]]);
+    var raw = staffMap[staffOrder[s]];
+    var dailyMax = Math.max(raw.daily, 70);
+    var dailyPct = Math.min(100, Math.round((raw.daily / dailyMax) * 100));
+    var weeklyMax = Math.max(raw.weekly, 300);
+    var weeklyPct = Math.min(100, Math.round((raw.weekly / weeklyMax) * 100));
+    var monthlyMax = Math.max(raw.monthly, 1000);
+    var monthlyPct = Math.min(100, Math.round((raw.monthly / monthlyMax) * 100));
+
+    result.push({
+      name: raw.name,
+      role: raw.role,
+      daily: dailyPct + "% (" + raw.daily + "/" + dailyMax + " P)",
+      weekly: weeklyPct + "% (" + raw.weekly + "/" + weeklyMax + " P)",
+      monthly: monthlyPct + "% (" + raw.monthly + "/" + monthlyMax + " P)",
+      rawMonthly: raw.monthly,
+      lastMonth: raw.lastMonth + " P",
+      currentQuarter: raw.currentQuarter + " P",
+      lastQuarter: raw.lastQuarter + " P",
+      yearly: raw.yearly + " P"
+    });
   }
-  result.sort(function(a, b) { return b.monthly - a.monthly; });
+  result.sort(function(a, b) { return b.rawMonthly - a.rawMonthly; });
   return result;
 }
 
@@ -1377,4 +1447,185 @@ function saveShiftHandover(staffName, role, completedCount, totalCount, pendingT
   ]);
 
   return { success: true, timestamp: timeStr };
+}
+
+
+// =====================================================================
+// 📊 POINTS LEDGER & AUDIT BREAKDOWN (ITEMIZED TASK POINTS WITH ON-TIME BONUS)
+// =====================================================================
+function getStaffPointsLedger(staffName, period) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var subSheet = ss.getSheetByName("Task_Submissions");
+  var role = getStaffRoleByName(staffName);
+  var periodClean = (period || 'daily').toLowerCase();
+
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  var todayStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+
+  var dayOfWeek = now.getDay();
+  var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+  var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
+
+  var currYear = now.getFullYear();
+  var currMonth = now.getMonth();
+  var lastMonthYear = currMonth === 0 ? currYear - 1 : currYear;
+  var lastMonth = currMonth === 0 ? 11 : currMonth - 1;
+
+  var currQuarter = Math.floor(currMonth / 3);
+  var lastQuarter = currQuarter === 0 ? 3 : currQuarter - 1;
+  var lastQuarterYear = currQuarter === 0 ? currYear - 1 : currYear;
+
+  var targetClean = staffName ? staffName.toString().trim().toUpperCase() : "";
+
+  // 1. Get Routine tasks for this staff
+  var allRoutineTasks = [];
+  try {
+    allRoutineTasks = getTasksForRole(role, staffName);
+  } catch(e) {}
+
+  var dailyRoutine = allRoutineTasks.filter(function(t) { return t.type === 'Daily'; });
+  var weeklyRoutine = allRoutineTasks.filter(function(t) { return t.type === 'Weekly'; });
+  var monthlyRoutine = allRoutineTasks.filter(function(t) { return t.type === 'Monthly'; });
+
+  // 2. Scan submissions
+  var entries = [];
+  var totalEarned = 0;
+  var completedCount = 0;
+  var onTimeCount = 0;
+  var submittedTitlesMap = {};
+
+  if (subSheet && subSheet.getLastRow() > 1) {
+    var subData = subSheet.getDataRange().getValues();
+
+    for (var j = subData.length - 1; j >= 1; j--) {
+      var rStaff = subData[j][1] ? subData[j][1].toString().trim().toUpperCase() : "";
+      if (targetClean !== "" && rStaff !== targetClean && !rStaff.includes(targetClean) && !targetClean.includes(rStaff)) continue;
+
+      var rawDate = subData[j][0];
+      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
+      if (isNaN(subDate.getTime())) continue;
+
+      var subYear = subDate.getFullYear();
+      var subMonth = subDate.getMonth();
+      var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
+      var subQuarter = Math.floor(subMonth / 3);
+
+      var isMatchPeriod = false;
+      if (periodClean === 'daily' && subDateStr === todayStr) isMatchPeriod = true;
+      else if (periodClean === 'weekly' && subDate >= startOfWeek) isMatchPeriod = true;
+      else if (periodClean === 'monthly' && subYear === currYear && subMonth === currMonth) isMatchPeriod = true;
+      else if (periodClean === 'lastmonth' && subYear === lastMonthYear && subMonth === lastMonth) isMatchPeriod = true;
+      else if (periodClean === 'currentquarter' && subYear === currYear && subQuarter === currQuarter) isMatchPeriod = true;
+      else if (periodClean === 'lastquarter' && subYear === lastQuarterYear && subQuarter === lastQuarter) isMatchPeriod = true;
+      else if (periodClean === 'yearly' && subYear === currYear) isMatchPeriod = true;
+
+      if (!isMatchPeriod) continue;
+
+      var pts = parseFloat(subData[j][10]) || 0;
+      var tName = subData[j][4] ? subData[j][4].toString().trim() : "";
+      var subTName = subData[j][5] ? subData[j][5].toString().trim() : "";
+      var fullTitle = tName + (subTName ? " - " + subTName : "");
+      var deadline = subData[j][6] ? subData[j][6].toString().trim() : "";
+      var submitTime = subData[j][7] ? subData[j][7].toString().trim() : Utilities.formatDate(subDate, tz, "hh:mm a");
+      var status = subData[j][8] ? subData[j][8].toString().trim() : "";
+      var proofLink = subData[j][9] ? subData[j][9].toString().trim() : "";
+
+      var compPts = pts >= 5 ? 5 : 0;
+      var onTimePts = pts === 10 ? 5 : 0;
+      var isOnTime = (pts === 10);
+
+      totalEarned += pts;
+      if (compPts > 0) completedCount++;
+      if (onTimePts > 0) onTimeCount++;
+
+      submittedTitlesMap[fullTitle.toLowerCase()] = true;
+      submittedTitlesMap[tName.toLowerCase()] = true;
+
+      entries.push({
+        task: tName,
+        subTask: subTName,
+        fullTitle: fullTitle,
+        deadline: deadline || "N/A",
+        submitTime: submitTime,
+        dateFormatted: Utilities.formatDate(subDate, tz, "dd MMM, hh:mm a"),
+        completionPoints: compPts,
+        onTimePoints: onTimePts,
+        totalPoints: pts,
+        isOnTime: isOnTime,
+        status: status,
+        proofLink: proofLink,
+        isPending: false
+      });
+    }
+  }
+
+  // 3. If Daily, append any scheduled daily tasks that are still pending
+  if (periodClean === 'daily') {
+    for (var d = 0; d < dailyRoutine.length; d++) {
+      var item = dailyRoutine[d];
+      var checkKey1 = (item.task + (item.subTask ? " - " + item.subTask : "")).toLowerCase();
+      var checkKey2 = item.task.toLowerCase();
+
+      if (!submittedTitlesMap[checkKey1] && !submittedTitlesMap[checkKey2]) {
+        entries.push({
+          task: item.task,
+          subTask: item.subTask,
+          fullTitle: item.task + (item.subTask ? " - " + item.subTask : ""),
+          deadline: item.deadline || "07:00 PM",
+          submitTime: "Pending ⏳",
+          dateFormatted: "Today",
+          completionPoints: 0,
+          onTimePoints: 0,
+          totalPoints: 0,
+          isOnTime: false,
+          status: "Pending ⏳",
+          proofLink: "",
+          isPending: true
+        });
+      }
+    }
+  }
+
+  // 4. Calculate Max Possible Points & Percentage
+  var expectedCount = 0;
+  if (periodClean === 'daily') {
+    expectedCount = Math.max(entries.length, dailyRoutine.length, 1);
+  } else if (periodClean === 'weekly') {
+    var dayOfWeekNum = (dayOfWeek === 0 ? 7 : dayOfWeek);
+    expectedCount = Math.max(entries.length, (dailyRoutine.length * dayOfWeekNum) + weeklyRoutine.length, 1);
+  } else if (periodClean === 'monthly') {
+    var dayOfMonth = now.getDate();
+    expectedCount = Math.max(entries.length, (dailyRoutine.length * dayOfMonth) + (weeklyRoutine.length * Math.ceil(dayOfMonth / 7)) + monthlyRoutine.length, 1);
+  } else {
+    expectedCount = Math.max(entries.length, 1);
+  }
+
+  var maxPossiblePoints = expectedCount * 10;
+  var percentage = maxPossiblePoints > 0 ? Math.min(100, Math.round((totalEarned / maxPossiblePoints) * 100)) : 0;
+
+  var labelMap = {
+    daily: 'Daily (Today)',
+    weekly: 'Weekly (This Week)',
+    monthly: 'Monthly (This Month)',
+    lastmonth: 'Last Month',
+    currentquarter: 'Current Quarter',
+    lastquarter: 'Last Quarter',
+    yearly: 'Yearly'
+  };
+
+  return {
+    success: true,
+    staffName: staffName,
+    role: role,
+    period: periodClean,
+    periodLabel: labelMap[periodClean] || 'Points Ledger',
+    earnedPoints: totalEarned,
+    maxPoints: maxPossiblePoints,
+    percentage: percentage,
+    totalTasks: expectedCount,
+    completedCount: completedCount,
+    onTimeCount: onTimeCount,
+    entries: entries
+  };
 }
