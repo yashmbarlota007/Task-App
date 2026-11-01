@@ -81,6 +81,184 @@
       .freq-tag.weekly { background: #8957e5; color: white; }
       .freq-tag.monthly { background: #da3633; color: white; }
       .freq-tag.extra { background: #d29922; color: #0d1117; }
+    
+      /* ============================================================
+         PHASE 1: ZERO-TRAINING & DAY-1 ONBOARDING STYLES
+         ============================================================ */
+      .onboarding-guide-banner {
+        background: linear-gradient(135deg, #1f6feb 0%, #388bfd 50%, #238636 100%);
+        border: 1px solid #388bfd;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 14px rgba(31, 111, 235, 0.3);
+      }
+      .onboarding-guide-banner:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(31, 111, 235, 0.45);
+      }
+      .onboarding-guide-banner .banner-icon { font-size: 26px; }
+      .onboarding-guide-banner .banner-title { font-weight: bold; font-size: 13px; color: #ffffff; }
+      .onboarding-guide-banner .banner-sub { font-size: 11px; color: #e1e4e8; margin-top: 2px; }
+      .onboarding-guide-banner .banner-badge {
+        background: rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+        padding: 5px 12px;
+        border-radius: 14px;
+        font-size: 11px;
+        font-weight: bold;
+        white-space: nowrap;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+      }
+
+      /* TIMELINE SLOTS RIBBON */
+      .timeline-bar-wrapper {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 15px;
+      }
+      .timeline-bar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #58a6ff;
+      }
+      .timeline-slots {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .timeline-slot-btn {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 6px 10px;
+        color: #8b949e;
+        font-size: 11px;
+        cursor: pointer;
+        white-space: nowrap;
+        text-align: center;
+        transition: 0.2s;
+        flex: 1;
+        min-width: 105px;
+      }
+      .timeline-slot-btn:hover { border-color: #58a6ff; color: #c9d1d9; }
+      .timeline-slot-btn.active {
+        background: #1f6feb;
+        color: #ffffff;
+        border-color: #388bfd;
+        font-weight: bold;
+      }
+      .timeline-slot-btn .slot-time { font-size: 10px; display: block; opacity: 0.85; }
+
+      /* TASK SOP STEPPER ACCORDION */
+      .task-stepper-box {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin: 8px 0;
+      }
+      .stepper-header {
+        font-size: 12px;
+        font-weight: bold;
+        color: #58a6ff;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .stepper-content { margin-top: 8px; display: none; }
+      .stepper-step {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .stepper-step:last-child { margin-bottom: 0; }
+      .stepper-num {
+        background: #1f6feb;
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: bold;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      /* BENCHMARK COMPARISON BOX */
+      .benchmark-box {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: #0d1117;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #30363d;
+        margin: 8px 0;
+      }
+      .benchmark-card {
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 11px;
+      }
+      .benchmark-card.good {
+        background: rgba(46, 160, 67, 0.15);
+        border: 1px solid #2ea043;
+        color: #7ee787;
+      }
+      .benchmark-card.bad {
+        background: rgba(218, 54, 51, 0.15);
+        border: 1px solid #da3633;
+        color: #f85149;
+      }
+      .benchmark-title { font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+
+      /* TROUBLESHOOT FAQ ACCORDION */
+      .troubleshoot-box {
+        background: rgba(210, 153, 34, 0.1);
+        border: 1px solid #d29922;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin: 8px 0;
+        font-size: 12px;
+        color: #e3b341;
+      }
+      .troubleshoot-title { font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; }
+      .troubleshoot-body { font-size: 11px; color: #c9d1d9; margin-top: 6px; line-height: 1.4; display: none; }
+
+      /* PRE-FLIGHT CHECKLIST IN MODAL */
+      .preflight-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #21262d;
+        padding: 8px 10px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        border: 1px solid #30363d;
+      }
+      .preflight-item input[type="checkbox"] { width: auto; margin: 0; }
+  
     </style>
   </head>
   <body>
@@ -947,6 +1125,168 @@
       // COMBINED & NORMALIZED TASK RENDERING
       // Daily, Weekly, Monthly, Assigned Tasks & Orders
       // ==========================================
+      
+      // ============================================================
+      // PHASE 1: JAVASCRIPT FUNCTIONS (ONBOARDING, TIMELINE, BENCHMARKS)
+      // ============================================================
+      var activeTimelineFilter = 'all';
+      var cachedOnboardingGuide = null;
+
+      function filterByTimelineSlot(slot) {
+        activeTimelineFilter = slot;
+        var btns = ['all', 'morning', 'midday', 'afternoon', 'closing'];
+        btns.forEach(function(b) {
+          var el = document.getElementById('slotBtn-' + b);
+          if (el) {
+            if (b === slot) el.classList.add('active');
+            else el.classList.remove('active');
+          }
+        });
+        renderStaffContent();
+      }
+
+      function openRoleOnboardingModal() {
+        var role = (loggedInUser && loggedInUser.role) ? loggedInUser.role : "Staff";
+        document.getElementById('onboardModalRoleTitle').innerText = "🚀 " + role + " - Day-1 Operating System";
+        document.getElementById('onboardingModal').style.display = 'block';
+
+        if (cachedOnboardingGuide && cachedOnboardingGuide.role.toLowerCase() === role.toLowerCase()) {
+          renderOnboardTabContent('mission');
+        } else {
+          document.getElementById('onboardContentArea').innerHTML = "<div style='text-align:center; padding:20px; color:#8b949e;'>Loading Role SOP Guide...</div>";
+          
+          if (isVercelMode()) {
+            callGasApi("getRoleOnboardingGuide", { role: role }, function(res) {
+              cachedOnboardingGuide = res;
+              renderOnboardTabContent('mission');
+            });
+          } else {
+            google.script.run.withSuccessHandler(function(res) {
+              cachedOnboardingGuide = res;
+              renderOnboardTabContent('mission');
+            }).getRoleOnboardingGuide(role);
+          }
+        }
+      }
+
+      function closeRoleOnboardingModal() {
+        document.getElementById('onboardingModal').style.display = 'none';
+      }
+
+      function switchOnboardTab(tabName) {
+        var tabs = ['mission', 'routine', 'tools', 'escalate', 'rules'];
+        tabs.forEach(function(t) {
+          var el = document.getElementById('onboardTab-' + t);
+          if (el) {
+            if (t === tabName) el.classList.add('active');
+            else el.classList.remove('active');
+          }
+        });
+        renderOnboardTabContent(tabName);
+      }
+
+      function renderOnboardTabContent(tabName) {
+        var g = cachedOnboardingGuide;
+        if (!g) return;
+        var area = document.getElementById('onboardContentArea');
+        var h = "";
+
+        if (tabName === 'mission') {
+          h += "<div style='background:#0d1117; padding:14px; border-radius:8px; border:1px solid #30363d;'>";
+          h += "<h4 style='color:#58a6ff; margin:0 0 8px 0;'>🎯 Role Core Mission</h4>";
+          h += "<p style='font-size:13px; line-height:1.5; color:#c9d1d9; margin:0;'>" + (g.mission || "") + "</p>";
+          h += "</div>";
+          h += "<div style='margin-top:12px; background:#161b22; padding:12px; border-radius:8px; border:1px solid #30363d;'>";
+          h += "<h4 style='color:#ffd33d; margin:0 0 6px 0; font-size:12px;'>🏆 Day-1 Expectations</h4>";
+          h += "<ul style='margin:0; padding-left:18px; font-size:12px; color:#8b949e; line-height:1.6;'>";
+          h += "<li>Apne assigned routine tasks ko deadline se pehle submit karein.</li>";
+          h += "<li>Har submission me authentic photo ya proof attach karein.</li>";
+          h += "<li>Kisi bhi doubt me 'Atak Gaye?' troubleshoot button check karein.</li>";
+          h += "</ul></div>";
+        }
+        else if (tabName === 'routine') {
+          h += "<div style='display:flex; flex-direction:column; gap:8px;'>";
+          var timeline = g.timeline || [];
+          for (var i = 0; i < timeline.length; i++) {
+            var item = timeline[i];
+            h += "<div style='background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px;'>";
+            h += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
+            h += "<span style='font-weight:bold; font-size:13px; color:#58a6ff;'>" + item.title + "</span>";
+            h += "<span style='font-size:11px; background:#1f6feb; color:white; padding:2px 8px; border-radius:10px;'>" + item.slot + "</span>";
+            h += "</div>";
+            h += "<p style='font-size:11px; color:#8b949e; margin:6px 0 0 0; line-height:1.4;'>" + item.focus + "</p>";
+            h += "</div>";
+          }
+          h += "</div>";
+        }
+        else if (tabName === 'tools') {
+          h += "<div style='display:flex; flex-direction:column; gap:8px;'>";
+          var tools = g.workstations || [];
+          for (var j = 0; j < tools.length; j++) {
+            var tool = tools[j];
+            h += "<div style='background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;'>";
+            h += "<div><div style='font-weight:bold; font-size:13px; color:#2ea043;'>" + tool.name + "</div>";
+            h += "<div style='font-size:11px; color:#8b949e; margin-top:2px;'>" + tool.desc + "</div></div>";
+            if (tool.url && tool.url !== "#") {
+              h += "<a href='" + tool.url + "' target='_blank' style='background:#238636; color:white; padding:6px 12px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;'>Open 🔗</a>";
+            }
+            h += "</div>";
+          }
+          h += "</div>";
+        }
+        else if (tabName === 'escalate') {
+          h += "<div style='display:flex; flex-direction:column; gap:8px;'>";
+          var escalations = g.escalations || [];
+          for (var k = 0; k < escalations.length; k++) {
+            var esc = escalations[k];
+            h += "<div style='background:#0d1117; border-left:4px solid #da3633; border-top:1px solid #30363d; border-right:1px solid #30363d; border-bottom:1px solid #30363d; border-radius:8px; padding:10px;'>";
+            h += "<div style='font-weight:bold; font-size:12px; color:#f85149;'>🚨 " + esc.trigger + "</div>";
+            h += "<div style='font-size:11px; color:#c9d1d9; margin-top:4px;'>Action: " + esc.action + "</div>";
+            h += "</div>";
+          }
+          h += "</div>";
+        }
+        else if (tabName === 'rules') {
+          h += "<div style='background:#0d1117; border:1px solid #ffd33d; border-radius:8px; padding:12px;'>";
+          h += "<h4 style='color:#ffd33d; margin:0 0 10px 0;'>⭐ 5 Non-Negotiable Golden Rules</h4>";
+          var rules = g.goldenRules || [];
+          for (var r = 0; r < rules.length; r++) {
+            h += "<div style='display:flex; gap:8px; margin-bottom:8px; font-size:12px; line-height:1.4;'>";
+            h += "<span style='color:#ffd33d; font-weight:bold;'>" + (r + 1) + ".</span>";
+            h += "<span style='color:#c9d1d9;'>" + rules[r] + "</span>";
+            h += "</div>";
+          }
+          h += "</div>";
+        }
+
+        area.innerHTML = h;
+      }
+
+      function openBenchmarkModal(goodSampleText, badSampleText) {
+        var g = decodeURIComponent(goodSampleText || "");
+        var b = decodeURIComponent(badSampleText || "");
+        var h = "<div class='benchmark-box'>";
+        h += "<div class='benchmark-card good'><div class='benchmark-title'>✅ Valid Proof Benchmark</div><div>" + g + "</div></div>";
+        h += "<div class='benchmark-card bad'><div class='benchmark-title'>❌ Rejected Sample</div><div>" + b + "</div></div>";
+        h += "</div>";
+        document.getElementById('benchmarkModalContent').innerHTML = h;
+        document.getElementById('benchmarkModal').style.display = 'block';
+      }
+
+      function closeBenchmarkModal() {
+        document.getElementById('benchmarkModal').style.display = 'none';
+      }
+
+      function toggleStepper(id) {
+        var el = document.getElementById('stepperContent-' + id);
+        if (el) el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+      }
+
+      function toggleTroubleshoot(id) {
+        var el = document.getElementById('troubleshootContent-' + id);
+        if (el) el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+      }
+  
       function renderStaffContent() {
         var isOwner = (loggedInUser && loggedInUser.role && (loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin"));
         
@@ -1106,6 +1446,14 @@
           for (var mainTask in groupedTasks) {
             var group = groupedTasks[mainTask];
             var firstTask = group[0].data;
+
+            // Apply Timeline Slot Filter
+            if (activeTimelineFilter !== 'all') {
+              var tSlot = (firstTask.timeSlot || 'morning').toLowerCase();
+              if (tSlot !== activeTimelineFilter) continue;
+            }
+
+            var slotLabel = firstTask.timeSlot ? firstTask.timeSlot.toUpperCase() : "ROUTINE";
             html += "<div class='task-card'>";
             html += "<h3 style='margin:0 0 5px 0; font-size:17px; color:#58a6ff;'>📌 " + mainTask + "</h3>";
             
@@ -1201,6 +1549,13 @@
       }
 
       function openStandardProofModal(index) {
+        setTimeout(function(){
+          var c1 = document.getElementById('chkPreflightData');
+          var c2 = document.getElementById('chkPreflightProof');
+          if (c1) c1.checked = false;
+          if (c2) c2.checked = false;
+          validatePreflightChecks();
+        }, 50);
         selectedTaskObj = roleTasks[index];
         selectedTaskObj.isAdhoc = false;
         document.getElementById("modalHeading").innerText = "📸 Capture Proof";
@@ -1385,5 +1740,49 @@
         <div id="apiTestStatus" style="font-size:12px; margin-top:12px; text-align:center;"></div>
       </div>
     </div>
+  
+    <!-- DAY-1 ROLE ONBOARDING & DIGITAL TWIN MODAL -->
+    <div id="onboardingModal" class="modal">
+      <div class="modal-content" style="max-width: 580px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #30363d; padding-bottom:8px;">
+          <div>
+            <h3 style="margin:0; color:#58a6ff; font-size:17px;" id="onboardModalRoleTitle">🚀 Role Digital Twin & Day-1 Guide</h3>
+            <span style="font-size:11px; color:#8b949e;">Yash Marketing Standard Operating Procedure (SOP)</span>
+          </div>
+          <span onclick="closeRoleOnboardingModal()" style="cursor:pointer; color:#8b949e; font-size:24px; font-weight:bold;">&times;</span>
+        </div>
+
+        <!-- 5 Tabs: Mission, Routine, Workstations, Escalation, Golden Rules -->
+        <div class="tabs" style="font-size:11px; margin-bottom:12px; gap:2px;">
+          <div class="tab active" id="onboardTab-mission" onclick="switchOnboardTab('mission')">🎯 Mission</div>
+          <div class="tab" id="onboardTab-routine" onclick="switchOnboardTab('routine')">⏰ Timeline</div>
+          <div class="tab" id="onboardTab-tools" onclick="switchOnboardTab('tools')">🛠️ Tools</div>
+          <div class="tab" id="onboardTab-escalate" onclick="switchOnboardTab('escalate')">🚨 Escalations</div>
+          <div class="tab" id="onboardTab-rules" onclick="switchOnboardTab('rules')">⭐ 5 Rules</div>
+        </div>
+
+        <div id="onboardContentArea" style="min-height: 200px;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <button type="button" class="btn-info" onclick="closeRoleOnboardingModal()" style="margin-top:15px; width:100%; padding:10px;">Got It! Main Kaam Shuru Karta Hoon ✅</button>
+      </div>
+    </div>
+
+    <!-- BENCHMARK SAMPLE MODAL -->
+    <div id="benchmarkModal" class="modal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="margin:0; color:#ffd33d; font-size:16px;">🔍 Quality Benchmark: Good vs Bad Proof</h3>
+          <span onclick="closeBenchmarkModal()" style="cursor:pointer; color:#8b949e; font-size:24px; font-weight:bold;">&times;</span>
+        </div>
+        <p style="font-size:12px; color:#8b949e; margin-bottom:12px;">Naye staff ke liye standard guidelines — aapki submission aisi dikhni chahiye:</p>
+        <div id="benchmarkModalContent">
+          <!-- Dynamically populated -->
+        </div>
+        <button type="button" class="btn-complete" onclick="closeBenchmarkModal()" style="margin-top:14px; width:100%; padding:10px;">Understood! Close Preview</button>
+      </div>
+    </div>
+  
   </body>
 </html>
