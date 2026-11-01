@@ -6,7 +6,7 @@
     <style>
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 15px; }
       .container { max-width: 650px; margin: auto; background: #161b22; padding: 20px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #30363d; }
-      h2, h3, h4 { color: #58a6ff; margin-top: 0; }
+      h2, h3, h4 { color: #58a6ff; margin-top:0; }
       input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #30363d; border-radius: 8px; box-sizing: border-box; background: #0d1117; color: #c9d1d9; font-size: 14px; font-family: inherit;}
       input[type="time"], input[type="datetime-local"] { color-scheme: dark; cursor: pointer; }
       button { background: #238636; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
@@ -16,13 +16,13 @@
       .card { background: #21262d; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #30363d; }
       .profile-header { background: linear-gradient(135deg, #1f6feb, #238636); padding: 15px; border-radius: 10px; color: white; margin-bottom: 15px; }
       
-      .tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 13px; cursor: pointer; overflow-x: auto; white-space: nowrap; gap: 4px; }
-      .tab { padding: 6px 10px; border-radius: 6px; color: #8b949e; position: relative; }
+      .tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 13px; cursor: pointer; overflow-x: auto; white-space: nowrap; }
+      .tab { padding: 6px 10px; border-radius: 6px; color: #8b949e; margin-right: 5px; position: relative; }
       .tab.active { background: #30363d; color: #58a6ff; }
       
-      .admin-tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 12px; cursor: pointer; overflow-x: auto; gap: 4px; }
-      .admin-tab { padding: 8px 6px; border-radius: 6px; color: #8b949e; flex: 1; text-align: center; white-space: nowrap; }
-      .admin-tab.active { background: #58a6ff; color: #0d1117; font-weight: bold; }
+      .admin-tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 8px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 12px; cursor: pointer; overflow-x: auto; white-space: nowrap; }
+      .admin-tab { padding: 8px 10px; border-radius: 6px; color: #8b949e; text-align: center; margin: 0 2px;}
+      .admin-tab.active { background: #58a6ff; color: #0d1117; }
       
       .task-card { background: #161b22; border-left: 5px solid #58a6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-top: 1px solid #30363d; border-right: 1px solid #30363d; border-bottom: 1px solid #30363d; }
       .task-card.order { border-left-color: #2ea043; background: #1a231d; transition: 0.3s; }
@@ -38,49 +38,29 @@
       .btn-capture { background: #58a6ff; color: #0d1117; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; font-weight: bold; cursor: pointer; width: auto !important; margin: 0 !important; }
       .btn-skip { background: #484f58; color: #c9d1d9; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; cursor: pointer; width: auto !important; margin: 0 !important; }
 
-      .status-text { font-size: 12px; font-weight: bold; text-align: right; margin-top: 5px; }
+      .status-text { font-size: 12px; font-weight: bold; text-align: right; margin-top:5px; }
       
-      .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px 0;}
-      .modal-content { background: #161b22; margin: auto; padding: 20px; border: 1px solid #30363d; width: 90%; max-width: 440px; border-radius: 10px; text-align: left; box-sizing: border-box; }
-      #photoPreview { border: 2px solid #238636; margin-top: 10px; margin-bottom: 15px; width: 100%; max-height: 250px; border-radius: 8px;}
-      .hidden { display: none; }
+      .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px 0;}
+      .modal-content { background: #161b22; margin: auto; padding: 20px; border: 1px solid #30363d; width: 90%; max-width: 420px; border-radius: 12px; text-align: left; }
+      #photoPreview { border: 2px solid #238636; margin-top: 10px; margin-bottom: 15px; width: 100%; max-height: 250px; border-radius:8px;}
+      .hidden { display: none !important; }
       
-      #notificationBanner { display: none; background: #2ea043; color: white; text-align: center; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; cursor: pointer; animation: blinker 1.5s linear infinite; box-shadow: 0px 4px 15px rgba(46, 160, 67, 0.4); }
-      @keyframes blinker { 50% { opacity: 0.7; } }
-      
-      .custom-file-upload { display: block; background: #58a6ff; color: #0d1117; padding: 15px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; margin: 20px 0; }
+      /* 🏆 SCORECARD GRIDS */
+      .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; margin-bottom: 15px; }
+      .score-box { background: #1f242c; padding: 10px 6px; border-radius: 8px; border: 1px solid #30363d; text-align: center; }
+      .score-box.highlight { border-color: #ffd33d; background: #262c36; }
+      .score-lbl { font-size: 10px; color: #8b949e; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
+      .score-val { font-size: 16px; font-weight: bold; color: #ffd33d; }
 
-      /* --- 7-PERIOD SCORE ENGINE STYLES --- */
-      .score-pill-container { display: flex; gap: 4px; overflow-x: auto; padding: 4px 0 8px 0; margin-bottom: 10px; scrollbar-width: none; }
-      .score-pill-container::-webkit-scrollbar { display: none; }
-      .score-pill { padding: 5px 10px; font-size: 11px; font-weight: bold; border-radius: 20px; background: #0d1117; color: #8b949e; border: 1px solid #30363d; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-      .score-pill.active { background: #ffd33d; color: #0d1117; border-color: #ffd33d; }
+      .ref-photo-thumb { display: inline-block; margin-right: 6px; margin-bottom: 6px; }
+      .ref-photo-thumb img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #58a6ff; cursor: pointer; }
       
-      .score-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-      .score-metric-box { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 8px 4px; text-align: center; }
-      .score-metric-box .val { font-size: 16px; font-weight: 700; color: #c9d1d9; }
-      .score-metric-box .lbl { font-size: 9px; text-transform: uppercase; color: #8b949e; letter-spacing: 0.5px; margin-top: 2px; }
-
-      /* --- MULTIPLE PHOTO UPLOADER & THUMBNAILS --- */
-      .photo-preview-item { position: relative; width: 68px; height: 68px; border-radius: 6px; border: 1px solid #30363d; overflow: hidden; background: #000; display: inline-block; }
-      .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-      .photo-preview-remove { position: absolute; top: 2px; right: 2px; background: rgba(218, 54, 51, 0.9); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
-      
-      .gallery-container { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-      .gallery-thumb { width: 48px; height: 48px; border-radius: 6px; border: 1px solid #30363d; object-fit: cover; cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
-      .gallery-thumb:hover { transform: scale(1.08); border-color: #58a6ff; }
-      
-      /* --- ADMIN SCORECARD TABLE --- */
-      .scorecard-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-      .scorecard-table th { background: #0d1117; color: #58a6ff; text-align: left; padding: 8px 6px; border-bottom: 2px solid #30363d; }
-      .scorecard-table td { padding: 8px 6px; border-bottom: 1px solid #21262d; color: #c9d1d9; }
-      .scorecard-table tr:hover td { background: #161b22; }
-
-      .freq-tag { display: inline-block; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
-      .freq-tag.daily { background: #1f6feb; color: white; }
-      .freq-tag.weekly { background: #8957e5; color: white; }
-      .freq-tag.monthly { background: #da3633; color: white; }
-      .freq-tag.extra { background: #d29922; color: #0d1117; }
+      /* Leaderboard Table */
+      .scoreboard-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; margin-top: 10px; }
+      .scoreboard-table th { background: #0d1117; color: #58a6ff; padding: 8px 6px; border: 1px solid #30363d; position: sticky; top: 0; }
+      .scoreboard-table td { padding: 8px 6px; border: 1px solid #30363d; }
+      .scoreboard-table tr:nth-child(even) { background: #1a1e24; }
+      .scoreboard-table tr:hover { background: #21262d; }
     
       /* ============================================================
          PHASE 1: ZERO-TRAINING & DAY-1 ONBOARDING STYLES
@@ -89,8 +69,8 @@
         background: linear-gradient(135deg, #1f6feb 0%, #388bfd 50%, #238636 100%);
         border: 1px solid #388bfd;
         border-radius: 10px;
-        padding: 12px 16px;
-        margin-bottom: 14px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -102,13 +82,13 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(31, 111, 235, 0.45);
       }
-      .onboarding-guide-banner .banner-icon { font-size: 26px; }
+      .onboarding-guide-banner .banner-icon { font-size: 24px; }
       .onboarding-guide-banner .banner-title { font-weight: bold; font-size: 13px; color: #ffffff; }
       .onboarding-guide-banner .banner-sub { font-size: 11px; color: #e1e4e8; margin-top: 2px; }
       .onboarding-guide-banner .banner-badge {
         background: rgba(255, 255, 255, 0.25);
         color: #ffffff;
-        padding: 5px 12px;
+        padding: 5px 10px;
         border-radius: 14px;
         font-size: 11px;
         font-weight: bold;
@@ -122,14 +102,14 @@
         border: 1px solid #30363d;
         border-radius: 10px;
         padding: 10px 12px;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
       }
       .timeline-bar-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 8px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         color: #58a6ff;
       }
@@ -138,7 +118,9 @@
         gap: 6px;
         overflow-x: auto;
         padding-bottom: 4px;
+        scrollbar-width: none;
       }
+      .timeline-slots::-webkit-scrollbar { display: none; }
       .timeline-slot-btn {
         background: #0d1117;
         border: 1px solid #30363d;
@@ -151,7 +133,7 @@
         text-align: center;
         transition: 0.2s;
         flex: 1;
-        min-width: 105px;
+        min-width: 95px;
       }
       .timeline-slot-btn:hover { border-color: #58a6ff; color: #c9d1d9; }
       .timeline-slot-btn.active {
@@ -160,14 +142,14 @@
         border-color: #388bfd;
         font-weight: bold;
       }
-      .timeline-slot-btn .slot-time { font-size: 10px; display: block; opacity: 0.85; }
+      .timeline-slot-btn .slot-time { font-size: 9px; display: block; opacity: 0.85; margin-top: 1px; }
 
       /* TASK SOP STEPPER ACCORDION */
       .task-stepper-box {
         background: #0d1117;
         border: 1px solid #30363d;
         border-radius: 8px;
-        padding: 10px 12px;
+        padding: 8px 10px;
         margin: 8px 0;
       }
       .stepper-header {
@@ -182,9 +164,9 @@
       .stepper-content { margin-top: 8px; display: none; }
       .stepper-step {
         display: flex;
-        gap: 10px;
-        margin-bottom: 8px;
-        font-size: 12px;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-size: 11px;
         line-height: 1.4;
       }
       .stepper-step:last-child { margin-bottom: 0; }
@@ -192,12 +174,12 @@
         background: #1f6feb;
         color: white;
         border-radius: 50%;
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: bold;
         flex-shrink: 0;
         margin-top: 1px;
@@ -229,20 +211,20 @@
         border: 1px solid #da3633;
         color: #f85149;
       }
-      .benchmark-title { font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+      .benchmark-title { font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; font-size: 11px; }
 
       /* TROUBLESHOOT FAQ ACCORDION */
       .troubleshoot-box {
         background: rgba(210, 153, 34, 0.1);
         border: 1px solid #d29922;
         border-radius: 8px;
-        padding: 8px 12px;
-        margin: 8px 0;
-        font-size: 12px;
+        padding: 6px 10px;
+        margin: 6px 0;
+        font-size: 11px;
         color: #e3b341;
       }
       .troubleshoot-title { font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; }
-      .troubleshoot-body { font-size: 11px; color: #c9d1d9; margin-top: 6px; line-height: 1.4; display: none; }
+      .troubleshoot-body { font-size: 11px; color: #c9d1d9; margin-top: 5px; line-height: 1.4; display: none; }
 
       /* PRE-FLIGHT CHECKLIST IN MODAL */
       .preflight-item {
@@ -256,28 +238,25 @@
         font-size: 12px;
         cursor: pointer;
         border: 1px solid #30363d;
+        text-align: left;
       }
       .preflight-item input[type="checkbox"] { width: auto; margin: 0; }
-  
     </style>
+
   </head>
   <body>
     <? var portalEmpId = typeof empId !== 'undefined' ? empId : ''; ?>
     
     <div class="container">
-      <!-- LOGIN SCREEN -->
       <div id="loginScreen" class="card" style="text-align: center; padding: 30px;">
-        <h2>🔒 Secure System Login</h2>
+        <h2>🔐 Secure System Login</h2>
         <input type="text" id="empId" placeholder="Employee ID">
         <input type="password" id="empPass" placeholder="Password">
         <button onclick="loginUser()">Login Karein</button>
         <p id="loginMsg" style="color: #f85149; font-weight: bold;"></p>
-        <div style="margin-top: 15px; border-top: 1px solid #30363d; padding-top: 12px;">
-          <a href="javascript:void(0)" onclick="openApiSettingsModal()" style="color: #58a6ff; font-size: 12px; text-decoration: none;">âš™ï¸ Backend API Settings</a>
-        </div>
       </div>
 
-      <!-- ADMIN / OWNER PORTAL -->
+      <!-- ADMIN PORTAL -->
       <div id="adminPortal" class="hidden">
         <div class="profile-header">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -288,22 +267,22 @@
 
         <div class="admin-tabs">
           <div class="admin-tab active" id="tabBtnAssign" onclick="switchAdminTab('Assign')">➕ Assign Task</div>
-          <div class="admin-tab" id="tabBtnScorecard" onclick="switchAdminTab('Scorecard')">📊 Staff Scores</div>
-          <div class="admin-tab" id="tabBtnProgress" onclick="switchAdminTab('Progress')">📈 Staff Progress</div>
+          <div class="admin-tab" id="tabBtnScoreboard" onclick="switchAdminTab('Scoreboard')">🏆 Scoreboard</div>
+          <div class="admin-tab" id="tabBtnProgress" onclick="switchAdminTab('Progress')">📊 Staff Progress</div>
           <div class="admin-tab" id="tabBtnHistory" onclick="switchAdminTab('History')">📜 Task History</div>
         </div>
 
-        <!-- 1. ASSIGN TASK TAB (MULTIPLE PHOTOS) -->
+        <!-- 1. ASSIGN TASK TAB -->
         <div id="adminTabAssign" class="card">
           <label style="color:#8b949e; font-size:13px;">Team ya Staff ko Task dein:</label>
           <select id="adminStaffSelect"><option>Loading...</option></select>
           
           <label style="color:#8b949e; font-size:12px; margin-top:10px; display:block;">Task Frequency:</label>
           <select id="adminTaskFrequency">
-            <option value="Extra (One Time)">Extra Task (One Time) ⚡</option>
-            <option value="Daily Task">Daily Task 📅</option>
-            <option value="Weekly Task">Weekly Task 📆</option>
-            <option value="Monthly Task">Monthly Task 🗓️</option>
+            <option value="Extra (One Time)">⚡ Extra Task (One Time)</option>
+            <option value="Daily Task">📅 Daily Task (Roz ka)</option>
+            <option value="Weekly Task">📆 Weekly Task (Hafte ka)</option>
+            <option value="Monthly Task">🗓️ Monthly Task (Mahine ka)</option>
           </select>
 
           <input type="text" id="adminAdhocTask" placeholder="Naya kaam (Task Description)...">
@@ -311,35 +290,21 @@
           <label style="color:#8b949e; font-size:12px; margin-top:5px; display:block;">Deadline (Date & Time Chunein):</label>
           <input type="datetime-local" id="adminAdhocDeadline">
 
-          <!-- MULTIPLE PHOTO UPLOADER -->
-          <label style="color:#8b949e; font-size:12px; margin-top:10px; display:block;">Reference Photos (Multiple Select Karein):</label>
-          <input type="file" id="adminTaskPhotoFile" accept="image/*" multiple onchange="handleAdminPhotoSelect(event)" style="background:#0d1117; padding:8px; border:1px solid #30363d; border-radius:6px; margin-top:5px; width:100%; box-sizing:border-box;">
-          
-          <div id="adminPhotoPreviews" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+          <label style="color:#8b949e; font-size:12px; margin-top:10px; display:block;">Reference Photos (Multiple Select kar sakte hain 📷):</label>
+          <input type="file" id="adminTaskPhotoFile" accept="image/*" multiple style="background:#0d1117; padding:8px; border:1px solid #30363d; border-radius:6px; margin-top:5px; width:100%; box-sizing:border-box;">
 
           <button onclick="sendAdhocTask()" class="btn-info" style="margin-top:15px;" id="btnAssignAdhoc">Assign Task 🚀</button>
           <p id="adminMsg" style="color: #2ea043; font-weight: bold; text-align:center;"></p>
         </div>
 
-        <!-- 2. OWNER SCORECARD OVERVIEW TAB (7 TIMEFRAMES) -->
-        <div id="adminTabScorecard" class="card hidden">
+        <!-- 2. OWNER ALL-STAFF SCOREBOARD TAB -->
+        <div id="adminTabScoreboard" class="card hidden">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h3 style="margin:0; font-size:16px; color:#ffd33d;">🏆 Staff Performance Leaderboard</h3>
-            <button onclick="loadAdminScorecard()" style="width:auto; padding:4px 8px; font-size:11px; background:#30363d;">🔄 Refresh</button>
+            <h3 style="margin:0; font-size:16px;">🏆 All Staff Performance Scoreboard</h3>
+            <button onclick="loadAdminScoreboard()" style="width:auto; padding:5px 10px; font-size:11px; background:#30363d; margin:0;">🔄 Refresh</button>
           </div>
-
-          <div class="score-pill-container" id="adminScorePillBar">
-            <div class="score-pill active" onclick="switchAdminScorePeriod('daily', this)">Daily (Today)</div>
-            <div class="score-pill" onclick="switchAdminScorePeriod('weekly', this)">This Week</div>
-            <div class="score-pill" onclick="switchAdminScorePeriod('monthly', this)">This Month</div>
-            <div class="score-pill" onclick="switchAdminScorePeriod('lastMonth', this)">Last Month</div>
-            <div class="score-pill" onclick="switchAdminScorePeriod('currentQuarter', this)">Curr Quarter</div>
-            <div class="score-pill" onclick="switchAdminScorePeriod('lastQuarter', this)">Last Quarter</div>
-            <div class="score-pill" onclick="switchAdminScorePeriod('yearly', this)">Yearly</div>
-          </div>
-
-          <div id="adminScorecardContent" style="overflow-x:auto;">
-            <p style="text-align:center; color:#8b949e;">Scorecard load ho raha hai...</p>
+          <div style="overflow-x:auto;">
+            <div id="adminScoreboardContent"></div>
           </div>
         </div>
 
@@ -367,55 +332,64 @@
           <p id="staffRoleDisplay" style="margin: 5px 0 0 0; font-size: 13px; color: #ffd33d;">🏆 Role: Staff</p>
         </div>
 
-        <!-- 7-PERIOD COMPREHENSIVE PERFORMANCE CARD (STAFF VIEW) -->
-        <div class="card" style="border-color:#ffd33d; background:#1c2128; padding:12px; margin-bottom:15px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size:12px; font-weight:bold; color:#ffd33d;" id="staffScoreTimeframeTitle">🎯 Performance Score (Today)</span>
-            <span id="lblRewardPoints" style="color:#ffd33d; font-size:20px; font-weight:700;">0 Pts</span>
+        <!-- 🚀 DAY-1 ROLE ONBOARDING & SOP BLUEPRINT BANNER -->
+        <div class="onboarding-guide-banner" onclick="openRoleOnboardingModal()">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="banner-icon">🚀</span>
+            <div>
+              <div class="banner-title" id="onboardBannerTitle">Day-1 Role Blueprint: Staff</div>
+              <div class="banner-sub">Tap here to view Shift Timeline, Quality Rules & Step-by-Step SOP</div>
+            </div>
           </div>
+          <span class="banner-badge">Open Guide 📖</span>
+        </div>
 
-          <!-- 7 Timeframe Switcher Pills -->
-          <div class="score-pill-container" id="staffScorePillBar">
-            <div class="score-pill active" onclick="switchStaffScorePeriod('daily', 'Today (Daily)', this)">Daily</div>
-            <div class="score-pill" onclick="switchStaffScorePeriod('weekly', 'This Week', this)">Weekly</div>
-            <div class="score-pill" onclick="switchStaffScorePeriod('monthly', 'This Month', this)">Monthly</div>
-            <div class="score-pill" onclick="switchStaffScorePeriod('lastMonth', 'Last Month', this)">Last Mth</div>
-            <div class="score-pill" onclick="switchStaffScorePeriod('currentQuarter', 'Current Quarter', this)">Curr Qtr</div>
-            <div class="score-pill" onclick="switchStaffScorePeriod('lastQuarter', 'Last Quarter', this)">Last Qtr</div>
-            <div class="score-pill" onclick="switchStaffScorePeriod('yearly', 'Current Year', this)">Yearly</div>
+        <!-- 🏆 STAFF 7-PERIOD SCORECARD -->
+        <div class="score-grid" id="staffScoreGrid">
+          <div class="score-box"><div class="score-lbl">Daily</div><div class="score-val" id="scDaily">0</div></div>
+          <div class="score-box"><div class="score-lbl">Weekly</div><div class="score-val" id="scWeekly">0</div></div>
+          <div class="score-box highlight"><div class="score-lbl">Monthly</div><div class="score-val" id="scMonthly">0</div></div>
+          <div class="score-box"><div class="score-lbl">Last Mo.</div><div class="score-val" id="scLastMonth">0</div></div>
+          <div class="score-box"><div class="score-lbl">Curr. Qtr</div><div class="score-val" id="scCurrQtr">0</div></div>
+          <div class="score-box"><div class="score-lbl">Last Qtr</div><div class="score-val" id="scLastQtr">0</div></div>
+          <div class="score-box highlight"><div class="score-lbl">Yearly</div><div class="score-val" id="scYearly">0</div></div>
+        </div>
+
+        <!-- 🕒 VISUAL HOUR-BY-HOUR SHIFT TIMELINE RIBBON -->
+        <div class="timeline-bar-wrapper">
+          <div class="timeline-bar-header">
+            <span>🕒 Shift Timeline Filter</span>
+            <span style="font-size:10px; color:#8b949e; font-weight:normal;">Filter tasks by current shift hour</span>
           </div>
-
-          <!-- Metrics Row: Assigned | Completed | Delayed | Percentage -->
-          <div class="score-metrics-grid">
-            <div class="score-metric-box">
-              <div class="val" id="metricAssigned" style="color:#58a6ff;">0</div>
-              <div class="lbl">Assigned</div>
-            </div>
-            <div class="score-metric-box">
-              <div class="val" id="metricCompleted" style="color:#2ea043;">0</div>
-              <div class="lbl">Completed</div>
-            </div>
-            <div class="score-metric-box">
-              <div class="val" id="metricDelayed" style="color:#da3633;">0</div>
-              <div class="lbl">Delayed</div>
-            </div>
-            <div class="score-metric-box">
-              <div class="val" id="metricPercentage" style="color:#ffd33d;">100%</div>
-              <div class="lbl">Score %</div>
-            </div>
+          <div class="timeline-slots">
+            <button class="timeline-slot-btn active" id="slotBtn-all" onclick="filterByTimelineSlot('all')">
+              All Shift
+              <span class="slot-time">Full Day</span>
+            </button>
+            <button class="timeline-slot-btn" id="slotBtn-morning" onclick="filterByTimelineSlot('morning')">
+              🌅 Morning
+              <span class="slot-time">09:00 - 11:30 AM</span>
+            </button>
+            <button class="timeline-slot-btn" id="slotBtn-midday" onclick="filterByTimelineSlot('midday')">
+              ☀️ Midday
+              <span class="slot-time">11:30 - 02:00 PM</span>
+            </button>
+            <button class="timeline-slot-btn" id="slotBtn-afternoon" onclick="filterByTimelineSlot('afternoon')">
+              ☕ Afternoon
+              <span class="slot-time">02:00 - 05:00 PM</span>
+            </button>
+            <button class="timeline-slot-btn" id="slotBtn-closing" onclick="filterByTimelineSlot('closing')">
+              🌙 Closing
+              <span class="slot-time">05:00 - 08:00 PM</span>
+            </button>
           </div>
         </div>
 
-        <div id="notificationBanner" onclick="switchTab('Adhoc', document.getElementById('adhocTabBtn'))">
-          🔔 Naya Task Aaya Hai! Click here to view.
-        </div>
-
-        <!-- NAVIGATION TABS -->
         <div class="tabs" id="navTabs">
           <div id="tabDaily" class="tab active" onclick="switchTab('Daily', this)">Daily</div>
           <div id="tabWeekly" class="tab" onclick="switchTab('Weekly', this)">Weekly</div>
           <div id="tabMonthly" class="tab" onclick="switchTab('Monthly', this)">Monthly</div>
-          <div id="adhocTabBtn" class="tab" onclick="switchTab('Adhoc', this)" style="color:#ffd33d;">🔔 Assigned Tasks</div>
+          <div id="adhocTabBtn" class="tab" onclick="switchTab('Adhoc', this)" style="color:#ffd33d;">🔔 Extra Tasks</div>
         </div>
 
         <div id="tabContentArea"></div>
@@ -432,11 +406,12 @@
         <h3 style="color:#58a6ff; margin-top:0;" id="modalHeading">📸 Capture Proof</h3>
         <p id="modalTaskTitle" style="font-size: 14px; color:#ffd33d; font-weight:bold; margin-bottom: 20px;"></p>
         
-        <label for="proofFile" class="custom-file-upload" id="uploadLabel">📸 Open Camera</label>
+        <label for="proofFile" class="custom-file-upload" id="uploadLabel" style="display:block; background:#58a6ff; color:#0d1117; padding:15px; font-size:16px; border-radius:6px; cursor:pointer; font-weight:bold;">📸 Open Camera / Select Photo</label>
         <input type="file" id="proofFile" accept="image/*" capture="environment" style="display:none;" onchange="showPhotoPreview(event)">
+        
         <img id="photoPreview" style="display:none;" />
         
-        <button onclick="confirmSubmitProof()" style="background:#2ea043; padding: 15px; font-size: 15px; width:100%; display:none;" id="uploadBtn">✅ Done</button>
+        <button onclick="confirmSubmitProof()" style="background:#2ea043; padding: 15px; font-size: 15px; width:100%; display:none;" id="uploadBtn">✅ Submit Proof</button>
         <button onclick="closeModal()" class="btn-danger" style="margin-top:10px; width:100%;">Cancel</button>
       </div>
     </div>
@@ -457,170 +432,23 @@
       </div>
     </div>
 
-    <!-- PHOTO ZOOM / GALLERY MODAL -->
-    <div id="photoZoomModal" class="modal">
-      <div class="modal-content" style="text-align: center; max-width: 500px;">
-        <h3 style="color:#58a6ff; margin-top:0;" id="zoomModalTitle">📷 Reference Photo</h3>
-        <div style="background:#000; border-radius:8px; overflow:hidden; margin: 10px 0; border:1px solid #30363d;">
-          <img id="zoomModalImg" style="width:100%; max-height:400px; object-fit:contain; display:block;" src="" />
-        </div>
-        <div style="display:flex; justify-content:space-between; gap:10px; margin-top:15px;">
-          <a id="zoomModalDriveLink" href="#" target="_blank" style="background:#1f6feb; color:white; padding:10px; border-radius:6px; font-size:13px; text-decoration:none; flex:1; font-weight:bold; text-align:center;">Open in Google Drive ↗</a>
-          <button onclick="closePhotoZoomModal()" class="btn-danger" style="flex:1; width:auto; margin:0; padding:10px;">Close</button>
-        </div>
-      </div>
-    </div>
-
     <script>
-      // =====================================================================
-      // UNIVERSAL HYBRID BRIDGE: SUPPORTS VERCEL (FETCH API) & GOOGLE APPS SCRIPT
-      // =====================================================================
-      var DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyXHJaFTSkjwu6C8ze4czs2Q42NQsgzjW814j8OLA7ztMXTW-nqmh2gkpjebmdSW4YJjA/exec";
-      var CURRENT_API_URL = localStorage.getItem("TASK_APP_API_URL") || window.TASK_APP_API_URL || DEFAULT_GAS_URL;
-
-      // Read URL Query Parameters (empId, apiUrl)
-      var urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has("apiUrl")) {
-        var pUrl = urlParams.get("apiUrl").trim();
-        if (pUrl) {
-          localStorage.setItem("TASK_APP_API_URL", pUrl);
-          CURRENT_API_URL = pUrl;
-        }
-      }
-
-      function openApiSettingsModal() {
-        document.getElementById("apiEndpointInput").value = CURRENT_API_URL;
-        document.getElementById("apiTestStatus").innerHTML = "";
-        document.getElementById("apiSettingsModal").style.display = "flex";
-      }
-
-      function closeApiSettingsModal() {
-        document.getElementById("apiSettingsModal").style.display = "none";
-      }
-
-      async function testApiConnection() {
-        var inputUrl = (document.getElementById("apiEndpointInput").value || "").trim();
-        var statusEl = document.getElementById("apiTestStatus");
-        if (!inputUrl) {
-          statusEl.innerHTML = "<span style='color:#f85149;'>Please enter a valid Google Apps Script Web App URL!</span>";
-          return;
-        }
-        statusEl.innerHTML = "<span style='color:#ffd33d;'>Testing backend connection...</span>";
-        try {
-          var res = await fetch(inputUrl, {
-            method: "POST",
-            body: JSON.stringify({ action: "ping" })
-          });
-          var json = await res.json();
-          if (json.status === "success" || json.pong) {
-            statusEl.innerHTML = "<span style='color:#2ea043; font-weight:bold;'>âœ… Connected successfully to Backend!</span>";
-          } else {
-            statusEl.innerHTML = "<span style='color:#f85149;'>âš ï¸ Reached backend, but got: " + (json.message || "Unknown response") + "</span>";
-          }
-        } catch (err) {
-          statusEl.innerHTML = "<span style='color:#f85149;'>âŒ Connection failed: " + err.message + "<br><small style='color:#8b949e;'>Ensure script is deployed as Web App with 'Anyone' access.</small></span>";
-        }
-      }
-
-      function saveApiUrlSettings() {
-        var inputUrl = (document.getElementById("apiEndpointInput").value || "").trim();
-        if (!inputUrl) {
-          alert("Please enter a valid URL!");
-          return;
-        }
-        localStorage.setItem("TASK_APP_API_URL", inputUrl);
-        CURRENT_API_URL = inputUrl;
-        alert("API Endpoint saved successfully! Reloading application...");
-        window.location.reload();
-      }
-
-      async function executeVercelApi(actionName, paramMap) {
-        var payload = Object.assign({ action: actionName }, paramMap || {});
-        var response = await fetch(CURRENT_API_URL, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-        var text = await response.text();
-        var json;
-        try {
-          json = JSON.parse(text);
-        } catch (e) {
-          console.error("Non-JSON from GAS backend:", text);
-          throw new Error("Google Apps Script failed to return JSON. Ensure Web App is deployed with 'Anyone' access.");
-        }
-        if (json.status === "success") {
-          return json.data;
-        } else {
-          throw new Error(json.message || "Backend error occurred");
-        }
-      }
-
-      var isNativeGAS = (typeof google !== "undefined" && google.script && typeof google.script.run !== "undefined");
-
-      if (!isNativeGAS) {
-        window.google = window.google || {};
-        window.google.script = window.google.script || {};
-
-        var makeRunner = function(successHandler, failureHandler) {
-          var runner = {
-            withSuccessHandler: function(sh) { return makeRunner(sh, failureHandler); },
-            withFailureHandler: function(fh) { return makeRunner(successHandler, fh); },
-            _run: function(action, paramMap) {
-              var sCb = successHandler || function() {};
-              var fCb = failureHandler || function(err) { console.error(err); alert("API Error: " + (err.message || err)); };
-              executeVercelApi(action, paramMap).then(sCb).catch(fCb);
-            },
-            verifyLogin: function(id) { this._run("verifyLogin", { empId: id }); },
-            getStaffListForAdmin: function() { this._run("getStaffListForAdmin", {}); },
-            assignAdhocTask: function(staff, typeVal, desc, deadline, photosData, fileType, fileName) {
-              this._run("assignAdhocTask", { staff: staff, typeVal: typeVal, desc: desc, deadline: deadline, photosData: photosData, fileType: fileType, fileName: fileName });
-            },
-            getAdhocTasksForStaff: function(staffName) { this._run("getAdhocTasksForStaff", { staffName: staffName }); },
-            getTasksForRole: function(role, staffName) { this._run("getTasksForRole", { role: role, staffName: staffName }); },
-            getStaffScoreMetrics: function(staffName, empId) { this._run("getStaffScoreMetrics", { staffName: staffName, empId: empId }); },
-            getStaffLeaderboard: function(period) { this._run("getStaffLeaderboard", { period: period }); },
-            submitTaskWithProof: function(name, role, type, task, subTask, deadline, base64Data, mimeType, fileName, isAdhoc, adhocIndex, actionType) {
-              this._run("submitTaskWithProof", { name: name, role: role, type: type, task: task, subTask: subTask, deadline: deadline, base64Data: base64Data, mimeType: mimeType, fileName: fileName, isAdhoc: isAdhoc, adhocIndex: adhocIndex, actionType: actionType });
-            },
-            getStaffProgressReport: function(staffName) { this._run("getStaffProgressReport", { staffName: staffName }); },
-            getAllAdhocHistory: function() { this._run("getAllAdhocHistory", {}); },
-            getLiveOrdersForManager: function() { this._run("getLiveOrdersForManager", {}); },
-            completeStoreManagerOrder: function(rowIndex) { this._run("completeStoreManagerOrder", { rowIndex: rowIndex }); }
-          };
-          return runner;
-        };
-
-        window.google.script.run = makeRunner(null, null);
-      }
-
       var loggedInUser = null;
       var roleTasks = [], extraTasks = [], orderTasks = [];
       var currentActiveTab = 'Daily';
       var selectedTaskObj = null; 
-      var lastOrderCount = -1; 
+      var urlParams = new URLSearchParams(window.location.search);
       var passedEmpId = "<?= portalEmpId ?>";
-      if (urlParams.has("empId")) passedEmpId = urlParams.get("empId");
-      else if (urlParams.has("id")) passedEmpId = urlParams.get("id");
-      
-      // Multi-photos store for task assignment
-      var adminSelectedPhotos = [];
-      
-      // Scorecard state
-      var staffScoresCache = {};
-      var currentStaffScorePeriod = 'daily';
-      var currentAdminScorePeriod = 'daily';
+      if ((!passedEmpId || passedEmpId.includes("<%=")) && urlParams.has("empId")) passedEmpId = urlParams.get("empId");
 
       window.onload = function() {
-        if (passedEmpId && passedEmpId.trim() !== "" && !passedEmpId.includes("<%=")) {
+        if (passedEmpId && passedEmpId.trim() !== "") {
           document.getElementById('empId').value = passedEmpId;
           document.getElementById('empPass').value = "SSO_BYPASS";
           loginUser();
         }
       };
 
-      // ==========================================
-      // AUTHENTICATION
-      // ==========================================
       function loginUser() {
         var id = document.getElementById("empId").value.trim();
         var pass = document.getElementById("empPass").value.trim();
@@ -629,25 +457,21 @@
 
         google.script.run.withSuccessHandler(function(res) {
           if(res.success) {
-            loggedInUser = { empId: res.empId || id, name: res.name, role: res.role };
+            loggedInUser = { name: res.name, role: res.role };
             document.getElementById("loginScreen").classList.add("hidden");
             var roleClean = res.role.toLowerCase().trim();
             if (roleClean === "admin" || roleClean === "owner") {
               document.getElementById("adminPortal").classList.remove("hidden");
               loadAdminDropdown();
+              loadAdminScoreboard();
               loadAdminHistory();
-              loadAdminScorecard();
             } else {
               document.getElementById("staffPortal").classList.remove("hidden");
               document.getElementById("staffNameDisplay").innerText = "Hello, " + res.name;
               document.getElementById("staffRoleDisplay").innerText = "🏆 Role: " + res.role;
-              
-              if(res.scores) {
-                staffScoresCache = res.scores;
-                renderStaffScoreUI();
-              } else {
-                fetchStaffScores();
-              }
+              var bannerTitleEl = document.getElementById("onboardBannerTitle");
+              if (bannerTitleEl) bannerTitleEl.innerText = "Day-1 Role Blueprint: " + res.role;
+              applyScorecardUI(res.scores);
 
               if(roleClean === "store manager") {
                 if(!document.getElementById("orderTabBtn")) {
@@ -658,6 +482,17 @@
             }
           } else { document.getElementById("loginMsg").innerText = res.message; }
         }).verifyLogin(id, pass);
+      }
+
+      function applyScorecardUI(sc) {
+        if (!sc) return;
+        document.getElementById("scDaily").innerText = (sc.daily || 0) + " P";
+        document.getElementById("scWeekly").innerText = (sc.weekly || 0) + " P";
+        document.getElementById("scMonthly").innerText = (sc.monthly || 0) + " P";
+        document.getElementById("scLastMonth").innerText = (sc.lastMonth || 0) + " P";
+        document.getElementById("scCurrQtr").innerText = (sc.currentQuarter || 0) + " P";
+        document.getElementById("scLastQtr").innerText = (sc.lastQuarter || 0) + " P";
+        document.getElementById("scYearly").innerText = (sc.yearly || 0) + " P";
       }
 
       function logout() {
@@ -671,25 +506,16 @@
         window.history.pushState({}, document.title, window.location.pathname);
       }
 
-      // ==========================================
-      // ADMIN DASHBOARD TAB NAVIGATION
-      // ==========================================
       function switchAdminTab(tabName) {
-        document.getElementById('tabBtnAssign').classList.remove('active');
-        document.getElementById('tabBtnScorecard').classList.remove('active');
-        document.getElementById('tabBtnProgress').classList.remove('active');
-        document.getElementById('tabBtnHistory').classList.remove('active');
-        
-        document.getElementById('adminTabAssign').classList.add('hidden');
-        document.getElementById('adminTabScorecard').classList.add('hidden');
-        document.getElementById('adminTabProgress').classList.add('hidden');
-        document.getElementById('adminTabHistory').classList.add('hidden');
-        
+        var tabs = ['Assign', 'Scoreboard', 'Progress', 'History'];
+        tabs.forEach(function(t) {
+          document.getElementById('tabBtn' + t).classList.remove('active');
+          document.getElementById('adminTab' + t).classList.add('hidden');
+        });
         document.getElementById('tabBtn' + tabName).classList.add('active');
         document.getElementById('adminTab' + tabName).classList.remove('hidden');
-        
-        if (tabName === 'Scorecard') loadAdminScorecard();
-        if (tabName === 'History') loadAdminHistory();
+
+        if(tabName === 'Scoreboard') loadAdminScoreboard();
       }
 
       function loadAdminDropdown() {
@@ -713,167 +539,115 @@
         return d.toLocaleString('en-US', options).replace(/\s*GMT.*/i, '').trim();
       }
 
-      // ==========================================
-      // MULTIPLE PHOTOS HANDLERS (ASSIGN TASK)
-      // ==========================================
-      function handleAdminPhotoSelect(e) {
-        var files = e.target.files;
-        if (!files || files.length === 0) return;
-        
-        for (var i = 0; i < files.length; i++) {
-          (function(file) {
-            var reader = new FileReader();
-            reader.onload = function(evt) {
-              adminSelectedPhotos.push({
-                name: file.name,
-                type: file.type,
-                base64: evt.target.result.split(',')[1],
-                previewUrl: evt.target.result
-              });
-              renderAdminPhotoPreviews();
-            };
-            reader.readAsDataURL(file);
-          })(files[i]);
-        }
-      }
-
-      function renderAdminPhotoPreviews() {
-        var container = document.getElementById("adminPhotoPreviews");
-        container.innerHTML = "";
-        for (var i = 0; i < adminSelectedPhotos.length; i++) {
-          var p = adminSelectedPhotos[i];
-          var div = document.createElement("div");
-          div.className = "photo-preview-item";
-          div.innerHTML = "<img src='" + p.previewUrl + "'><button type='button' class='photo-preview-remove' onclick='removeAdminPhoto(" + i + ")'>✕</button>";
-          container.appendChild(div);
-        }
-      }
-
-      function removeAdminPhoto(index) {
-        adminSelectedPhotos.splice(index, 1);
-        renderAdminPhotoPreviews();
-      }
-
+      // 📌 SEND ADHOC WITH MULTIPLE PHOTOS
       function sendAdhocTask() {
         var staff = document.getElementById("adminStaffSelect").value;
         var typeVal = document.getElementById("adminTaskFrequency").value;
         var desc = document.getElementById("adminAdhocTask").value;
         var rawDeadline = document.getElementById("adminAdhocDeadline").value;
         var dead = formatDateTimeLocal(rawDeadline); 
+        var photoInput = document.getElementById("adminTaskPhotoFile");
+        var btn = document.getElementById("btnAssignAdhoc");
 
         if(!staff || !desc) { alert("Staff aur Task bharna zaroori hai!"); return; }
 
-        var btn = document.getElementById("btnAssignAdhoc");
-        btn.innerText = "Assigning Task...";
         btn.disabled = true;
-        document.getElementById("adminMsg").innerText = "Uploading & Assigning...";
+        var files = photoInput.files;
 
-        // Send photos array payload
-        google.script.run.withSuccessHandler(function(res) {
-          btn.innerText = "Assign Task 🚀";
-          btn.disabled = false;
-          document.getElementById("adminMsg").innerText = res;
-          document.getElementById("adminAdhocTask").value = "";
-          document.getElementById("adminAdhocDeadline").value = "";
-          document.getElementById("adminTaskPhotoFile").value = "";
-          adminSelectedPhotos = [];
-          renderAdminPhotoPreviews();
-          setTimeout(function() { document.getElementById("adminMsg").innerText = ""; }, 3500);
-          loadAdminHistory(); 
-        }).withFailureHandler(function(err) {
-          btn.innerText = "Assign Task 🚀";
-          btn.disabled = false;
-          document.getElementById("adminMsg").innerText = "Error: " + err.message;
-        }).assignAdhocTask(staff, typeVal, desc, dead, adminSelectedPhotos, null, null);
-      }
-
-      // ==========================================
-      // PHOTO GALLERY RENDERING & ZOOM MODAL
-      // ==========================================
-      function parsePhotoUrls(photoCell) {
-        if (!photoCell || photoCell === "No Photo") return [];
-        var urls = [];
-        if (typeof photoCell === "string" && photoCell.startsWith("[")) {
-          try {
-            urls = JSON.parse(photoCell);
-          } catch(e) {
-            urls = [photoCell];
+        if (files.length > 0) {
+          btn.innerText = "Reading " + files.length + " Photo(s)...";
+          var photoArray = [];
+          var readCount = 0;
+          for (var i = 0; i < files.length; i++) {
+            (function(file) {
+              var reader = new FileReader();
+              reader.onload = function(e) {
+                photoArray.push({
+                  base64Data: e.target.result.split(',')[1],
+                  mimeType: file.type || "image/jpeg",
+                  fileName: file.name
+                });
+                readCount++;
+                if (readCount === files.length) {
+                  btn.innerText = "Uploading & Assigning...";
+                  google.script.run.withSuccessHandler(function(res) {
+                    btn.disabled = false; btn.innerText = "Assign Task 🚀";
+                    document.getElementById("adminMsg").innerText = res;
+                    document.getElementById("adminAdhocTask").value = "";
+                    document.getElementById("adminAdhocDeadline").value = "";
+                    photoInput.value = "";
+                    setTimeout(function() { document.getElementById("adminMsg").innerText = ""; }, 4000);
+                    loadAdminHistory(); 
+                  }).assignAdhocTask(staff, typeVal, desc, dead, photoArray);
+                }
+              };
+              reader.readAsDataURL(file);
+            })(files[i]);
           }
-        } else if (typeof photoCell === "string") {
-          var clean = photoCell.replace(/=HYPERLINK\("/gi, '').split('",')[0].replace(/"/g, '');
-          var parts = clean.split(",");
-          for (var i = 0; i < parts.length; i++) {
-            var u = parts[i].trim();
-            if (u && u !== "No Photo") urls.push(u);
-          }
+        } else {
+          btn.innerText = "Assigning Task...";
+          google.script.run.withSuccessHandler(function(res) {
+            btn.disabled = false; btn.innerText = "Assign Task 🚀";
+            document.getElementById("adminMsg").innerText = res;
+            document.getElementById("adminAdhocTask").value = "";
+            document.getElementById("adminAdhocDeadline").value = "";
+            setTimeout(function() { document.getElementById("adminMsg").innerText = ""; }, 4000);
+            loadAdminHistory(); 
+          }).assignAdhocTask(staff, typeVal, desc, dead, []);
         }
-        return urls;
       }
 
-      function renderPhotoGalleryHtml(photoCell) {
-        var urls = parsePhotoUrls(photoCell);
-        if (urls.length === 0) return "";
-        var html = "<div class='gallery-container'>";
-        for (var i = 0; i < urls.length; i++) {
-          var u = urls[i];
-          var driveIdMatch = u.match(/\/d\/([a-zA-Z0-9_-]+)/);
-          var previewImgUrl = driveIdMatch ? ("https://drive.google.com/thumbnail?id=" + driveIdMatch[1] + "&sz=w200") : u;
-          html += "<img class='gallery-thumb' src='" + previewImgUrl + "' onclick='openPhotoZoomModal(\"" + encodeURIComponent(u) + "\", \"" + encodeURIComponent(previewImgUrl) + "\", " + (i + 1) + ")' title='Click to zoom photo #" + (i + 1) + "'>";
-        }
-        html += "</div>";
-        return html;
-      }
-
-      function openPhotoZoomModal(driveUrl, imgUrl, index) {
-        var cleanDrive = decodeURIComponent(driveUrl);
-        var cleanImg = decodeURIComponent(imgUrl);
-        document.getElementById("zoomModalTitle").innerText = "📷 Reference Photo #" + index;
-        document.getElementById("zoomModalImg").src = cleanImg;
-        document.getElementById("zoomModalDriveLink").href = cleanDrive;
-        document.getElementById("photoZoomModal").style.display = "block";
-      }
-
-      function closePhotoZoomModal() {
-        document.getElementById("photoZoomModal").style.display = "none";
-        document.getElementById("zoomModalImg").src = "";
-      }
-
-      // ==========================================
-      // ADMIN: STAFF PROGRESS & SCORECARD
-      // ==========================================
-      function switchAdminScorePeriod(periodKey, el) {
-        currentAdminScorePeriod = periodKey;
-        var pills = document.getElementById("adminScorePillBar").querySelectorAll(".score-pill");
-        for(var i=0; i<pills.length; i++) pills[i].classList.remove("active");
-        if(el) el.classList.add("active");
-        loadAdminScorecard();
-      }
-
-      function loadAdminScorecard() {
-        document.getElementById("adminScorecardContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>Scorecard nikal rahe hain...</p>";
-        google.script.run.withSuccessHandler(function(staffList) {
-          if (!staffList || staffList.length === 0) {
-            document.getElementById("adminScorecardContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>Koi staff data uplabdh nahi hai.</p>";
+      // 📌 LOAD OWNER ALL-STAFF SCOREBOARD
+      function loadAdminScoreboard() {
+        var content = document.getElementById("adminScoreboardContent");
+        content.innerHTML = "<p style='color:#8b949e; text-align:center;'>Scoreboard load ho raha hai...</p>";
+        google.script.run.withSuccessHandler(function(list) {
+          if (!list || list.length === 0) {
+            content.innerHTML = "<p style='color:#8b949e; text-align:center;'>Koi staff data nahi mila.</p>";
             return;
           }
-          var html = "<table class='scorecard-table'>";
-          html += "<thead><tr><th>Staff</th><th>Role</th><th>Pts</th><th>Done/Total</th><th>Delay</th><th>Score %</th></tr></thead>";
-          html += "<tbody>";
-          for (var i = 0; i < staffList.length; i++) {
-            var s = staffList[i];
-            var scoreColor = s.percentage >= 80 ? "#2ea043" : (s.percentage >= 50 ? "#ffd33d" : "#da3633");
+          var html = "<table class='scoreboard-table'>";
+          html += "<thead><tr>";
+          html += "<th>Rank / Staff</th><th>Role</th><th>Today</th><th>Week</th><th style='color:#ffd33d;'>Month</th><th>Last Mo.</th><th>Qtr</th><th>Last Qtr</th><th style='color:#ffd33d;'>Year</th>";
+          html += "</tr></thead><tbody>";
+
+          for (var i = 0; i < list.length; i++) {
+            var s = list[i];
+            var medal = (i === 0) ? "🥇 " : (i === 1 ? "🥈 " : (i === 2 ? "🥉 " : (i + 1) + ". "));
             html += "<tr>";
-            html += "<td><b style='color:#c9d1d9;'>" + s.name + "</b></td>";
-            html += "<td style='color:#8b949e; font-size:11px;'>" + s.role + "</td>";
-            html += "<td style='color:#ffd33d; font-weight:bold;'>" + s.points + "</td>";
-            html += "<td>" + s.completed + " / " + s.assigned + "</td>";
-            html += "<td style='color:#da3633;'>" + s.delayed + "</td>";
-            html += "<td style='color:" + scoreColor + "; font-weight:bold;'>" + s.percentage + "%</td>";
+            html += "<td style='font-weight:bold; color:#c9d1d9;'>" + medal + s.name + "</td>";
+            html += "<td style='color:#8b949e;'>" + s.role + "</td>";
+            html += "<td>" + s.daily + "</td>";
+            html += "<td>" + s.weekly + "</td>";
+            html += "<td style='color:#ffd33d; font-weight:bold;'>" + s.monthly + "</td>";
+            html += "<td>" + s.lastMonth + "</td>";
+            html += "<td>" + s.currentQuarter + "</td>";
+            html += "<td>" + s.lastQuarter + "</td>";
+            html += "<td style='color:#ffd33d; font-weight:bold;'>" + s.yearly + "</td>";
             html += "</tr>";
           }
           html += "</tbody></table>";
-          document.getElementById("adminScorecardContent").innerHTML = html;
-        }).getStaffLeaderboard(currentAdminScorePeriod);
+          content.innerHTML = html;
+        }).getAllStaffScoreboard();
+      }
+
+      function renderPhotoPills(photoString) {
+        if (!photoString || photoString === "No Photo") return "";
+        var urls = photoString.split(" , ");
+        var h = "<div style='margin:6px 0; display:flex; flex-wrap:wrap; gap:6px;'>";
+        for (var u = 0; u < urls.length; u++) {
+          var cleanUrl = urls[u].replace(/=HYPERLINK\("([^"]+)".*/, "$1").trim();
+          if (!cleanUrl || cleanUrl.indexOf("http") === -1) continue;
+          var driveId = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/id=([a-zA-Z0-9_-]+)/);
+          var thumbUrl = driveId ? ("https://drive.google.com/thumbnail?id=" + driveId[1] + "&sz=w150") : "";
+          if (thumbUrl) {
+            h += "<a href='" + cleanUrl + "' target='_blank' class='ref-photo-thumb'><img src='" + thumbUrl + "' title='View Reference " + (u+1) + "'></a>";
+          } else {
+            h += "<a href='" + cleanUrl + "' target='_blank' style='background:#1f6feb; color:white; padding:4px 8px; border-radius:4px; font-size:11px; text-decoration:none;'>📷 Photo " + (u+1) + "</a>";
+          }
+        }
+        h += "</div>";
+        return h;
       }
 
       function fetchStaffProgress() {
@@ -881,69 +655,47 @@
         if(!sel) { document.getElementById("staffProgressContent").innerHTML = ""; return; }
         var cleanName = sel.replace("👤 ", "").trim();
         document.getElementById("staffProgressContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>Progress report nikal rahe hain...</p>";
-        
         google.script.run.withSuccessHandler(function(res) {
           var html = "<div style='background:#1f242c; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #58a6ff;'>";
-          html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
-          html += "<div><b style='color:#c9d1d9; font-size:15px;'>" + cleanName + "</b> <span style='font-size:12px; color:#8b949e;'>(Role: " + res.role + ")</span></div>";
-          html += "</div>";
+          html += "<b style='color:#c9d1d9; font-size:15px;'>" + cleanName + "</b> <span style='font-size:12px; color:#8b949e;'>(Role: " + res.role + ")</span>";
           
-          // 7-Period Score Card for Selected Staff
           if (res.scores) {
-            html += "<div style='display:grid; grid-template-columns:repeat(auto-fit, minmax(75px, 1fr)); gap:6px; margin-top:10px;'>";
-            var timePeriods = [
-              { k: 'daily', lbl: 'Daily' }, { k: 'weekly', lbl: 'Weekly' }, { k: 'monthly', lbl: 'Monthly' },
-              { k: 'lastMonth', lbl: 'Last Mth' }, { k: 'currentQuarter', lbl: 'Curr Qtr' },
-              { k: 'lastQuarter', lbl: 'Last Qtr' }, { k: 'yearly', lbl: 'Yearly' }
-            ];
-            for (var t = 0; t < timePeriods.length; t++) {
-              var m = res.scores[timePeriods[t].k] || { points: 0, percentage: 100 };
-              html += "<div style='background:#0d1117; padding:6px; border-radius:6px; text-align:center;'>";
-              html += "<div style='font-size:10px; color:#8b949e;'>" + timePeriods[t].lbl + "</div>";
-              html += "<div style='color:#ffd33d; font-weight:bold; font-size:13px;'>" + (m.points || 0) + " Pts</div>";
-              html += "<div style='font-size:10px; color:#58a6ff;'>" + (m.percentage || 100) + "%</div>";
-              html += "</div>";
-            }
+            html += "<div class='score-grid' style='margin-top:10px;'>";
+            html += "<div class='score-box'><div class='score-lbl'>Today</div><div class='score-val'>" + res.scores.daily + "</div></div>";
+            html += "<div class='score-box'><div class='score-lbl'>Week</div><div class='score-val'>" + res.scores.weekly + "</div></div>";
+            html += "<div class='score-box highlight'><div class='score-lbl'>Month</div><div class='score-val'>" + res.scores.monthly + "</div></div>";
+            html += "<div class='score-box'><div class='score-lbl'>Last Mo.</div><div class='score-val'>" + res.scores.lastMonth + "</div></div>";
+            html += "<div class='score-box'><div class='score-lbl'>Qtr</div><div class='score-val'>" + res.scores.currentQuarter + "</div></div>";
+            html += "<div class='score-box'><div class='score-lbl'>Last Qtr</div><div class='score-val'>" + res.scores.lastQuarter + "</div></div>";
+            html += "<div class='score-box highlight'><div class='score-lbl'>Year</div><div class='score-val'>" + res.scores.yearly + "</div></div>";
             html += "</div>";
           }
           html += "</div>";
 
-          html += "<h4 style='color:#58a6ff; margin-bottom:10px; margin-top:0;'>📋 Permanent Routine Tasks</h4>";
-          if(!res.routine || res.routine.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Koi routine task nahi hai.</p>";
-          var groupedTasks = {};
-          for(var i=0; i<(res.routine||[]).length; i++) {
-            var t = res.routine[i];
-            if(!groupedTasks[t.task]) groupedTasks[t.task] = [];
-            groupedTasks[t.task].push(t);
+          html += "<h4 style='color:#58a6ff; margin-bottom:10px;'>📋 Routine & Assigned Tasks</h4>";
+          if(res.routine.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Koi routine task nahi hai.</p>";
+          for(var i=0; i<res.routine.length; i++) {
+             var st = res.routine[i];
+             var isDone = st.status.includes("Uploaded") || st.status.includes("Completed") || st.status.includes("Skipped");
+             var cColor = st.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
+             html += "<div class='subtask-row' style='padding:8px; margin-bottom:6px;'>";
+             html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:#58a6ff;'>[" + st.type + "]</span><span style='font-size:11px; color:#ffd33d;'>⏰ " + (st.deadline || "N/A") + "</span></div>";
+             html += "<div class='subtask-name' style='font-size:13px; margin:4px 0; " + (isDone ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + st.task + (st.subTask ? " - " + st.subTask : "") + "</div>";
+             if(st.refPhoto) html += renderPhotoPills(st.refPhoto);
+             html += "<div class='status-text' style='font-size:11px; color:" + cColor + "; text-align:left;'>" + st.status + "</div>";
+             html += "</div>";
           }
-          for(var mainTask in groupedTasks) {
-            html += "<div class='subtask-container' style='margin-bottom:10px;'>";
-            html += "<div class='subtask-name' style='color:#c9d1d9; font-weight:bold; margin-bottom:8px;'>" + mainTask + "</div>";
-            var group = groupedTasks[mainTask];
-            for(var j=0; j<group.length; j++) {
-               var st = group[j];
-               var stName = st.subTask || "Main Task";
-               var isDone = st.status.includes("Uploaded") || st.status.includes("Completed") || st.status.includes("Skipped");
-               var cColor = st.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
-               html += "<div class='subtask-row' style='padding:8px;'>";
-               html += "<div class='subtask-name' style='font-size:12px; margin-bottom:0; " + (isDone ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + stName + "</div>";
-               html += "<div class='status-text' style='font-size:11px; color:" + cColor + "; text-align:left; margin-top:2px;'>" + st.status + "</div>";
-               html += "</div>";
-            }
-            html += "</div>";
-          }
-          
-          html += "<h4 style='color:#ffd33d; margin-top:20px; margin-bottom:10px;'>🔔 Extra & Assigned Tasks</h4>";
-          if(!res.adhoc || res.adhoc.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Inko koi extra task assign nahi kiya gaya hai.</p>";
-          for(var i=0; i<(res.adhoc||[]).length; i++) {
-             var at = res.adhoc[i];
-             var isDone = at.status.includes("Uploaded") || at.status.includes("Completed") || at.status.includes("Skipped");
-             var cColor = at.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
+
+          html += "<h4 style='color:#ffd33d; margin-top:20px; margin-bottom:10px;'>🔔 Extra (One-Time) Tasks</h4>";
+          if(res.adhoc.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Inko koi extra task assign nahi hai.</p>";
+          for(var j=0; j<res.adhoc.length; j++) {
+             var at = res.adhoc[j];
+             var isDoneA = at.status.includes("Uploaded") || at.status.includes("Completed") || at.status.includes("Skipped");
+             var cColorA = at.status.includes("Skipped") ? "#da3633" : (isDoneA ? "#2ea043" : "#e67e22");
              html += "<div class='subtask-container' style='margin-bottom:10px; border-left: 4px solid #e67e22;'>";
-             html += "<div class='subtask-name' style='font-size:13px; margin-bottom:0; " + (isDone ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + at.task + " <span style='font-size:11px; color:#ffd33d;'>(" + (at.type || 'Extra') + ")</span></div>";
-             
-             html += renderPhotoGalleryHtml(at.refPhoto);
-             html += "<div class='status-text' style='margin-top:2px; font-size:11px; color:" + cColor + "; text-align:left;'>" + at.status + "</div>";
+             html += "<div class='subtask-name' style='font-size:13px; margin-bottom:0; " + (isDoneA ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + at.task + "</div>";
+             if(at.refPhoto) html += renderPhotoPills(at.refPhoto);
+             html += "<div class='status-text' style='margin-top:4px; font-size:11px; color:" + cColorA + "; text-align:left;'>" + at.status + "</div>";
              html += "</div>";
           }
           document.getElementById("staffProgressContent").innerHTML = html;
@@ -954,20 +706,18 @@
         document.getElementById("adminHistoryContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>History load ho rahi hai...</p>";
         google.script.run.withSuccessHandler(function(history) {
           var html = "";
-          if(!history || history.length === 0) html = "<p style='text-align:center; color:#8b949e;'>Koi task history nahi hai.</p>";
+          if(history.length === 0) html = "<p style='text-align:center; color:#8b949e;'>Koi task history nahi hai.</p>";
           else {
              for(var i=0; i<history.length; i++) {
                 var h = history[i];
                 var isDone = h.status.includes("Completed") || h.status.includes("Uploaded") || h.status.includes("Skipped");
                 var sColor = h.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
                 html += "<div style='background:#1f242c; padding:12px; border-radius:8px; border-left:4px solid "+sColor+"; margin-bottom:10px;'>";
-                html += "<p style='margin:0 0 5px 0; font-size:11px; color:#8b949e;'>📅 Assign Date: " + h.date + " <span style='color:#ffd33d; font-weight:bold; float:right;'>(" + (h.type || 'Extra') + ")</span></p>";
-                html += "<p style='margin:0 0 5px 0; font-size:14px; font-weight:bold; color:#c9d1d9;'>👤 " + h.assignedTo + "</p>";
-                html += "<p style='margin:0 0 8px 0; font-size:13px; color:#58a6ff;'>" + h.task + "</p>";
-                
-                html += renderPhotoGalleryHtml(h.refPhoto);
-                
-                html += "<p style='margin:5px 0 0 0; font-size:12px; font-weight:bold; color:" + sColor + ";'>Status: " + h.status + "</p>";
+                html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:#8b949e;'>📅 " + h.date + "</span><span style='font-size:11px; background:#30363d; color:#58a6ff; padding:2px 6px; border-radius:4px;'>" + h.freq + "</span></div>";
+                html += "<p style='margin:4px 0; font-size:14px; font-weight:bold; color:#c9d1d9;'>👤 " + h.assignedTo + "</p>";
+                html += "<p style='margin:0 0 6px 0; font-size:13px; color:#58a6ff;'>" + h.task + "</p>";
+                if(h.photos) html += renderPhotoPills(h.photos);
+                html += "<p style='margin:4px 0 0 0; font-size:12px; font-weight:bold; color:" + sColor + ";'>Status: " + h.status + "</p>";
                 html += "</div>";
              }
           }
@@ -975,44 +725,11 @@
         }).getAllAdhocHistory();
       }
 
-      // ==========================================
-      // STAFF SCORECARD (7 TIMEFRAMES)
-      // ==========================================
-      function fetchStaffScores() {
-        if (!loggedInUser || !loggedInUser.name) return;
-        google.script.run.withSuccessHandler(function(scores) {
-          staffScoresCache = scores || {};
-          renderStaffScoreUI();
-        }).getStaffScoreMetrics(loggedInUser.name, loggedInUser.empId);
-      }
-
-      function switchStaffScorePeriod(periodKey, labelText, el) {
-        currentStaffScorePeriod = periodKey;
-        var pills = document.getElementById("staffScorePillBar").querySelectorAll(".score-pill");
-        for(var i=0; i<pills.length; i++) pills[i].classList.remove("active");
-        if(el) el.classList.add("active");
-        document.getElementById("staffScoreTimeframeTitle").innerText = "🎯 " + labelText;
-        renderStaffScoreUI();
-      }
-
-      function renderStaffScoreUI() {
-        var periodData = (staffScoresCache && staffScoresCache[currentStaffScorePeriod]) ? staffScoresCache[currentStaffScorePeriod] : { points: 0, assigned: 0, completed: 0, delayed: 0, percentage: 100 };
-        document.getElementById("lblRewardPoints").innerText = (periodData.points || 0) + " Pts";
-        document.getElementById("metricAssigned").innerText = periodData.assigned || 0;
-        document.getElementById("metricCompleted").innerText = periodData.completed || 0;
-        document.getElementById("metricDelayed").innerText = periodData.delayed || 0;
-        document.getElementById("metricPercentage").innerText = (periodData.percentage || 100) + "%";
-      }
-
-      // ==========================================
-      // STAFF DASHBOARD NAVIGATION & TASKS
-      // ==========================================
       function switchTab(tabName, el) {
         currentActiveTab = tabName;
         var tabs = document.querySelectorAll('.tab');
         for(var i=0; i<tabs.length; i++) tabs[i].classList.remove('active');
         if(el) el.classList.add('active');
-        if(tabName === 'Orders' || tabName === 'Adhoc') document.getElementById("notificationBanner").style.display = "none";
         renderStaffContent(); 
       }
 
@@ -1022,17 +739,6 @@
             roleTasks = tasks || []; 
             google.script.run.withSuccessHandler(function(adhocs) { 
                 extraTasks = adhocs || []; 
-                
-                // Show notification banner if any pending assigned tasks
-                var pendingCount = extraTasks.filter(function(e) {
-                  return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped");
-                }).length;
-                if (pendingCount > 0) {
-                  var banner = document.getElementById("notificationBanner");
-                  banner.innerText = "🔔 " + pendingCount + " Naye Assigned Task Aaye Hain! Click to view.";
-                  banner.style.display = "block";
-                }
-
                 if (loggedInUser.role.toLowerCase().trim() === "store manager") {
                   google.script.run.withSuccessHandler(function(orders) { 
                     orderTasks = orders || []; 
@@ -1041,7 +747,7 @@
                 } else {
                   renderStaffContent(); 
                 }
-            }).getAdhocTasksForStaff(loggedInUser.name, loggedInUser.empId);
+            }).getAdhocTasksForStaff(loggedInUser.name);
         }).getTasksForRole(loggedInUser.role, loggedInUser.name);
       }
 
@@ -1086,48 +792,11 @@
           }
         });
       }
-      setInterval(updateLiveTimers, 10000); 
+      setInterval(updateLiveTimers, 15000); 
 
-      // Helper function to render a task row for Owner-Assigned tasks
-      function renderAssignedTaskItem(atObj, atIdx, isOwner) {
-        var isDone = atObj.status.includes("Uploaded") || atObj.status.includes("Completed") || atObj.status.includes("Skipped");
-        var isSkipped = atObj.status.includes("Skipped");
-        var normType = (atObj.type || "Extra").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-        var tagClass = normType.toLowerCase() === "daily" ? "daily" : (normType.toLowerCase() === "weekly" ? "weekly" : (normType.toLowerCase() === "monthly" ? "monthly" : "extra"));
-
-        var html = "<div class='subtask-row " + (isDone ? "completed" : "") + "' style='border-left:4px solid #ffd33d; margin-bottom:10px;'>";
-        html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
-        html += "<div><b style='color:#c9d1d9; font-size:14px;'>" + atObj.task + "</b><span class='freq-tag " + tagClass + "'>" + normType + "</span></div>";
-        html += "<span style='font-size:11px; color:#ffd33d; font-weight:bold;'>🎯 10 Pts</span>";
-        html += "</div>";
-        
-        var displayDead = atObj.deadline || "Jald";
-        html += "<div style='font-size:11px; color:#8b949e; margin-top:4px;'>⏰ Deadline: " + displayDead;
-        html += " <span class='live-timer' data-deadline='" + displayDead + "' data-completed='" + isDone + "'></span>";
-        html += "</div>";
-        
-        html += renderPhotoGalleryHtml(atObj.refPhoto);
-        
-        if(isDone) {
-          html += "<div class='status-text' style='color:" + (isSkipped ? "#da3633" : "#2ea043") + "; text-align:left; margin-top:5px;'>" + atObj.status + "</div>";
-        } else {
-          html += "<div class='subtask-actions' style='margin-top:8px;'>";
-          html += "<button class='btn-complete' onclick='openAdhocProofModal(" + atIdx + ")'>✅ Done</button>";
-          html += "<button class='btn-capture' onclick='openAdhocProofModal(" + atIdx + ")'>📸 Photo</button>";
-          if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + atIdx + ", this)'>⏭️ Skip</button>";
-          html += "</div>";
-        }
-        html += "</div>";
-        return html;
-      }
-
-      // ==========================================
-      // COMBINED & NORMALIZED TASK RENDERING
-      // Daily, Weekly, Monthly, Assigned Tasks & Orders
-      // ==========================================
       
       // ============================================================
-      // PHASE 1: JAVASCRIPT FUNCTIONS (ONBOARDING, TIMELINE, BENCHMARKS)
+      // PHASE 1: ZERO-TRAINING & DAY-1 BLUEPRINT JAVASCRIPT ENGINE
       // ============================================================
       var activeTimelineFilter = 'all';
       var cachedOnboardingGuide = null;
@@ -1154,18 +823,10 @@
           renderOnboardTabContent('mission');
         } else {
           document.getElementById('onboardContentArea').innerHTML = "<div style='text-align:center; padding:20px; color:#8b949e;'>Loading Role SOP Guide...</div>";
-          
-          if (isVercelMode()) {
-            callGasApi("getRoleOnboardingGuide", { role: role }, function(res) {
-              cachedOnboardingGuide = res;
-              renderOnboardTabContent('mission');
-            });
-          } else {
-            google.script.run.withSuccessHandler(function(res) {
-              cachedOnboardingGuide = res;
-              renderOnboardTabContent('mission');
-            }).getRoleOnboardingGuide(role);
-          }
+          google.script.run.withSuccessHandler(function(res) {
+            cachedOnboardingGuide = res || {};
+            renderOnboardTabContent('mission');
+          }).getRoleOnboardingGuide(role);
         }
       }
 
@@ -1174,102 +835,72 @@
       }
 
       function switchOnboardTab(tabName) {
-        var tabs = ['mission', 'routine', 'tools', 'escalate', 'rules'];
+        var tabs = ['mission', 'timeline', 'benchmarks', 'faq'];
         tabs.forEach(function(t) {
-          var el = document.getElementById('onboardTab-' + t);
-          if (el) {
-            if (t === tabName) el.classList.add('active');
-            else el.classList.remove('active');
+          var btn = document.getElementById('onboardTab-' + t);
+          if (btn) {
+            if (t === tabName) btn.classList.add('active');
+            else btn.classList.remove('active');
           }
         });
         renderOnboardTabContent(tabName);
       }
 
       function renderOnboardTabContent(tabName) {
-        var g = cachedOnboardingGuide;
-        if (!g) return;
+        var g = cachedOnboardingGuide || {};
         var area = document.getElementById('onboardContentArea');
-        var h = "";
+        var out = "";
 
         if (tabName === 'mission') {
-          h += "<div style='background:#0d1117; padding:14px; border-radius:8px; border:1px solid #30363d;'>";
-          h += "<h4 style='color:#58a6ff; margin:0 0 8px 0;'>🎯 Role Core Mission</h4>";
-          h += "<p style='font-size:13px; line-height:1.5; color:#c9d1d9; margin:0;'>" + (g.mission || "") + "</p>";
-          h += "</div>";
-          h += "<div style='margin-top:12px; background:#161b22; padding:12px; border-radius:8px; border:1px solid #30363d;'>";
-          h += "<h4 style='color:#ffd33d; margin:0 0 6px 0; font-size:12px;'>🏆 Day-1 Expectations</h4>";
-          h += "<ul style='margin:0; padding-left:18px; font-size:12px; color:#8b949e; line-height:1.6;'>";
-          h += "<li>Apne assigned routine tasks ko deadline se pehle submit karein.</li>";
-          h += "<li>Har submission me authentic photo ya proof attach karein.</li>";
-          h += "<li>Kisi bhi doubt me 'Atak Gaye?' troubleshoot button check karein.</li>";
-          h += "</ul></div>";
-        }
-        else if (tabName === 'routine') {
-          h += "<div style='display:flex; flex-direction:column; gap:8px;'>";
-          var timeline = g.timeline || [];
-          for (var i = 0; i < timeline.length; i++) {
-            var item = timeline[i];
-            h += "<div style='background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px;'>";
-            h += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
-            h += "<span style='font-weight:bold; font-size:13px; color:#58a6ff;'>" + item.title + "</span>";
-            h += "<span style='font-size:11px; background:#1f6feb; color:white; padding:2px 8px; border-radius:10px;'>" + item.slot + "</span>";
-            h += "</div>";
-            h += "<p style='font-size:11px; color:#8b949e; margin:6px 0 0 0; line-height:1.4;'>" + item.focus + "</p>";
-            h += "</div>";
-          }
-          h += "</div>";
-        }
-        else if (tabName === 'tools') {
-          h += "<div style='display:flex; flex-direction:column; gap:8px;'>";
-          var tools = g.workstations || [];
-          for (var j = 0; j < tools.length; j++) {
-            var tool = tools[j];
-            h += "<div style='background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;'>";
-            h += "<div><div style='font-weight:bold; font-size:13px; color:#2ea043;'>" + tool.name + "</div>";
-            h += "<div style='font-size:11px; color:#8b949e; margin-top:2px;'>" + tool.desc + "</div></div>";
-            if (tool.url && tool.url !== "#") {
-              h += "<a href='" + tool.url + "' target='_blank' style='background:#238636; color:white; padding:6px 12px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;'>Open 🔗</a>";
-            }
-            h += "</div>";
-          }
-          h += "</div>";
-        }
-        else if (tabName === 'escalate') {
-          h += "<div style='display:flex; flex-direction:column; gap:8px;'>";
-          var escalations = g.escalations || [];
-          for (var k = 0; k < escalations.length; k++) {
-            var esc = escalations[k];
-            h += "<div style='background:#0d1117; border-left:4px solid #da3633; border-top:1px solid #30363d; border-right:1px solid #30363d; border-bottom:1px solid #30363d; border-radius:8px; padding:10px;'>";
-            h += "<div style='font-weight:bold; font-size:12px; color:#f85149;'>🚨 " + esc.trigger + "</div>";
-            h += "<div style='font-size:11px; color:#c9d1d9; margin-top:4px;'>Action: " + esc.action + "</div>";
-            h += "</div>";
-          }
-          h += "</div>";
-        }
-        else if (tabName === 'rules') {
-          h += "<div style='background:#0d1117; border:1px solid #ffd33d; border-radius:8px; padding:12px;'>";
-          h += "<h4 style='color:#ffd33d; margin:0 0 10px 0;'>⭐ 5 Non-Negotiable Golden Rules</h4>";
-          var rules = g.goldenRules || [];
-          for (var r = 0; r < rules.length; r++) {
-            h += "<div style='display:flex; gap:8px; margin-bottom:8px; font-size:12px; line-height:1.4;'>";
-            h += "<span style='color:#ffd33d; font-weight:bold;'>" + (r + 1) + ".</span>";
-            h += "<span style='color:#c9d1d9;'>" + rules[r] + "</span>";
-            h += "</div>";
-          }
-          h += "</div>";
-        }
+          out += "<div style='background:#161b22; padding:12px; border-radius:8px; border-left:4px solid #1f6feb; margin-bottom:12px;'>";
+          out += "<h4 style='color:#58a6ff; margin:0 0 6px 0; font-size:14px;'>🎯 Role Purpose & Mission</h4>";
+          out += "<p style='margin:0; font-size:12px; line-height:1.5; color:#c9d1d9;'>" + (g.mission || "Apne daily routine kaam ko time par aur zero-error ke sath deliver karna.") + "</p>";
+          out += "</div>";
 
-        area.innerHTML = h;
+          out += "<h4 style='color:#ffd33d; margin:10px 0 6px 0; font-size:13px;'>⚡ 3 Cardinal Rules (Do's & Don'ts):</h4>";
+          var rules = g.rules || [
+            "Deadline ka 100% strict adherence karein.",
+            "Bina proof ya accurate entry ke task Done na karein.",
+            "Kisi bhi problem par supervisor ko turant inform karein."
+          ];
+          for (var r = 0; r < rules.length; r++) {
+            out += "<div style='display:flex; gap:8px; margin-bottom:6px; font-size:12px;'><span style='color:#2ea043; font-weight:bold;'>✓</span><span>" + rules[r] + "</span></div>";
+          }
+        } 
+        else if (tabName === 'timeline') {
+          out += "<h4 style='color:#58a6ff; margin:0 0 10px 0; font-size:13px;'>⏰ Shift Hour-by-Hour Blueprint</h4>";
+          var tl = g.timeline || [];
+          if (tl.length === 0) out += "<p style='color:#8b949e;'>Timeline jald uplabdh hogi.</p>";
+          for (var t = 0; t < tl.length; t++) {
+            out += "<div style='background:#161b22; padding:8px 10px; border-radius:6px; border:1px solid #30363d; margin-bottom:8px;'>";
+            out += "<div style='display:flex; justify-content:space-between; margin-bottom:4px;'><b style='color:#ffd33d; font-size:12px;'>" + tl[t].time + "</b><span style='color:#58a6ff; font-size:11px; font-weight:bold;'>" + tl[t].title + "</span></div>";
+            out += "<p style='margin:0; font-size:11px; color:#8b949e;'>" + tl[t].desc + "</p>";
+            out += "</div>";
+          }
+        } 
+        else if (tabName === 'benchmarks') {
+          var bm = g.benchmarks || { good: "Clean verified execution with proper proof.", bad: "Incomplete execution or blurry/empty proof." };
+          out += "<div class='benchmark-box'>";
+          out += "<div class='benchmark-card good'><div class='benchmark-title'>✅ Good Work (Acceptable)</div><div>" + bm.good + "</div></div>";
+          out += "<div class='benchmark-card bad'><div class='benchmark-title'>❌ Common Mistake (Rejected)</div><div>" + bm.bad + "</div></div>";
+          out += "</div>";
+        } 
+        else if (tabName === 'faq') {
+          var faq = g.faq || [];
+          out += "<h4 style='color:#e3b341; margin:0 0 10px 0; font-size:13px;'>❓ Problem Resolution & Blockers</h4>";
+          for (var f = 0; f < faq.length; f++) {
+            out += "<div style='background:#161b22; padding:8px 10px; border-radius:6px; border:1px solid #30363d; margin-bottom:8px;'>";
+            out += "<div style='color:#ffd33d; font-weight:bold; font-size:12px; margin-bottom:3px;'>Q: " + faq[f].q + "</div>";
+            out += "<div style='color:#c9d1d9; font-size:11px;'>Ans: " + faq[f].a + "</div>";
+            out += "</div>";
+          }
+        }
+        area.innerHTML = out;
       }
 
       function openBenchmarkModal(goodSampleText, badSampleText) {
-        var g = decodeURIComponent(goodSampleText || "");
-        var b = decodeURIComponent(badSampleText || "");
-        var h = "<div class='benchmark-box'>";
-        h += "<div class='benchmark-card good'><div class='benchmark-title'>✅ Valid Proof Benchmark</div><div>" + g + "</div></div>";
-        h += "<div class='benchmark-card bad'><div class='benchmark-title'>❌ Rejected Sample</div><div>" + b + "</div></div>";
-        h += "</div>";
-        document.getElementById('benchmarkModalContent').innerHTML = h;
+        document.getElementById('bmGoodSample').innerText = decodeURIComponent(goodSampleText || "Clear documentation meeting quality standards.");
+        document.getElementById('bmBadSample').innerText = decodeURIComponent(badSampleText || "Blurry photo or unverified submission.");
         document.getElementById('benchmarkModal').style.display = 'block';
       }
 
@@ -1278,43 +909,24 @@
       }
 
       function toggleStepper(id) {
-        var el = document.getElementById('stepperContent-' + id);
+        var el = document.getElementById(id);
         if (el) el.style.display = (el.style.display === 'block') ? 'none' : 'block';
       }
 
       function toggleTroubleshoot(id) {
-        var el = document.getElementById('troubleshootContent-' + id);
+        var el = document.getElementById(id);
         if (el) el.style.display = (el.style.display === 'block') ? 'none' : 'block';
       }
-  
+
       function renderStaffContent() {
-        var isOwner = (loggedInUser && loggedInUser.role && (loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin"));
+        var isOwner = (loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin");
         
         var counts = { Daily: {t:0, d:0}, Weekly: {t:0, d:0}, Monthly: {t:0, d:0} };
-
-        // 1. Count Role Routine Tasks
         for(var k=0; k<roleTasks.length; k++) {
             var tItem = roleTasks[k];
-            var normType = (tItem.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-            normType = normType.charAt(0).toUpperCase() + normType.slice(1).toLowerCase();
-            if(counts[normType]) {
-                counts[normType].t++;
-                if(tItem.status.includes("Uploaded") || tItem.status.includes("Completed") || tItem.status.includes("Skipped")) { counts[normType].d++; }
-            }
-        }
-
-        // 2. Count Owner-Assigned Recurring Tasks (Daily, Weekly, Monthly) + One-Time Daily
-        for(var a=0; a<extraTasks.length; a++) {
-            var aItem = extraTasks[a];
-            var aNormType = (aItem.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-            aNormType = aNormType.charAt(0).toUpperCase() + aNormType.slice(1).toLowerCase();
-            if(counts[aNormType]) {
-                counts[aNormType].t++;
-                if(aItem.status.includes("Uploaded") || aItem.status.includes("Completed") || aItem.status.includes("Skipped")) { counts[aNormType].d++; }
-            } else if (aNormType.indexOf("Extra") !== -1 || aNormType.indexOf("One") !== -1) {
-                // One-time tasks also counted in Daily total
-                counts.Daily.t++;
-                if(aItem.status.includes("Uploaded") || aItem.status.includes("Completed") || aItem.status.includes("Skipped")) { counts.Daily.d++; }
+            if(counts[tItem.type]) {
+                counts[tItem.type].t++;
+                if(tItem.status.includes("Uploaded") || tItem.status.includes("Completed") || tItem.status.includes("Skipped")) { counts[tItem.type].d++; }
             }
         }
 
@@ -1327,17 +939,14 @@
         
         var adhocBtn = document.getElementById("adhocTabBtn");
         if(adhocBtn) {
-           var pendingAssigned = extraTasks.filter(function(e){ 
-             return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); 
-           }).length;
-           adhocBtn.innerHTML = "🔔 Assigned Tasks (" + pendingAssigned + ")";
+           var adhocPending = extraTasks.filter(function(e){ return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); }).length;
+           adhocBtn.innerHTML = "🔔 Extra Tasks (" + adhocPending + ")";
         }
 
         var area = document.getElementById("tabContentArea");
         var html = "";
         var count = 0;
 
-        // ORDERS TAB (STORE MANAGER)
         if (currentActiveTab === 'Orders') {
           if(orderTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Aaj ke saare Orders process ho gaye hain! 🎉</div>"; updateLiveTimers(); return; }
           for(var i=0; i<orderTasks.length; i++) {
@@ -1352,35 +961,24 @@
             html += "</div>";
           }
         } 
-        // ASSIGNED TASKS TAB (DISPLAYS ALL OWNER ASSIGNED TASKS: ONE-TIME & RECURRING)
         else if (currentActiveTab === 'Adhoc') {
-          if(extraTasks.length === 0) { 
-            area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Aapko koi extra ya assigned task nahi diya gaya hai! 🎉</div>"; 
-            updateLiveTimers(); 
-            return; 
-          }
-          
+          if(extraTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Koi extra task nahi hai! 🎉</div>"; updateLiveTimers(); return; }
           for(var i=0; i<extraTasks.length; i++) {
             var t = extraTasks[i];
             var isCompleted = t.status.includes("Uploaded") || t.status.includes("Completed") || t.status.includes("Skipped");
             var isSkipped = t.status.includes("Skipped");
-            var normType = (t.type || "Extra").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').trim();
-            var tagClass = normType.toLowerCase() === "daily" ? "daily" : (normType.toLowerCase() === "weekly" ? "weekly" : (normType.toLowerCase() === "monthly" ? "monthly" : "extra"));
-
-            html += "<div class='task-card adhoc' style='border-left-color: #ffd33d; background:#1f242c;'>";
-            html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
-            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:#ffd33d;'>🔔 " + t.task + " <span class='freq-tag " + tagClass + "'>" + normType + "</span></p>";
-            html += "<span style='color:#ffd33d; font-weight:bold; font-size:12px;'>🎯 10 Pts</span>";
-            html += "</div>";
+            html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#1f242c;'>";
+            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:#ffd33d;'>🔔 Extra Task: " + t.task + "</p>";
             
             html += "<div style='background:#0d1117; padding:10px; border-radius:8px; margin: 10px 0; border:1px solid #30363d;'>";
-            if (t.assignDate) { html += "<p style='margin:0 0 5px 0; font-size:11px; color:#58a6ff;'>🟢 <b>Assigned:</b> " + t.assignDate + (t.assignedTo ? " (To: " + t.assignedTo + ")" : "") + "</p>"; }
+            if (t.assignDate) { html += "<p style='margin:0 0 5px 0; font-size:11px; color:#58a6ff;'>🟢 <b>Assigned:</b> " + t.assignDate + "</p>"; }
             var displayDead = t.deadline || "Jald";
             html += "<p style='margin:0; font-size:12px; color:#ffd33d;'>⏰ <b>Deadline:</b> " + displayDead;
-            html += " <span class='live-timer' data-deadline='" + displayDead + "' data-completed='" + isCompleted + "'></span></p>";
+            html += " <span class='live-timer' data-deadline='" + displayDead + "' data-completed='" + isCompleted + "'></span>";
+            html += " <span style='color:#ffd33d; font-weight:bold; float:right;'>🎯 10 Pts</span></p>";
             html += "</div>";
 
-            html += renderPhotoGalleryHtml(t.refPhoto);
+            if(t.refPhoto) html += renderPhotoPills(t.refPhoto);
 
             html += "<div class='subtask-row " + (isCompleted ? "completed" : "") + "'>";
             if(isCompleted) {
@@ -1389,73 +987,42 @@
             } else {
               html += "<div class='subtask-name' style='font-size:13px; color:#c9d1d9; margin-bottom:6px;'>👉 Action:</div>";
               html += "<div class='subtask-actions'>";
-              html += "<button class='btn-complete' onclick='openAdhocProofModal(" + i + ")'>✅ Done</button>";
+              html += "<button class='btn-complete' onclick='directCompleteAdhoc(" + i + ", this)'>✅ Done</button>";
               html += "<button class='btn-capture' onclick='openAdhocProofModal(" + i + ")'>📸 Photo</button>";
-              if (isOwner) {
-                html += "<button class='btn-skip' onclick='skipAdhocTask(" + i + ", this)'>⏭️ Skip</button>";
-              }
+              if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + i + ", this)'>⏭️ Skip</button>";
               html += "</div>";
             }
             html += "</div></div>";
           }
         }
-        // RECURRING TABS: DAILY, WEEKLY, OR MONTHLY
         else {
-          var currentTabClean = currentActiveTab.toLowerCase().trim();
-
-          // 1. Group Routine Tasks
           var groupedTasks = {};
           for(var i = 0; i < roleTasks.length; i++) {
             var t = roleTasks[i];
-            var tTypeClean = (t.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').toLowerCase().trim();
-            if(tTypeClean === currentTabClean) {
+            if(t.type.toLowerCase() === currentActiveTab.toLowerCase()) {
               if(!groupedTasks[t.task]) groupedTasks[t.task] = [];
-              groupedTasks[t.task].push({ data: t, index: i, isAdhoc: false });
+              groupedTasks[t.task].push({ data: t, index: i });
               count++;
             }
           }
-
-          // 2. Render Owner-Assigned Recurring Tasks + (One-Time tasks in Daily tab)
-          var assignedForThisTab = [];
-          for(var a = 0; a < extraTasks.length; a++) {
-            var at = extraTasks[a];
-            var atTypeClean = (at.type || "").replace(/[^\w\s]/gi, '').replace(/\s*Task/i, '').toLowerCase().trim();
-            // Include matching recurring tasks
-            if (atTypeClean === currentTabClean) {
-              assignedForThisTab.push({ data: at, index: a });
-              count++;
-            }
-            // In the Daily tab, also show active One-Time tasks so they are immediately visible alongside daily work
-            else if (currentTabClean === 'daily' && (atTypeClean.indexOf('extra') !== -1 || atTypeClean.indexOf('one') !== -1)) {
-              assignedForThisTab.push({ data: at, index: a });
-              count++;
-            }
-          }
-
-          // A) Display Owner Assigned Section (if any assigned by Owner)
-          if (assignedForThisTab.length > 0) {
-            html += "<div style='background:#1c2128; border:1px solid #ffd33d; border-radius:8px; padding:12px; margin-bottom:15px;'>";
-            html += "<h4 style='margin:0 0 10px 0; color:#ffd33d;'>⭐ Owner Assigned Tasks (" + assignedForThisTab.length + ")</h4>";
-            for(var x = 0; x < assignedForThisTab.length; x++) {
-              html += renderAssignedTaskItem(assignedForThisTab[x].data, assignedForThisTab[x].index, isOwner);
-            }
-            html += "</div>";
-          }
-
-          // B) Display Routine Tasks
           for (var mainTask in groupedTasks) {
             var group = groupedTasks[mainTask];
             var firstTask = group[0].data;
-
-            // Apply Timeline Slot Filter
+            // Filter by timeline slot if active
             if (activeTimelineFilter !== 'all') {
-              var tSlot = (firstTask.timeSlot || 'morning').toLowerCase();
-              if (tSlot !== activeTimelineFilter) continue;
+              var matchesSlot = group.some(function(item) {
+                return (item.data.timeSlot || 'morning').toLowerCase() === activeTimelineFilter.toLowerCase();
+              });
+              if (!matchesSlot) continue;
             }
 
-            var slotLabel = firstTask.timeSlot ? firstTask.timeSlot.toUpperCase() : "ROUTINE";
             html += "<div class='task-card'>";
-            html += "<h3 style='margin:0 0 5px 0; font-size:17px; color:#58a6ff;'>📌 " + mainTask + "</h3>";
+            html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
+            html += "<h3 style='margin:0; font-size:15px; color:#58a6ff;'>📌 " + mainTask + "</h3>";
+            if (firstTask.timeSlot) {
+              html += "<span style='font-size:10px; background:#1f6feb; color:white; padding:2px 8px; border-radius:10px; text-transform:uppercase; font-weight:bold;'>" + firstTask.timeSlot + "</span>";
+            }
+            html += "</div>";
             
             var isAllDone = group.every(function(x) { return x.data.status.includes("Uploaded") || x.data.status.includes("Completed") || x.data.status.includes("Skipped"); });
             var rawDeadRoutine = firstTask.deadline || "N/A";
@@ -1465,6 +1032,42 @@
             html += " <span style='float:right;'>🎯 10 Pts</span></p>";
             html += "</div>";
 
+            if(firstTask.refPhoto) html += renderPhotoPills(firstTask.refPhoto);
+
+            // 1-2-3 STEPPER ACCORDION
+            var stepperId = "stepper_main_" + count;
+            var sopSteps = firstTask.sopSteps || [];
+            if (sopSteps.length > 0) {
+              html += "<div class='task-stepper-box'>";
+              html += "<div class='stepper-header' onclick='toggleStepper(\"" + stepperId + "\")'>";
+              html += "<span>📋 Step-by-Step SOP (How to Execute)</span>";
+              html += "<span style='font-size:10px; color:#58a6ff;'>Tap to View ▼</span>";
+              html += "</div>";
+              html += "<div class='stepper-content' id='" + stepperId + "'>";
+              for (var s = 0; s < sopSteps.length; s++) {
+                html += "<div class='stepper-step'><span class='stepper-num'>" + (s+1) + "</span><span>" + sopSteps[s] + "</span></div>";
+              }
+              html += "</div></div>";
+            }
+
+            // GOOD VS BAD BENCHMARK BUTTON
+            if (firstTask.goodSample || firstTask.badSample) {
+              var gEnc = encodeURIComponent(firstTask.goodSample || "");
+              var bEnc = encodeURIComponent(firstTask.badSample || "");
+              html += "<div style='display:flex; gap:6px; margin-bottom:8px;'>";
+              html += "<button type='button' style='width:auto; padding:5px 10px; font-size:11px; background:#21262d; border:1px solid #30363d; color:#ffd33d;' onclick='openBenchmarkModal(\"" + gEnc + "\", \"" + bEnc + "\")'>⚖️ Quality Sample (Good vs Bad)</button>";
+              html += "</div>";
+            }
+
+            // TROUBLESHOOT ACCORDION
+            if (firstTask.troubleshoot) {
+              var tbId = "tb_main_" + count;
+              html += "<div class='troubleshoot-box'>";
+              html += "<div class='troubleshoot-title' onclick='toggleTroubleshoot(\"" + tbId + "\")'><span>❓ Agar problem aaye (Troubleshoot)</span><span>▼</span></div>";
+              html += "<div class='troubleshoot-body' id='" + tbId + "'>" + firstTask.troubleshoot + "</div>";
+              html += "</div>";
+            }
+
             if(firstTask.sop || firstTask.sopVideo) {
               html += "<div style='display:flex; gap:6px; margin-bottom:12px;'>";
               if(firstTask.sop) html += "<button class='btn-info' style='padding:6px; font-size:11px;' onclick='openSopModal(\"" + encodeURIComponent(firstTask.sop) + "\")'>📖 View SOP</button>";
@@ -1473,10 +1076,6 @@
             }
             
             html += "<div class='subtask-container'>";
-            if(group.length > 1) {
-              html += "<div class='subtask-header'>📸 CHECKLIST (" + group.length + " TASKS)</div>";
-            }
-            
             for(var j = 0; j < group.length; j++) {
               var st = group[j].data;
               var stIndex = group[j].index; 
@@ -1484,7 +1083,7 @@
               var isSkipped = st.status.includes("Skipped");
               var isDone = isCompleted || isSkipped;
               
-              var displayName = st.subTask ? st.subTask : "Action Details:";
+              var displayName = st.subTask ? st.subTask : "Action Required";
 
               html += "<div class='subtask-row " + (isDone ? "completed" : "") + "'>";
               if(isDone) {
@@ -1493,11 +1092,9 @@
               } else {
                 html += "<div class='subtask-name'>" + displayName + "</div>";
                 html += "<div class='subtask-actions'>";
-                html += "<button class='btn-complete' onclick='openStandardProofModal(" + stIndex + ")'>✅ Done</button>";
+                html += "<button class='btn-complete' onclick='directCompleteRoutine(" + stIndex + ", this)'>✅ Done</button>";
                 html += "<button class='btn-capture' onclick='openStandardProofModal(" + stIndex + ")'>📸 Photo</button>";
-                if (isOwner) {
-                  html += "<button class='btn-skip' onclick='skipTask(" + stIndex + ", this)'>⏭️ Skip</button>";
-                }
+                if (isOwner) html += "<button class='btn-skip' onclick='skipTask(" + stIndex + ", this)'>⏭️ Skip</button>";
                 html += "</div>";
               }
               html += "</div>";
@@ -1505,59 +1102,65 @@
             html += "</div></div>";
           }
         }
-        if(currentActiveTab !== 'Orders' && currentActiveTab !== 'Adhoc' && count === 0) {
-          html = "<div class='card' style='text-align:center; color:#8b949e;'>Is tab mein abhi koi task nahi hai! 🎉</div>";
-        }
+        if(currentActiveTab !== 'Orders' && currentActiveTab !== 'Adhoc' && count === 0) html = "<div class='card' style='text-align:center; color:#8b949e;'>Is tab mein abhi koi task nahi hai! 🎉</div>";
         area.innerHTML = html;
         updateLiveTimers(); 
       }
 
       function updatePointsUI(pts) {
-        var lbl = document.getElementById('lblRewardPoints');
-        if (lbl && pts > 0) {
-           var currentPts = parseInt(lbl.innerText.replace(/\D/g,'')) || 0;
-           lbl.innerText = (currentPts + pts) + " Pts";
+        if (!pts) return;
+        var scD = document.getElementById('scDaily');
+        if (scD) {
+          scD.innerText = ((parseInt(scD.innerText) || 0) + pts) + " P";
+          var scW = document.getElementById('scWeekly');
+          if (scW) scW.innerText = ((parseInt(scW.innerText) || 0) + pts) + " P";
+          var scM = document.getElementById('scMonthly');
+          if (scM) scM.innerText = ((parseInt(scM.innerText) || 0) + pts) + " P";
+          var scY = document.getElementById('scYearly');
+          if (scY) scY.innerText = ((parseInt(scY.innerText) || 0) + pts) + " P";
         }
-        fetchStaffScores();
       }
 
-      // ==========================================
-      // TASK ACTIONS: SKIP & PROOF SUBMISSION
-      // ==========================================
+      // DIRECT DONE WITHOUT PHOTO
+      function directCompleteRoutine(index, btn) {
+        var t = roleTasks[index];
+        btn.innerText = "..."; btn.disabled = true;
+        var isAdhoc = t.isAdhocAssigned ? true : false;
+        var adhocRow = t.adhocRowIndex ? t.adhocRowIndex - 1 : null;
+        google.script.run.withSuccessHandler(function(res) {
+          t.status = res.status;
+          updatePointsUI(res.pointsEarned);
+          renderStaffContent();
+        }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, t.type, t.task, t.subTask, t.deadline, null, null, null, isAdhoc, adhocRow, "Complete");
+      }
+
+      function directCompleteAdhoc(index, btn) {
+        var t = extraTasks[index];
+        btn.innerText = "..."; btn.disabled = true;
+        google.script.run.withSuccessHandler(function(res) {
+          t.status = res.status;
+          updatePointsUI(res.pointsEarned);
+          renderStaffContent();
+        }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", t.task, "", t.deadline, null, null, null, true, t.index, "Complete");
+      }
+
       function skipTask(index, btn) {
         if(confirm("Kya aap is task ko 'Skip' karna chahte hain?")) {
            var t = roleTasks[index];
            btn.innerText = "..."; btn.disabled = true;
-           google.script.run.withSuccessHandler(function(res) { 
-             t.status = res.status; 
-             updatePointsUI(res.pointsEarned); 
-             renderStaffContent(); 
-           }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, t.type, t.task, t.subTask, t.deadline, null, null, null, false, null, "Skip");
+           google.script.run.withSuccessHandler(function(res) { t.status = res.status; updatePointsUI(res.pointsEarned); renderStaffContent(); }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, t.type, t.task, t.subTask, t.deadline, null, null, null, false, null, "Skip");
         }
       }
-
       function skipAdhocTask(index, btn) {
-        if(confirm("Kya aap is task ko 'Skip' karna chahte hain?")) {
+        if(confirm("Kya aap is extra task ko 'Skip' karna chahte hain?")) {
            var t = extraTasks[index];
            btn.innerText = "..."; btn.disabled = true;
-           google.script.run.withSuccessHandler(function(res) { 
-             t.status = res.status; 
-             updatePointsUI(res.pointsEarned); 
-             renderStaffContent(); 
-           }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, t.type || "Ad-hoc", t.task, "", t.deadline, null, null, null, true, t.index, "Skip");
+           google.script.run.withSuccessHandler(function(res) { t.status = res.status; updatePointsUI(res.pointsEarned); renderStaffContent(); }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", t.task, "", t.deadline, null, null, null, true, t.index, "Skip");
         }
       }
 
       function openStandardProofModal(index) {
-        setTimeout(function(){
-          var c1 = document.getElementById('chkPreflightData');
-          var c2 = document.getElementById('chkPreflightProof');
-          if (c1) c1.checked = false;
-          if (c2) c2.checked = false;
-          validatePreflightChecks();
-        }, 50);
         selectedTaskObj = roleTasks[index];
-        selectedTaskObj.isAdhoc = false;
         document.getElementById("modalHeading").innerText = "📸 Capture Proof";
         document.getElementById("modalTaskTitle").innerText = "Capture: " + (selectedTaskObj.subTask || selectedTaskObj.task);
         document.getElementById("proofModal").style.display = "block";
@@ -1569,9 +1172,9 @@
 
       function openAdhocProofModal(index) {
         selectedTaskObj = extraTasks[index];
-        selectedTaskObj.isAdhoc = true;
-        document.getElementById("modalHeading").innerText = "📸 Task Proof";
-        document.getElementById("modalTaskTitle").innerText = "Task: " + selectedTaskObj.task;
+        selectedTaskObj.isAdhocModal = true;
+        document.getElementById("modalHeading").innerText = "📸 Capture Proof";
+        document.getElementById("modalTaskTitle").innerText = "Capture: Extra Task";
         document.getElementById("proofModal").style.display = "block";
         document.getElementById("proofFile").value = "";
         document.getElementById("photoPreview").style.display = "none";
@@ -1579,210 +1182,109 @@
         document.getElementById("uploadLabel").style.display = "block";
       }
 
-      function closeModal() {
-        document.getElementById("proofModal").style.display = "none";
-        selectedTaskObj = null;
-      }
+      function closeModal() { document.getElementById("proofModal").style.display = "none"; selectedTaskObj = null; }
 
       function showPhotoPreview(event) {
-        var file = event.target.files[0];
-        if (file) {
+        if(event.target.files.length > 0) {
           var reader = new FileReader();
-          reader.onload = function(e) {
-            var img = document.getElementById("photoPreview");
-            img.src = e.target.result;
-            img.style.display = "block";
+          reader.onload = function(e){
+            var preview = document.getElementById('photoPreview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
             document.getElementById("uploadBtn").style.display = "block";
             document.getElementById("uploadLabel").style.display = "none";
           };
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(event.target.files[0]);
         }
       }
 
       function confirmSubmitProof() {
-        var fileInput = document.getElementById("proofFile");
         var uploadBtn = document.getElementById("uploadBtn");
-        uploadBtn.innerText = "Uploading Proof...";
-        uploadBtn.disabled = true;
-
+        var fileInput = document.getElementById("proofFile");
         if (fileInput.files.length > 0) {
           var file = fileInput.files[0];
           var reader = new FileReader();
           reader.onload = function(e) {
             var base64Data = e.target.result.split(',')[1];
-            if (selectedTaskObj.isAdhoc) {
+            uploadBtn.innerText = "Submitting..."; uploadBtn.disabled = true;
+            if (selectedTaskObj && selectedTaskObj.isAdhocModal) {
               google.script.run.withSuccessHandler(function(res) {
-                selectedTaskObj.status = res.status; 
-                updatePointsUI(res.pointsEarned); 
-                closeModal(); 
-                uploadBtn.innerText = "✅ Done"; 
-                uploadBtn.disabled = false; 
-                renderStaffContent();
-              }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type || "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, base64Data, file.type, file.name, true, selectedTaskObj.index, "Capture");
+                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent();
+              }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, base64Data, file.type, file.name, true, selectedTaskObj.index, "Capture");
             } else {
+              var isAdhoc = selectedTaskObj.isAdhocAssigned ? true : false;
+              var adhocRow = selectedTaskObj.adhocRowIndex ? selectedTaskObj.adhocRowIndex - 1 : null;
               google.script.run.withSuccessHandler(function(res) {
-                selectedTaskObj.status = res.status; 
-                updatePointsUI(res.pointsEarned); 
-                closeModal(); 
-                uploadBtn.innerText = "✅ Done"; 
-                uploadBtn.disabled = false; 
-                renderStaffContent();
-              }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, base64Data, file.type, file.name, false, null, "Capture");
+                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent();
+              }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, base64Data, file.type, file.name, isAdhoc, adhocRow, "Capture");
             }
           };
           reader.readAsDataURL(file);
-        } else {
-          // Direct Done without photo
-          if (selectedTaskObj.isAdhoc) {
-            google.script.run.withSuccessHandler(function(res) {
-              selectedTaskObj.status = res.status; 
-              updatePointsUI(res.pointsEarned); 
-              closeModal(); 
-              uploadBtn.innerText = "✅ Done"; 
-              uploadBtn.disabled = false; 
-              renderStaffContent();
-            }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type || "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, null, null, null, true, selectedTaskObj.index, "Done");
-          } else {
-            google.script.run.withSuccessHandler(function(res) {
-              selectedTaskObj.status = res.status; 
-              updatePointsUI(res.pointsEarned); 
-              closeModal(); 
-              uploadBtn.innerText = "✅ Done"; 
-              uploadBtn.disabled = false; 
-              renderStaffContent();
-            }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, null, null, null, false, null, "Done");
-          }
-        }
+        } else { alert("Kripya photo capture karein!"); }
       }
 
-      // ==========================================
-      // STORE MANAGER ORDERS DISPATCH
-      // ==========================================
-      function confirmAndCompleteOrder(index, rowIndex, btn) {
-        if(confirm("Kya aap confirm karte hain ki yeh order pack & dispatch ho chuka hai?")) {
-           btn.innerText = "Processing...";
-           btn.disabled = true;
-           google.script.run.withSuccessHandler(function(res) {
-             orderTasks[index].status = "Completed";
-             renderStaffContent();
-           }).completeStoreManagerOrder(rowIndex);
-        }
+      function openSopModal(encodedText) { document.getElementById("sopTextContent").innerText = decodeURIComponent(encodedText); document.getElementById("sopModal").style.display = "block"; }
+      function closeSopModal() { document.getElementById("sopModal").style.display = "none"; }
+      function openVideoModal(videoUrl) { 
+        var url = decodeURIComponent(videoUrl);
+        if(url.includes("drive.google.com/file/d/")) url = url.replace("/view", "/preview").replace("?usp=sharing", "");
+        document.getElementById("sopVideoPlayer").src = url; 
+        document.getElementById("videoModal").style.display = "block"; 
       }
+      function closeVideoModal() { document.getElementById("sopVideoPlayer").src = ""; document.getElementById("videoModal").style.display = "none"; }
 
-      // ==========================================
-      // SOP & VIDEO MODALS
-      // ==========================================
-      function openSopModal(sopText) {
-        document.getElementById("sopTextContent").innerText = decodeURIComponent(sopText);
-        document.getElementById("sopModal").style.display = "block";
-      }
-      function closeSopModal() {
-        document.getElementById("sopModal").style.display = "none";
-      }
-
-      function openVideoModal(videoUrl) {
-        var cleanUrl = decodeURIComponent(videoUrl);
-        if (cleanUrl.includes("youtube.com/watch?v=")) {
-            cleanUrl = cleanUrl.replace("watch?v=", "embed/");
-        } else if (cleanUrl.includes("youtu.be/")) {
-            cleanUrl = cleanUrl.replace("youtu.be/", "youtube.com/embed/");
-        }
-        document.getElementById("sopVideoPlayer").src = cleanUrl;
-        document.getElementById("videoModal").style.display = "block";
-      }
-      function closeVideoModal() {
-        document.getElementById("sopVideoPlayer").src = "";
-        document.getElementById("videoModal").style.display = "none";
-      }
-
-      // ==========================================
-      // WHATSAPP EOD GENERATOR
-      // ==========================================
       function sendEOD() {
-        var doneRoutine = 0, totalRoutine = roleTasks.length;
-        var doneAdhoc = 0, totalAdhoc = extraTasks.length;
-
-        for (var i = 0; i < roleTasks.length; i++) {
-          if (roleTasks[i].status.includes("Uploaded") || roleTasks[i].status.includes("Completed") || roleTasks[i].status.includes("Skipped")) doneRoutine++;
-        }
-        for (var j = 0; j < extraTasks.length; j++) {
-          if (extraTasks[j].status.includes("Uploaded") || extraTasks[j].status.includes("Completed") || extraTasks[j].status.includes("Skipped")) doneAdhoc++;
-        }
-
-        var text = "*Daily EOD Work Report - Yash Marketing*\n\n";
-        text += "👤 *Staff:* " + (loggedInUser ? loggedInUser.name : "Staff") + " (" + (loggedInUser ? loggedInUser.role : "Role") + ")\n";
-        text += "📅 *Date:* " + new Date().toLocaleDateString('en-GB') + "\n\n";
-        text += "📋 *Routine Checklist:* " + doneRoutine + " / " + totalRoutine + " Tasks Completed\n";
-        text += "🔔 *Assigned Tasks:* " + doneAdhoc + " / " + totalAdhoc + " Tasks Completed\n\n";
-        text += "🎯 *Total Daily Points:* " + document.getElementById('lblRewardPoints').innerText + "\n\n";
-        text += "✅ _Report submitted via Yash Marketing Portal._";
-
+        var text = "Hello Sir, meri EOD Report - " + loggedInUser.name + " (" + loggedInUser.role + "). Aaj ke saare task update kar diye hain.";
         window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
       }
     </script>
-
-    <!-- BACKEND API SETTINGS MODAL -->
-    <div id="apiSettingsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center; padding:15px; backdrop-filter:blur(4px);">
-      <div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:22px; max-width:520px; width:100%; box-shadow:0 12px 36px rgba(0,0,0,0.85);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="color:#58a6ff; margin:0; font-size:16px;">âš™ï¸ Backend API Configuration</h3>
-          <span onclick="closeApiSettingsModal()" style="cursor:pointer; color:#8b949e; font-size:22px; font-weight:bold;">&times;</span>
-        </div>
-        <p style="font-size:12px; color:#8b949e; line-height:1.5; margin-bottom:12px;">
-          Google Apps Script Web App Deployment URL yahan enter karein. Vercel frontend is endpoint se live communicate karega:
-        </p>
-        <label style="font-size:11px; color:#58a6ff; font-weight:bold; text-transform:uppercase; display:block; margin-bottom:4px;">Apps Script /exec Endpoint:</label>
-        <input type="text" id="apiEndpointInput" style="font-size:12px; padding:10px; margin-bottom:12px;" placeholder="https://script.google.com/macros/s/.../exec" />
-        <div style="display:flex; gap:10px; margin-top:5px;">
-          <button type="button" class="btn-info" onclick="testApiConnection()" style="flex:1; padding:10px; font-size:12px;">ðŸ” Test Connection</button>
-          <button type="button" onclick="saveApiUrlSettings()" style="flex:1; padding:10px; font-size:12px;">ðŸ’¾ Save & Reload</button>
-        </div>
-        <div id="apiTestStatus" style="font-size:12px; margin-top:12px; text-align:center;"></div>
-      </div>
-    </div>
   
-    <!-- DAY-1 ROLE ONBOARDING & DIGITAL TWIN MODAL -->
+    <!-- DAY-1 ONBOARDING BLUEPRINT MODAL -->
     <div id="onboardingModal" class="modal">
-      <div class="modal-content" style="max-width: 580px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #30363d; padding-bottom:8px;">
-          <div>
-            <h3 style="margin:0; color:#58a6ff; font-size:17px;" id="onboardModalRoleTitle">🚀 Role Digital Twin & Day-1 Guide</h3>
-            <span style="font-size:11px; color:#8b949e;">Yash Marketing Standard Operating Procedure (SOP)</span>
-          </div>
-          <span onclick="closeRoleOnboardingModal()" style="cursor:pointer; color:#8b949e; font-size:24px; font-weight:bold;">&times;</span>
+      <div class="modal-content" style="max-width: 600px; text-align: left; padding: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:10px; margin-bottom:12px;">
+          <h3 style="color:#58a6ff; margin:0;" id="onboardModalRoleTitle">🚀 Day-1 Role Blueprint</h3>
+          <button onclick="closeRoleOnboardingModal()" style="width:auto; padding:4px 8px; font-size:14px; background:#da3633; border:none; border-radius:4px; color:white; cursor:pointer;">✕</button>
         </div>
 
-        <!-- 5 Tabs: Mission, Routine, Workstations, Escalation, Golden Rules -->
-        <div class="tabs" style="font-size:11px; margin-bottom:12px; gap:2px;">
-          <div class="tab active" id="onboardTab-mission" onclick="switchOnboardTab('mission')">🎯 Mission</div>
-          <div class="tab" id="onboardTab-routine" onclick="switchOnboardTab('routine')">⏰ Timeline</div>
-          <div class="tab" id="onboardTab-tools" onclick="switchOnboardTab('tools')">🛠️ Tools</div>
-          <div class="tab" id="onboardTab-escalate" onclick="switchOnboardTab('escalate')">🚨 Escalations</div>
-          <div class="tab" id="onboardTab-rules" onclick="switchOnboardTab('rules')">⭐ 5 Rules</div>
+        <!-- 4 TABS -->
+        <div class="tabs" style="margin-bottom:12px;">
+          <div id="onboardTab-mission" class="tab active" onclick="switchOnboardTab('mission')">🎯 Mission</div>
+          <div id="onboardTab-timeline" class="tab" onclick="switchOnboardTab('timeline')">⏰ Shift Hours</div>
+          <div id="onboardTab-benchmarks" class="tab" onclick="switchOnboardTab('benchmarks')">⚖️ Good/Bad</div>
+          <div id="onboardTab-faq" class="tab" onclick="switchOnboardTab('faq')">❓ FAQ / Help</div>
         </div>
 
-        <div id="onboardContentArea" style="min-height: 200px;">
-          <!-- Dynamically populated -->
-        </div>
+        <div id="onboardContentArea" style="min-height: 220px; font-size: 13px; line-height: 1.5; color: #c9d1d9;"></div>
 
-        <button type="button" class="btn-info" onclick="closeRoleOnboardingModal()" style="margin-top:15px; width:100%; padding:10px;">Got It! Main Kaam Shuru Karta Hoon ✅</button>
+        <div style="text-align: right; margin-top: 15px; border-top: 1px solid #30363d; padding-top: 10px;">
+          <button onclick="closeRoleOnboardingModal()" style="background:#2ea043; width:auto; padding:8px 16px; font-size:13px;">Got It! Samajh Gaya 👍</button>
+        </div>
       </div>
     </div>
 
-    <!-- BENCHMARK SAMPLE MODAL -->
+    <!-- BENCHMARK SAMPLES COMPARISON MODAL -->
     <div id="benchmarkModal" class="modal">
-      <div class="modal-content" style="max-width: 500px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="margin:0; color:#ffd33d; font-size:16px;">🔍 Quality Benchmark: Good vs Bad Proof</h3>
-          <span onclick="closeBenchmarkModal()" style="cursor:pointer; color:#8b949e; font-size:24px; font-weight:bold;">&times;</span>
+      <div class="modal-content" style="max-width: 520px; text-align: left; padding: 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:8px; margin-bottom:12px;">
+          <h3 style="color:#ffd33d; margin:0; font-size:15px;">⚖️ Quality Benchmarks (Expected vs Rejected)</h3>
+          <button onclick="closeBenchmarkModal()" style="width:auto; padding:4px 8px; font-size:12px; background:#da3633; color:white; border:none; border-radius:4px;">✕</button>
         </div>
-        <p style="font-size:12px; color:#8b949e; margin-bottom:12px;">Naye staff ke liye standard guidelines — aapki submission aisi dikhni chahiye:</p>
-        <div id="benchmarkModalContent">
-          <!-- Dynamically populated -->
+
+        <div class="benchmark-box" style="margin-bottom:12px;">
+          <div class="benchmark-card good">
+            <div class="benchmark-title">✅ Acceptable (Good Work)</div>
+            <div id="bmGoodSample" style="line-height:1.4;"></div>
+          </div>
+          <div class="benchmark-card bad">
+            <div class="benchmark-title">❌ Common Mistake (Rejected)</div>
+            <div id="bmBadSample" style="line-height:1.4;"></div>
+          </div>
         </div>
-        <button type="button" class="btn-complete" onclick="closeBenchmarkModal()" style="margin-top:14px; width:100%; padding:10px;">Understood! Close Preview</button>
+
+        <button onclick="closeBenchmarkModal()" style="background:#30363d; color:#c9d1d9; width:100%; padding:10px;">Close Sample</button>
       </div>
     </div>
-  
   </body>
+
 </html>
