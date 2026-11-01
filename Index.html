@@ -898,10 +898,42 @@
         area.innerHTML = out;
       }
 
-      function openBenchmarkModal(goodSampleText, badSampleText) {
-        document.getElementById('bmGoodSample').innerText = decodeURIComponent(goodSampleText || "Clear documentation meeting quality standards.");
-        document.getElementById('bmBadSample').innerText = decodeURIComponent(badSampleText || "Blurry photo or unverified submission.");
+      function openBenchmarkModal(goodText, goodPhoto, badText, badPhoto) {
+        var gText = decodeURIComponent(goodText || "Clear documentation meeting quality standards.");
+        var bText = decodeURIComponent(badText || "Blurry photo, incomplete submission, or unverified figures.");
+        var gPhoto = decodeURIComponent(goodPhoto || "");
+        var bPhoto = decodeURIComponent(badPhoto || "");
+
+        document.getElementById('bmGoodSample').innerText = gText;
+        document.getElementById('bmBadSample').innerText = bText;
+
+        var gImgCont = document.getElementById('bmGoodPhotoContainer');
+        var gImg = document.getElementById('bmGoodPhotoImg');
+        if (gPhoto && gPhoto.trim() !== "" && gPhoto !== "undefined") {
+          gImg.src = gPhoto;
+          gImgCont.style.display = 'block';
+        } else {
+          gImgCont.style.display = 'none';
+        }
+
+        var bImgCont = document.getElementById('bmBadPhotoContainer');
+        var bImg = document.getElementById('bmBadPhotoImg');
+        if (bPhoto && bPhoto.trim() !== "" && bPhoto !== "undefined") {
+          bImg.src = bPhoto;
+          bImgCont.style.display = 'block';
+        } else {
+          bImgCont.style.display = 'none';
+        }
+
         document.getElementById('benchmarkModal').style.display = 'block';
+      }
+
+      function openPhotoZoomDirect(url, title) {
+        if (!url) return;
+        document.getElementById('zoomModalImg').src = url;
+        document.getElementById('zoomModalTitle').innerText = title || "Photo Preview";
+        document.getElementById('zoomModalLink').href = url;
+        document.getElementById('photoZoomModal').style.display = 'block';
       }
 
       function closeBenchmarkModal() {
@@ -1005,7 +1037,9 @@
               count++;
             }
           }
+          var cardIdx = 0;
           for (var mainTask in groupedTasks) {
+            cardIdx++;
             var group = groupedTasks[mainTask];
             var firstTask = group[0].data;
             // Filter by timeline slot if active
@@ -1034,38 +1068,48 @@
 
             if(firstTask.refPhoto) html += renderPhotoPills(firstTask.refPhoto);
 
-            // 1-2-3 STEPPER ACCORDION
-            var stepperId = "stepper_main_" + count;
+            // 1-2-3 STEPPER ACCORDION (Unique ID per card)
+            var stepperId = "stepper_card_" + cardIdx;
             var sopSteps = firstTask.sopSteps || [];
             if (sopSteps.length > 0) {
               html += "<div class='task-stepper-box'>";
               html += "<div class='stepper-header' onclick='toggleStepper(\"" + stepperId + "\")'>";
-              html += "<span>📋 Step-by-Step SOP (How to Execute)</span>";
+              html += "<span>📋 Step-by-Step SOP (Execution Guide)</span>";
               html += "<span style='font-size:10px; color:#58a6ff;'>Tap to View ▼</span>";
               html += "</div>";
               html += "<div class='stepper-content' id='" + stepperId + "'>";
               for (var s = 0; s < sopSteps.length; s++) {
                 html += "<div class='stepper-step'><span class='stepper-num'>" + (s+1) + "</span><span>" + sopSteps[s] + "</span></div>";
               }
+              if (firstTask.refPhoto && firstTask.refPhoto.trim() !== '') {
+                html += "<div style='margin-top:8px;'><a href='#' onclick='openPhotoZoomDirect(\"" + encodeURIComponent(firstTask.refPhoto) + "\", \"Reference Document\"); return false;' style='font-size:11px; color:#58a6ff; text-decoration:none;'>📄 View Reference Document / Template Form</a></div>";
+              }
+              if (firstTask.sopVideo && firstTask.sopVideo.trim() !== '') {
+                html += "<div style='margin-top:6px;'><button type='button' style='width:auto; padding:4px 8px; font-size:10px; background:#da3633; color:white;' onclick='openVideoModal(\"" + encodeURIComponent(firstTask.sopVideo) + "\")'>🎥 Watch Training Video</button></div>";
+              }
               html += "</div></div>";
             }
 
-            // GOOD VS BAD BENCHMARK BUTTON
-            if (firstTask.goodSample || firstTask.badSample) {
-              var gEnc = encodeURIComponent(firstTask.goodSample || "");
-              var bEnc = encodeURIComponent(firstTask.badSample || "");
-              html += "<div style='display:flex; gap:6px; margin-bottom:8px;'>";
-              html += "<button type='button' style='width:auto; padding:5px 10px; font-size:11px; background:#21262d; border:1px solid #30363d; color:#ffd33d;' onclick='openBenchmarkModal(\"" + gEnc + "\", \"" + bEnc + "\")'>⚖️ Quality Sample (Good vs Bad)</button>";
-              html += "</div>";
-            }
+            // GOOD VS BAD BENCHMARK BUTTON (With Photo URLs)
+            var gEnc = encodeURIComponent(firstTask.goodSample || "");
+            var gPhotoEnc = encodeURIComponent(firstTask.goodPhoto || "");
+            var bEnc = encodeURIComponent(firstTask.badSample || "");
+            var bPhotoEnc = encodeURIComponent(firstTask.badPhoto || "");
+            html += "<div style='display:flex; gap:6px; margin-bottom:8px;'>";
+            html += "<button type='button' style='width:auto; padding:5px 10px; font-size:11px; background:#21262d; border:1px solid #30363d; color:#ffd33d;' onclick='openBenchmarkModal(\"" + gEnc + "\", \"" + gPhotoEnc + "\", \"" + bEnc + "\", \"" + bPhotoEnc + "\")'>⚖️ Quality Sample (Good vs Bad)</button>";
+            html += "</div>";
 
-            // TROUBLESHOOT ACCORDION
-            if (firstTask.troubleshoot) {
-              var tbId = "tb_main_" + count;
-              html += "<div class='troubleshoot-box'>";
-              html += "<div class='troubleshoot-title' onclick='toggleTroubleshoot(\"" + tbId + "\")'><span>❓ Agar problem aaye (Troubleshoot)</span><span>▼</span></div>";
-              html += "<div class='troubleshoot-body' id='" + tbId + "'>" + firstTask.troubleshoot + "</div>";
-              html += "</div>";
+            // TROUBLESHOOT ACCORDION (Unique ID per card)
+            var tbId = "tb_card_" + cardIdx;
+            var troubleText = firstTask.troubleshoot || "Agar is task mein koi problem aaye toh apne supervisor ko turant inform karein.";
+            html += "<div class='troubleshoot-box'>";
+            html += "<div class='troubleshoot-title' onclick='toggleTroubleshoot(\"" + tbId + "\")'><span>❓ Agar problem aaye (Troubleshoot)</span><span>▼</span></div>";
+            html += "<div class='troubleshoot-body' id='" + tbId + "'>" + troubleText + "</div>";
+            html += "</div>";
+
+            // SOURCE SHEET INDICATOR
+            if (firstTask.sourceSheet) {
+              html += "<div style='font-size:9px; color:#8b949e; margin-bottom:8px;'>📊 Sheet: <b>" + firstTask.sourceSheet + "</b> (Owner can edit here)</div>";
             }
 
             if(firstTask.sop || firstTask.sopVideo) {
@@ -1265,24 +1309,39 @@
 
     <!-- BENCHMARK SAMPLES COMPARISON MODAL -->
     <div id="benchmarkModal" class="modal">
-      <div class="modal-content" style="max-width: 520px; text-align: left; padding: 18px;">
+      <div class="modal-content" style="max-width: 540px; text-align: left; padding: 18px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:8px; margin-bottom:12px;">
           <h3 style="color:#ffd33d; margin:0; font-size:15px;">⚖️ Quality Benchmarks (Expected vs Rejected)</h3>
-          <button onclick="closeBenchmarkModal()" style="width:auto; padding:4px 8px; font-size:12px; background:#da3633; color:white; border:none; border-radius:4px;">✕</button>
+          <button onclick="closeBenchmarkModal()" style="width:auto; padding:4px 8px; font-size:12px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
         </div>
 
-        <div class="benchmark-box" style="margin-bottom:12px;">
-          <div class="benchmark-card good">
-            <div class="benchmark-title">✅ Acceptable (Good Work)</div>
-            <div id="bmGoodSample" style="line-height:1.4;"></div>
+        <div class="benchmark-box" style="margin-bottom:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <!-- GOOD BENCHMARK -->
+          <div class="benchmark-card good" style="background:rgba(46,160,67,0.1); border:1px solid #2ea043; border-radius:8px; padding:10px;">
+            <div class="benchmark-title" style="color:#2ea043; font-weight:bold; font-size:12px; margin-bottom:6px;">✅ Acceptable (Good Work)</div>
+            <div id="bmGoodSample" style="font-size:11px; line-height:1.4; color:#c9d1d9; margin-bottom:8px;"></div>
+            <div id="bmGoodPhotoContainer" style="display:none; margin-top:8px;">
+              <p style="font-size:10px; color:#8b949e; margin:0 0 4px 0;">📷 Reference Sample Photo:</p>
+              <img id="bmGoodPhotoImg" src="" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; border:1px solid #30363d; cursor:pointer;" onclick="openPhotoZoomDirect(this.src, 'Good Sample Benchmark')"/>
+            </div>
           </div>
-          <div class="benchmark-card bad">
-            <div class="benchmark-title">❌ Common Mistake (Rejected)</div>
-            <div id="bmBadSample" style="line-height:1.4;"></div>
+
+          <!-- BAD BENCHMARK -->
+          <div class="benchmark-card bad" style="background:rgba(218,54,51,0.1); border:1px solid #da3633; border-radius:8px; padding:10px;">
+            <div class="benchmark-title" style="color:#da3633; font-weight:bold; font-size:12px; margin-bottom:6px;">❌ Common Mistake (Rejected)</div>
+            <div id="bmBadSample" style="font-size:11px; line-height:1.4; color:#c9d1d9; margin-bottom:8px;"></div>
+            <div id="bmBadPhotoContainer" style="display:none; margin-top:8px;">
+              <p style="font-size:10px; color:#8b949e; margin:0 0 4px 0;">🚫 Mistake Example Photo:</p>
+              <img id="bmBadPhotoImg" src="" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; border:1px solid #30363d; cursor:pointer;" onclick="openPhotoZoomDirect(this.src, 'Rejected Mistake Example')"/>
+            </div>
           </div>
         </div>
 
-        <button onclick="closeBenchmarkModal()" style="background:#30363d; color:#c9d1d9; width:100%; padding:10px;">Close Sample</button>
+        <div style="background:#161b22; padding:8px 10px; border-radius:6px; border:1px solid #30363d; font-size:11px; color:#8b949e; margin-bottom:12px;">
+          💡 <b>Owner Live Control:</b> Ye samples aap Google Sheet mein Column H, I, J, K mein direct change kar sakte hain.
+        </div>
+
+        <button onclick="closeBenchmarkModal()" style="background:#30363d; color:#c9d1d9; width:100%; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Close Benchmark</button>
       </div>
     </div>
   </body>
