@@ -361,6 +361,81 @@
       border-bottom: none;
     }
 
+  
+    /* POINTS LEDGER & SCORE CARD STYLES */
+    .score-pts-sub {
+      font-size: 9px;
+      color: #8b949e;
+      margin-top: 2px;
+      font-weight: normal;
+    }
+    .score-box:hover {
+      border-color: #58a6ff;
+      background: #1c2128;
+      transform: translateY(-2px);
+    }
+    .score-pill-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #ffd33d;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-block;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .score-pill-btn:hover {
+      background: #1f6feb;
+      color: white;
+      border-color: #388bfd;
+    }
+    .ledger-pill-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .ledger-pill-btn.active {
+      background: #1f6feb;
+      border-color: #388bfd;
+      color: white;
+    }
+    .pts-badge-10 {
+      background: rgba(35, 134, 54, 0.2);
+      border: 1px solid #238636;
+      color: #3fb950;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .pts-badge-5 {
+      background: rgba(227, 179, 65, 0.2);
+      border: 1px solid #d29922;
+      color: #e3b341;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .pts-badge-0 {
+      background: rgba(218, 54, 51, 0.2);
+      border: 1px solid #da3633;
+      color: #f85149;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
   </style>
 
   </head>
@@ -504,13 +579,45 @@
 
         <!-- 🏆 STAFF 7-PERIOD SCORECARD -->
         <div class="score-grid" id="staffScoreGrid">
-          <div class="score-box"><div class="score-lbl">Daily</div><div class="score-val" id="scDaily">0</div></div>
-          <div class="score-box"><div class="score-lbl">Weekly</div><div class="score-val" id="scWeekly">0</div></div>
-          <div class="score-box highlight"><div class="score-lbl">Monthly</div><div class="score-val" id="scMonthly">0</div></div>
-          <div class="score-box"><div class="score-lbl">Last Mo.</div><div class="score-val" id="scLastMonth">0</div></div>
-          <div class="score-box"><div class="score-lbl">Curr. Qtr</div><div class="score-val" id="scCurrQtr">0</div></div>
-          <div class="score-box"><div class="score-lbl">Last Qtr</div><div class="score-val" id="scLastQtr">0</div></div>
-          <div class="score-box highlight"><div class="score-lbl">Yearly</div><div class="score-val" id="scYearly">0</div></div>
+          <div class="score-box" onclick="openPointsLedger('daily')" style="cursor:pointer;" title="Tap to view Daily Points Ledger">
+            <div class="score-lbl">Daily Score</div>
+            <div class="score-val" id="scDaily">0%</div>
+            <div class="score-pts-sub" id="scDailyPts">0 / 0 P</div>
+          </div>
+          <div class="score-box" onclick="openPointsLedger('weekly')" style="cursor:pointer;" title="Tap to view Weekly Points Ledger">
+            <div class="score-lbl">Weekly Score</div>
+            <div class="score-val" id="scWeekly">0%</div>
+            <div class="score-pts-sub" id="scWeeklyPts">0 / 0 P</div>
+          </div>
+          <div class="score-box highlight" onclick="openPointsLedger('monthly')" style="cursor:pointer;" title="Tap to view Monthly Points Ledger">
+            <div class="score-lbl">Monthly Score</div>
+            <div class="score-val" id="scMonthly">0%</div>
+            <div class="score-pts-sub" id="scMonthlyPts" style="color:#ffd33d;">0 / 0 P</div>
+          </div>
+          <div class="score-box" onclick="openPointsLedger('lastmonth')" style="cursor:pointer;">
+            <div class="score-lbl">Last Mo.</div>
+            <div class="score-val" id="scLastMonth">0%</div>
+            <div class="score-pts-sub" id="scLastMonthPts">0 P</div>
+          </div>
+          <div class="score-box" onclick="openPointsLedger('currentquarter')" style="cursor:pointer;">
+            <div class="score-lbl">Curr. Qtr</div>
+            <div class="score-val" id="scCurrQtr">0%</div>
+            <div class="score-pts-sub" id="scCurrQtrPts">0 P</div>
+          </div>
+          <div class="score-box" onclick="openPointsLedger('lastquarter')" style="cursor:pointer;">
+            <div class="score-lbl">Last Qtr</div>
+            <div class="score-val" id="scLastQtr">0%</div>
+            <div class="score-pts-sub" id="scLastQtrPts">0 P</div>
+          </div>
+          <div class="score-box highlight" onclick="openPointsLedger('yearly')" style="cursor:pointer;">
+            <div class="score-lbl">Yearly</div>
+            <div class="score-val" id="scYearly">0%</div>
+            <div class="score-pts-sub" id="scYearlyPts" style="color:#ffd33d;">0 P</div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-6px; margin-bottom:12px; font-size:11px;">
+          <span style="color:#8b949e;">💡 Rule: Task = 5 P Complete + 5 P On-Time (10 P total)</span>
+          <span style="color:#58a6ff; cursor:pointer; font-weight:600;" onclick="openPointsLedger('daily')">📊 Open Points Ledger ➔</span>
         </div>
 
         <!-- 🕒 VISUAL HOUR-BY-HOUR SHIFT TIMELINE RIBBON -->
@@ -643,15 +750,32 @@
         }).verifyLogin(id, pass);
       }
 
+      var cachedScoresData = null;
+
       function applyScorecardUI(sc) {
         if (!sc) return;
-        document.getElementById("scDaily").innerText = (sc.daily || 0) + " P";
-        document.getElementById("scWeekly").innerText = (sc.weekly || 0) + " P";
-        document.getElementById("scMonthly").innerText = (sc.monthly || 0) + " P";
-        document.getElementById("scLastMonth").innerText = (sc.lastMonth || 0) + " P";
-        document.getElementById("scCurrQtr").innerText = (sc.currentQuarter || 0) + " P";
-        document.getElementById("scLastQtr").innerText = (sc.lastQuarter || 0) + " P";
-        document.getElementById("scYearly").innerText = (sc.yearly || 0) + " P";
+        cachedScoresData = sc;
+        setScoreBox('scDaily', 'scDailyPts', sc.daily);
+        setScoreBox('scWeekly', 'scWeeklyPts', sc.weekly);
+        setScoreBox('scMonthly', 'scMonthlyPts', sc.monthly);
+        setScoreBox('scLastMonth', 'scLastMonthPts', sc.lastMonth);
+        setScoreBox('scCurrQtr', 'scCurrQtrPts', sc.currentQuarter);
+        setScoreBox('scLastQtr', 'scLastQtrPts', sc.lastQuarter);
+        setScoreBox('scYearly', 'scYearlyPts', sc.yearly);
+      }
+
+      function setScoreBox(valId, subId, data) {
+        var elVal = document.getElementById(valId);
+        var elSub = document.getElementById(subId);
+        if (!elVal) return;
+        if (data && typeof data === 'object') {
+          elVal.innerText = (data.percentage || 0) + "%";
+          if (elSub) elSub.innerText = (data.earned || 0) + " / " + (data.max || 0) + " P";
+        } else {
+          var num = parseInt(data) || 0;
+          elVal.innerText = num + " P";
+          if (elSub) elSub.innerText = "";
+        }
       }
 
       function logout() {
@@ -781,9 +905,9 @@
             html += "<tr>";
             html += "<td style='font-weight:bold; color:#c9d1d9;'>" + medal + s.name + "</td>";
             html += "<td style='color:#8b949e;'>" + s.role + "</td>";
-            html += "<td>" + s.daily + "</td>";
-            html += "<td>" + s.weekly + "</td>";
-            html += "<td style='color:#ffd33d; font-weight:bold;'>" + s.monthly + "</td>";
+            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('daily', '" + s.name + "')\">" + s.daily + "</span></td>";
+            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('weekly', '" + s.name + "')\">" + s.weekly + "</span></td>";
+            html += "<td><span class='score-pill-btn' style='color:#ffd33d;' onclick=\"openPointsLedger('monthly', '" + s.name + "')\">" + s.monthly + "</span></td>";
             html += "<td>" + s.lastMonth + "</td>";
             html += "<td>" + s.currentQuarter + "</td>";
             html += "<td>" + s.lastQuarter + "</td>";
@@ -1717,6 +1841,95 @@
         window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
       }
 
+    
+      // =====================================================================
+      // 📊 POINTS LEDGER MODAL CONTROLLER
+      // =====================================================================
+      var currentLedgerTargetStaff = "";
+      var currentLedgerPeriod = "daily";
+
+      function openPointsLedger(period, targetStaff) {
+        currentLedgerPeriod = period || 'daily';
+        currentLedgerTargetStaff = targetStaff || (loggedInUser ? loggedInUser.name : '');
+
+        var subEl = document.getElementById('ledgerStaffSubtitle');
+        if (subEl) subEl.innerText = "Staff: " + currentLedgerTargetStaff + " | Breakdown & Audit Trail";
+
+        switchLedgerPeriod(currentLedgerPeriod);
+        document.getElementById('pointsLedgerModal').style.display = 'block';
+      }
+
+      function closePointsLedgerModal() {
+        document.getElementById('pointsLedgerModal').style.display = 'none';
+      }
+
+      function switchLedgerPeriod(period) {
+        currentLedgerPeriod = period;
+        var periods = ['daily', 'weekly', 'monthly'];
+        periods.forEach(function(p) {
+          var btn = document.getElementById('ledgerPill-' + p);
+          if (btn) {
+            if (p === period) btn.classList.add('active');
+            else btn.classList.remove('active');
+          }
+        });
+
+        var tbody = document.getElementById('ledgerTableBody');
+        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:#8b949e; padding:15px;'>⏳ Loading " + period + " points ledger...</td></tr>";
+
+        google.script.run.withSuccessHandler(function(data) {
+          renderPointsLedger(data);
+        }).getStaffPointsLedger(currentLedgerTargetStaff, period);
+      }
+
+      function renderPointsLedger(data) {
+        if (!data || !data.success) {
+          document.getElementById('ledgerTableBody').innerHTML = "<tr><td colspan='7' style='text-align:center; color:#8b949e; padding:15px;'>Koi ledger data nahi mila.</td></tr>";
+          return;
+        }
+
+        // Update Summary KPIs
+        document.getElementById('ledgerKpiPercent').innerText = data.percentage + "%";
+        document.getElementById('ledgerKpiPts').innerText = data.earnedPoints + " / " + data.maxPoints + " P";
+        document.getElementById('ledgerKpiComp').innerText = data.completedCount + " / " + data.totalTasks + " Tasks";
+        document.getElementById('ledgerKpiOnTime').innerText = data.onTimeCount + " Tasks";
+
+        var tbody = document.getElementById('ledgerTableBody');
+        if (!data.entries || data.entries.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:#8b949e; padding:15px;'>✨ Is period mein koi task submission nahi hai.</td></tr>";
+          return;
+        }
+
+        var html = "";
+        for (var i = 0; i < data.entries.length; i++) {
+          var e = data.entries[i];
+          var badgeClass = e.totalPoints === 10 ? 'pts-badge-10' : (e.totalPoints === 5 ? 'pts-badge-5' : 'pts-badge-0');
+
+          var compBadge = e.completionPoints === 5 ? "<span style='color:#3fb950; font-weight:bold;'>✅ +5 P</span>" : "<span style='color:#da3633;'>❌ 0 P</span>";
+          var onTimeBadge = e.onTimePoints === 5 ? "<span style='color:#79c0ff; font-weight:bold;'>⏱️ +5 P</span>" : (e.isPending ? "<span style='color:#8b949e;'>⏳ 0 P</span>" : "<span style='color:#e3b341;'>🚨 Late (+0 P)</span>");
+
+          var proofCell = "";
+          if (e.proofLink && e.proofLink.indexOf("http") !== -1) {
+            var cleanUrl = e.proofLink.replace(/=HYPERLINK\("([^"]+)".*/, "$1").trim();
+            proofCell = "<a href='" + cleanUrl + "' target='_blank' style='color:#58a6ff; text-decoration:underline;'>📷 View Proof</a>";
+          } else {
+            proofCell = "<span style='color:#8b949e;'>" + (e.status || "N/A") + "</span>";
+          }
+
+          html += "<tr style='" + (e.isPending ? "opacity:0.7; background:rgba(255,255,255,0.02);" : "") + "'>";
+          html += "<td style='font-weight:600; color:#c9d1d9;'>" + e.fullTitle + "</td>";
+          html += "<td style='color:#ffd33d;'>" + e.deadline + "</td>";
+          html += "<td style='color:#8b949e;'>" + e.submitTime + "</td>";
+          html += "<td style='text-align:center;'>" + compBadge + "</td>";
+          html += "<td style='text-align:center;'>" + onTimeBadge + "</td>";
+          html += "<td style='text-align:center;'><span class='" + badgeClass + "'>" + e.totalPoints + " P</span></td>";
+          html += "<td style='font-size:11px;'>" + proofCell + "</td>";
+          html += "</tr>";
+        }
+
+        tbody.innerHTML = html;
+      }
+
     </script>
   
     
@@ -1771,6 +1984,81 @@
         <div style="display:flex; gap:10px;">
           <button onclick="dispatchShiftHandoverWhatsapp()" style="flex:1; background:#25d366; color:#0d1117; padding:12px; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;">📲 Dispatch Handover to CEO via WhatsApp</button>
           <button onclick="closeHandoverModal()" style="width:auto; background:#30363d; color:#c9d1d9; padding:12px; border:none; border-radius:6px; font-size:13px; cursor:pointer;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    
+    <!-- POINTS LEDGER & AUDIT BREAKDOWN MODAL -->
+    <div id="pointsLedgerModal" class="modal">
+      <div class="modal-content" style="max-width: 680px; text-align: left; padding: 20px;">
+        <!-- Modal Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:10px; margin-bottom:14px;">
+          <div>
+            <h3 style="color:#ffd33d; margin:0; font-size:17px; display:flex; align-items:center; gap:6px;">
+              <span>📊 Points Ledger & Audit Breakdown</span>
+            </h3>
+            <p id="ledgerStaffSubtitle" style="margin:3px 0 0 0; font-size:12px; color:#8b949e;">Staff: Loading...</p>
+          </div>
+          <button onclick="closePointsLedgerModal()" style="width:auto; padding:4px 10px; font-size:14px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
+        </div>
+
+        <!-- Period Filter Pills -->
+        <div class="ledger-period-ribbon" style="display:flex; gap:8px; margin-bottom:14px;">
+          <button class="ledger-pill-btn active" id="ledgerPill-daily" onclick="switchLedgerPeriod('daily')">Daily (Today)</button>
+          <button class="ledger-pill-btn" id="ledgerPill-weekly" onclick="switchLedgerPeriod('weekly')">Weekly (This Week)</button>
+          <button class="ledger-pill-btn" id="ledgerPill-monthly" onclick="switchLedgerPeriod('monthly')">Monthly (This Month)</button>
+        </div>
+
+        <!-- Summary KPI Card -->
+        <div id="ledgerKpiCard" style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:12px; margin-bottom:14px;">
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center;">
+            <div>
+              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">Score Card</div>
+              <div id="ledgerKpiPercent" style="font-size:22px; font-weight:800; color:#58a6ff; margin-top:2px;">--%</div>
+            </div>
+            <div>
+              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">Points Scored</div>
+              <div id="ledgerKpiPts" style="font-size:16px; font-weight:700; color:#ffd33d; margin-top:5px;">-- / -- P</div>
+            </div>
+            <div>
+              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">Completed (+5 P)</div>
+              <div id="ledgerKpiComp" style="font-size:16px; font-weight:700; color:#3fb950; margin-top:5px;">-- Tasks</div>
+            </div>
+            <div>
+              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">On-Time (+5 P)</div>
+              <div id="ledgerKpiOnTime" style="font-size:16px; font-weight:700; color:#79c0ff; margin-top:5px;">-- Tasks</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scoring Rule Notice -->
+        <div style="background:rgba(31,111,235,0.1); border-left:4px solid #1f6feb; padding:8px 12px; border-radius:4px; margin-bottom:14px; font-size:11px; color:#c9d1d9;">
+          💡 <b>Scoring Rule:</b> Har task = <b>10 Points</b> (<b>5 P</b> Execution/Proof complete hone par + <b>5 P</b> Deadline par On-Time complete karne ka bonus).
+        </div>
+
+        <!-- Ledger Table Container -->
+        <div style="overflow-x:auto; max-height: 380px; overflow-y:auto;" id="ledgerTableContainer">
+          <table class="scoreboard-table" style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Task & SubTask</th>
+                <th>Deadline</th>
+                <th>Submit Time</th>
+                <th>Complete (+5)</th>
+                <th>On-Time (+5)</th>
+                <th style="color:#ffd33d;">Total Points</th>
+                <th>Status / Proof</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTableBody">
+              <tr><td colspan="7" style="text-align:center; color:#8b949e; padding:15px;">Loading ledger...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="text-align: right; margin-top: 15px; border-top: 1px solid #30363d; padding-top: 10px;">
+          <button onclick="closePointsLedgerModal()" style="background:#30363d; color:#c9d1d9; width:auto; padding:8px 16px; font-size:13px; border:none; border-radius:6px; cursor:pointer;">Close</button>
         </div>
       </div>
     </div>
