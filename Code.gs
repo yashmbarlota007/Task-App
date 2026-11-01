@@ -56,7 +56,7 @@ function getStaffListForAdmin() {
     var name = data[i][0] ? data[i][0].toString().trim() : "";
     var role = data[i][4] ? data[i][4].toString().trim() : "";
     if (name !== "" && list.indexOf("👤 " + name) === -1) list.push("👤 " + name);
-    if (role !== "" && role.toLowerCase() !== "owner" && role.toLowerCase() !== "admin" && roles.indexOf("🏢 Team: " + role) === -1) {
+    if (role !== "" && role.toLowerCase() !== "owner" && role.toLowerCase() !== "ceo" && role.toLowerCase() !== "admin" && roles.indexOf("🏢 Team: " + role) === -1) {
       roles.push("🏢 Team: " + role);
     }
   }
@@ -94,7 +94,9 @@ function getStaffRoleByName(empName) {
   var data = sheet.getRange(2, 2, sheet.getLastRow(), 5).getValues();
   for (var i = 0; i < data.length; i++) {
     if (data[i][0] && data[i][0].toString().trim().toLowerCase() === empName.toLowerCase()) {
-      return data[i][4] ? data[i][4].toString().trim() : "Staff";
+      var r = data[i][4] ? data[i][4].toString().trim() : "Staff";
+      if (r.toLowerCase() === "owner") return "CEO";
+      return r;
     }
   }
   return "Staff";
@@ -168,7 +170,7 @@ function getStaffScoresBreakdown(staffName) {
   return scores;
 }
 
-// 📌 OWNER SCOREBOARD FOR ALL STAFF
+// 📌 CEO SCOREBOARD FOR ALL STAFF
 function getAllStaffScoreboard() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var masterSheet = ss.getSheetByName("staff master");
@@ -181,7 +183,7 @@ function getAllStaffScoreboard() {
   for (var i = 1; i < mData.length; i++) {
     var name = mData[i][1] ? mData[i][1].toString().trim() : "";
     var role = mData[i][5] ? mData[i][5].toString().trim() : (mData[i][4] ? mData[i][4].toString().trim() : "Staff");
-    if (name && role.toLowerCase() !== "owner" && role.toLowerCase() !== "admin" && !staffMap[name.toUpperCase()]) {
+    if (name && role.toLowerCase() !== "owner" && role.toLowerCase() !== "ceo" && role.toLowerCase() !== "admin" && !staffMap[name.toUpperCase()]) {
       staffMap[name.toUpperCase()] = {
         name: name, role: role,
         daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0
@@ -287,7 +289,7 @@ function getSmartRoleDefaults(roleName, mainTask, subTask) {
         ],
         goodSample: 'Clear, unblurred photo jisme: Date, Opening Cash, Denomination Tally, Total Receipts, Total Payments aur Net Cash clearly visible ho.',
         badSample: 'Sirf total amount ka rough paper scribble, dhundli photo, ya cash physical count kiye bina submit karna.',
-        troubleshoot: 'Agar cash mein farq (discrepancy) aaye toh pehle last 3 payment vouchers check karein aur turant Owner ko report karein. Skip na karein.',
+        troubleshoot: 'Agar cash mein farq (discrepancy) aaye toh pehle last 3 payment vouchers check karein aur turant CEO ko report karein. Skip na karein.',
         checklist: ['Cash denomination count verify kar liya', 'Cash book entry tally ho gayi']
       };
     }
@@ -319,7 +321,7 @@ function getSmartRoleDefaults(roleName, mainTask, subTask) {
         ],
         goodSample: 'Sealed carton photo jisme shop name, invoice number aur parcel label clearly legible ho.',
         badSample: 'Open box, bina tape ka carton, ya galat dealer ka address laga hona.',
-        troubleshoot: 'Stock kam ho toh partial dispatch na karein; CRM aur Owner ko inform karke replacement item confirm karein.',
+        troubleshoot: 'Stock kam ho toh partial dispatch na karein; CRM aur CEO ko inform karke replacement item confirm karein.',
         checklist: ['Item quantity aur model check kiya', 'Carton tightly tape aur label kiya']
       };
     }
@@ -383,7 +385,7 @@ function getRoleOnboardingGuide(roleName) {
         bad: 'Rough chit par pencil se likha total, ya bina physical cash count kiye man-pasand figure likhna.'
       },
       faq: [
-        { q: 'Agar physical cash aur cash book mein difference aaye toh kya karein?', a: 'Sabse pehle din ke sabhi payment vouchers dubara total karein. Agar farq na mile toh turant Owner ko WhatsApp par escalate karein.' },
+        { q: 'Agar physical cash aur cash book mein difference aaye toh kya karein?', a: 'Sabse pehle din ke sabhi payment vouchers dubara total karein. Agar farq na mile toh turant CEO ko WhatsApp par escalate karein.' },
         { q: 'Internet ya ERP band ho toh reports kaise submit karein?', a: 'Offline Excel sheet mein manual tally karein aur register ka clear photo lekar task complete karein.' }
       ]
     };
@@ -411,7 +413,7 @@ function getRoleOnboardingGuide(roleName) {
         bad: 'Dheela pack jisse saman bahar nikal sake ya bina label ka parcel.'
       },
       faq: [
-        { q: 'Agar order ka koi item stock mein na ho toh?', a: 'Customer ko galat item na bhejein. CRM / Owner ko message karein aur confirm karein.' }
+        { q: 'Agar order ka koi item stock mein na ho toh?', a: 'Customer ko galat item na bhejein. CRM / CEO ko message karein aur confirm karein.' }
       ]
     };
   }
@@ -1203,10 +1205,176 @@ function setupAllStaffTaskSheets() {
   for (var i = 1; i < data.length; i++) {
     var name = data[i][1] ? data[i][1].toString().trim() : "";
     var role = data[i][5] ? data[i][5].toString().trim() : (data[i][4] ? data[i][4].toString().trim() : "Staff");
-    if (name && role.toLowerCase() !== "owner" && role.toLowerCase() !== "admin") {
+    if (name && role.toLowerCase() !== "owner" && role.toLowerCase() !== "ceo" && role.toLowerCase() !== "admin") {
       setupStaffTaskSheet(name, role);
       count++;
     }
   }
   return count + " staff sheets setup / verified successfully!";
+}
+
+
+// =====================================================================
+// 📌 CEO EXECUTIVE OPERATIONS RADAR (LIVE PULSE & COMPLIANCE COMMAND)
+// =====================================================================
+function getCeoOperationsRadar() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var masterSheet = ss.getSheetByName("staff master");
+  if (!masterSheet) {
+    return {
+      pulse: { totalStaff: 0, totalTasksDue: 0, totalCompleted: 0, totalOverdue: 0, totalPending: 0, executionRate: 0 },
+      staffList: []
+    };
+  }
+
+  var mData = masterSheet.getDataRange().getValues();
+  var activeStaff = [];
+
+  for (var i = 1; i < mData.length; i++) {
+    var name = mData[i][1] ? mData[i][1].toString().trim() : "";
+    var role = mData[i][5] ? mData[i][5].toString().trim() : (mData[i][4] ? mData[i][4].toString().trim() : "Staff");
+    var phone = mData[i][2] ? mData[i][2].toString().trim() : "";
+    var rLower = role.toLowerCase();
+    if (name && rLower !== "owner" && rLower !== "ceo" && rLower !== "admin") {
+      activeStaff.push({ name: name, role: role, phone: phone });
+    }
+  }
+
+  var totalTasksDue = 0;
+  var totalCompleted = 0;
+  var totalOverdue = 0;
+  var totalPending = 0;
+  var staffResults = [];
+
+  var now = new Date();
+  var nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  for (var s = 0; s < activeStaff.length; s++) {
+    var member = activeStaff[s];
+    var tasks = [];
+    try {
+      tasks = getTasksForRole(member.role, member.name);
+    } catch(e) {
+      tasks = [];
+    }
+
+    var dailyTasks = [];
+    var sCompleted = 0;
+    var sOverdue = 0;
+    var sPending = 0;
+
+    for (var t = 0; t < tasks.length; t++) {
+      var item = tasks[t];
+      if (item.type !== "Daily") continue;
+
+      var isDone = item.status && (item.status.indexOf("Uploaded") !== -1 || item.status.indexOf("Completed") !== -1 || item.status.indexOf("Skipped") !== -1);
+      var isOverdue = false;
+      var overdueText = "";
+
+      if (!isDone) {
+        var match = (item.deadline || "").match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (match) {
+          var h = parseInt(match[1], 10);
+          var m = parseInt(match[2], 10);
+          var ampm = match[3].toUpperCase();
+          if (ampm === "PM" && h < 12) h += 12;
+          if (ampm === "AM" && h === 12) h = 0;
+          var deadMins = h * 60 + m;
+          if (nowMinutes > deadMins) {
+            isOverdue = true;
+            var diff = nowMinutes - deadMins;
+            var hrs = Math.floor(diff / 60);
+            var mins = diff % 60;
+            overdueText = (hrs > 0 ? hrs + "h " : "") + mins + "m late";
+          }
+        }
+      }
+
+      if (isDone) {
+        sCompleted++;
+      } else {
+        sPending++;
+        if (isOverdue) sOverdue++;
+      }
+
+      dailyTasks.push({
+        task: item.task,
+        subTask: item.subTask,
+        deadline: item.deadline,
+        timeSlot: item.timeSlot,
+        points: item.points,
+        status: item.status,
+        isDone: isDone,
+        isOverdue: isOverdue,
+        overdueText: overdueText,
+        sourceSheet: item.sourceSheet
+      });
+    }
+
+    totalTasksDue += dailyTasks.length;
+    totalCompleted += sCompleted;
+    totalOverdue += sOverdue;
+    totalPending += sPending;
+
+    var sRate = dailyTasks.length > 0 ? Math.round((sCompleted / dailyTasks.length) * 100) : 100;
+
+    staffResults.push({
+      name: member.name,
+      role: member.role,
+      phone: member.phone,
+      total: dailyTasks.length,
+      completed: sCompleted,
+      overdue: sOverdue,
+      pending: sPending,
+      rate: sRate,
+      tasks: dailyTasks
+    });
+  }
+
+  var overallRate = totalTasksDue > 0 ? Math.round((totalCompleted / totalTasksDue) * 100) : 100;
+
+  return {
+    pulse: {
+      totalStaff: activeStaff.length,
+      totalTasksDue: totalTasksDue,
+      totalCompleted: totalCompleted,
+      totalOverdue: totalOverdue,
+      totalPending: totalPending,
+      executionRate: overallRate
+    },
+    staffList: staffResults
+  };
+}
+
+// =====================================================================
+// 📌 SAVE SHIFT HANDOVER REPORT (AUTO-CALCULATED DAY-END AUDIT LOG)
+// =====================================================================
+function saveShiftHandover(staffName, role, completedCount, totalCount, pendingTasks, notes) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Shift_Handovers");
+  if (!sheet) {
+    sheet = ss.insertSheet("Shift_Handovers");
+    var headers = ["Timestamp", "Staff Name", "Role", "Completed Tasks", "Total Tasks", "Completion %", "Pending / Carried Forward", "Handover Notes"];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setBackground("#1f6feb").setFontColor("#ffffff").setFontWeight("bold");
+    sheet.setFrozenRows(1);
+  }
+
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  var timeStr = Utilities.formatDate(now, tz, "yyyy-MM-dd HH:mm:ss");
+  var rate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) + "%" : "100%";
+
+  sheet.appendRow([
+    timeStr,
+    staffName || "",
+    role || "",
+    completedCount || 0,
+    totalCount || 0,
+    rate,
+    pendingTasks || "None",
+    notes || ""
+  ]);
+
+  return { success: true, timestamp: timeStr };
 }
