@@ -16,13 +16,113 @@
       .card { background: #21262d; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #30363d; }
       .profile-header { background: linear-gradient(135deg, #1f6feb, #238636); padding: 15px; border-radius: 10px; color: white; margin-bottom: 15px; }
       
-      .tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 13px; cursor: pointer; overflow-x: auto; white-space: nowrap; }
-      .tab { padding: 6px 10px; border-radius: 6px; color: #8b949e; margin-right: 5px; position: relative; }
-      .tab.active { background: #30363d; color: #58a6ff; }
+      /* 📑 STAFF ZERO-SCROLL 4-COLUMN TAB BAR */
+      .tabs { 
+        display: grid; 
+        grid-template-columns: repeat(4, 1fr); 
+        gap: 6px; 
+        background: #0d1117; 
+        padding: 6px; 
+        border-radius: 10px; 
+        margin-bottom: 15px; 
+        font-weight: bold; 
+        font-size: 11px; 
+        border: 1px solid #30363d; 
+        width: 100%; 
+        box-sizing: border-box; 
+      }
+      .tabs.has-5-tabs { 
+        grid-template-columns: repeat(5, 1fr); 
+      }
+      .tab { 
+        padding: 6px 2px; 
+        border-radius: 8px; 
+        color: #8b949e; 
+        text-align: center; 
+        position: relative; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        background: #161b22; 
+        border: 1px solid #30363d; 
+        cursor: pointer; 
+        transition: all 0.2s ease; 
+        min-height: 48px; 
+        box-sizing: border-box; 
+      }
+      .tab:hover { 
+        border-color: #58a6ff; 
+        color: #c9d1d9; 
+      }
+      .tab.active { 
+        background: #21262d; 
+        color: #58a6ff; 
+        border-color: #388bfd; 
+        box-shadow: 0 0 10px rgba(56, 139, 253, 0.25); 
+      }
+      .tab .tab-label { 
+        font-size: 11px; 
+        font-weight: bold; 
+        white-space: nowrap; 
+      }
+      .tab .tab-sub { 
+        font-size: 9px; 
+        margin-top: 2px; 
+        color: #8b949e; 
+        font-weight: normal; 
+        white-space: nowrap; 
+      }
+      .tab.active .tab-sub { 
+        color: #58a6ff; 
+        font-weight: 600; 
+      }
+      .tab.tab-adhoc { 
+        border-color: #d29922; 
+      }
+      .tab.tab-adhoc .tab-label { 
+        color: #ffd33d; 
+      }
+      .tab.has-pending-adhoc { 
+        background: rgba(248, 81, 73, 0.18) !important; 
+        border: 1.5px solid #f85149 !important; 
+        box-shadow: 0 0 12px rgba(248, 81, 73, 0.4) !important; 
+        animation: pulse-adhoc-tab 1.5s infinite; 
+      }
+      @keyframes pulse-adhoc-tab {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+      }
       
-      .admin-tabs { display: flex; justify-content: space-around; background: #0d1117; padding: 8px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 12px; cursor: pointer; overflow-x: auto; white-space: nowrap; }
-      .admin-tab { padding: 8px 10px; border-radius: 6px; color: #8b949e; text-align: center; margin: 0 2px;}
-      .admin-tab.active { background: #58a6ff; color: #0d1117; }
+      .admin-tabs { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+        gap: 6px; 
+        background: #0d1117; 
+        padding: 6px; 
+        border-radius: 10px; 
+        margin-bottom: 15px; 
+        font-weight: bold; 
+        font-size: 11px; 
+        cursor: pointer; 
+        border: 1px solid #30363d; 
+        box-sizing: border-box; 
+      }
+      .admin-tab { 
+        padding: 8px 6px; 
+        border-radius: 6px; 
+        color: #8b949e; 
+        text-align: center; 
+        background: #161b22; 
+        border: 1px solid #30363d; 
+        transition: 0.2s; 
+      }
+      .admin-tab.active { 
+        background: #58a6ff; 
+        color: #0d1117; 
+        border-color: #58a6ff; 
+      }
       
       .task-card { background: #161b22; border-left: 5px solid #58a6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-top: 1px solid #30363d; border-right: 1px solid #30363d; border-bottom: 1px solid #30363d; }
       .task-card.order { border-left-color: #2ea043; background: #1a231d; transition: 0.3s; }
@@ -97,12 +197,14 @@
       }
 
       /* TIMELINE SLOTS RIBBON */
+      /* 🕒 VISUAL SHIFT TIMELINE RIBBON - 100% ZERO-SCROLL RESPONSIVE */
       .timeline-bar-wrapper {
         background: #161b22;
         border: 1px solid #30363d;
         border-radius: 10px;
         padding: 10px 12px;
         margin-bottom: 12px;
+        box-sizing: border-box;
       }
       .timeline-bar-header {
         display: flex;
@@ -113,27 +215,58 @@
         font-weight: bold;
         color: #58a6ff;
       }
-      .timeline-slots {
+      .timeline-slots-grid {
         display: flex;
+        flex-direction: column;
         gap: 6px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        scrollbar-width: none;
+        width: 100%;
+        box-sizing: border-box;
       }
-      .timeline-slots::-webkit-scrollbar { display: none; }
+      .timeline-slot-all {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 7px 12px;
+        color: #8b949e;
+        font-size: 11.5px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: 0.2s;
+        box-sizing: border-box;
+        width: 100%;
+      }
+      .timeline-slot-all:hover { border-color: #58a6ff; color: #c9d1d9; }
+      .timeline-slot-all.active {
+        background: #1f6feb;
+        color: #ffffff;
+        border-color: #388bfd;
+        font-weight: bold;
+        box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
+      }
+      .timeline-shifts-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+        width: 100%;
+        box-sizing: border-box;
+      }
       .timeline-slot-btn {
         background: #0d1117;
         border: 1px solid #30363d;
-        border-radius: 8px;
-        padding: 6px 10px;
+        border-radius: 6px;
+        padding: 6px 2px;
         color: #8b949e;
-        font-size: 11px;
+        font-size: 10px;
         cursor: pointer;
-        white-space: nowrap;
         text-align: center;
         transition: 0.2s;
-        flex: 1;
-        min-width: 95px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
       .timeline-slot-btn:hover { border-color: #58a6ff; color: #c9d1d9; }
       .timeline-slot-btn.active {
@@ -141,8 +274,15 @@
         color: #ffffff;
         border-color: #388bfd;
         font-weight: bold;
+        box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
       }
-      .timeline-slot-btn .slot-time { font-size: 9px; display: block; opacity: 0.85; margin-top: 1px; }
+      .timeline-slot-btn .slot-time {
+        font-size: 8px;
+        display: block;
+        opacity: 0.85;
+        margin-top: 2px;
+        white-space: nowrap;
+      }
 
       /* TASK SOP STEPPER ACCORDION */
       .task-stepper-box {
@@ -679,41 +819,59 @@
           <span style="color:#58a6ff; cursor:pointer; font-weight:600;" onclick="openPointsLedger('daily')">📊 Open Points Ledger ➔</span>
         </div>
 
-        <!-- 🕒 VISUAL HOUR-BY-HOUR SHIFT TIMELINE RIBBON -->
+        <!-- 🕒 VISUAL HOUR-BY-HOUR SHIFT TIMELINE RIBBON (ZERO-SCROLL RESPONSIVE GRID) -->
         <div class="timeline-bar-wrapper">
           <div class="timeline-bar-header">
             <span>🕒 Shift Timeline Filter</span>
-            <span style="font-size:10px; color:#8b949e; font-weight:normal;">Filter tasks by current shift hour</span>
+            <span style="font-size:10px; color:#8b949e; font-weight:normal;">Filter tasks by shift</span>
           </div>
-          <div class="timeline-slots">
-            <button class="timeline-slot-btn active" id="slotBtn-all" onclick="filterByTimelineSlot('all')">
-              All Shift
-              <span class="slot-time">Full Day</span>
+          <div class="timeline-slots-grid">
+            <button class="timeline-slot-all active" id="slotBtn-all" onclick="filterByTimelineSlot('all')">
+              <span>🌐 All Shifts (Full Day Tasks)</span>
+              <span class="slot-time" style="font-size:10px; opacity:0.85;">View All</span>
             </button>
-            <button class="timeline-slot-btn" id="slotBtn-morning" onclick="filterByTimelineSlot('morning')">
-              🌅 Morning
-              <span class="slot-time">09:00 - 11:30 AM</span>
-            </button>
-            <button class="timeline-slot-btn" id="slotBtn-midday" onclick="filterByTimelineSlot('midday')">
-              ☀️ Midday
-              <span class="slot-time">11:30 - 02:00 PM</span>
-            </button>
-            <button class="timeline-slot-btn" id="slotBtn-afternoon" onclick="filterByTimelineSlot('afternoon')">
-              ☕ Afternoon
-              <span class="slot-time">02:00 - 05:00 PM</span>
-            </button>
-            <button class="timeline-slot-btn" id="slotBtn-closing" onclick="filterByTimelineSlot('closing')">
-              🌙 Closing
-              <span class="slot-time">05:00 - 08:00 PM</span>
-            </button>
+            <div class="timeline-shifts-row">
+              <button class="timeline-slot-btn" id="slotBtn-morning" onclick="filterByTimelineSlot('morning')">
+                <span>🌅 Morning</span>
+                <span class="slot-time">09:00 - 11:30 AM</span>
+              </button>
+              <button class="timeline-slot-btn" id="slotBtn-midday" onclick="filterByTimelineSlot('midday')">
+                <span>☀️ Midday</span>
+                <span class="slot-time">11:30 - 02:00 PM</span>
+              </button>
+              <button class="timeline-slot-btn" id="slotBtn-afternoon" onclick="filterByTimelineSlot('afternoon')">
+                <span>☕ Aftern.</span>
+                <span class="slot-time">02:00 - 05:00 PM</span>
+              </button>
+              <button class="timeline-slot-btn" id="slotBtn-closing" onclick="filterByTimelineSlot('closing')">
+                <span>🌙 Closing</span>
+                <span class="slot-time">05:00 - 08:00 PM</span>
+              </button>
+            </div>
           </div>
         </div>
 
+        <!-- ⚠️ HIGH-PRIORITY CEO ONE-TIME TASK NOTICE BANNER -->
+        <div id="adhocNoticeBanner" style="display:none; margin-bottom:12px; background:linear-gradient(135deg, rgba(210,153,34,0.25), rgba(248,81,73,0.25)); border:1.5px solid #f85149; border-radius:8px; padding:10px 12px; cursor:pointer; align-items:center; justify-content:space-between; animation:pulse-adhoc-tab 1.8s infinite;"></div>
+
+        <!-- 📑 STAFF TABS (ZERO-SCROLL 4-COLUMN GRID) -->
         <div class="tabs" id="navTabs">
-          <div id="tabDaily" class="tab active" onclick="switchTab('Daily', this)">Daily</div>
-          <div id="tabWeekly" class="tab" onclick="switchTab('Weekly', this)">Weekly</div>
-          <div id="tabMonthly" class="tab" onclick="switchTab('Monthly', this)">Monthly</div>
-          <div id="adhocTabBtn" class="tab" onclick="switchTab('Adhoc', this)" style="color:#ffd33d;">🔔 Extra Tasks</div>
+          <div id="tabDaily" class="tab active" onclick="switchTab('Daily', this)">
+            <div class="tab-label">Daily</div>
+            <div class="tab-sub" id="subDaily">0/0</div>
+          </div>
+          <div id="tabWeekly" class="tab" onclick="switchTab('Weekly', this)">
+            <div class="tab-label">Weekly</div>
+            <div class="tab-sub" id="subWeekly">0/0</div>
+          </div>
+          <div id="tabMonthly" class="tab" onclick="switchTab('Monthly', this)">
+            <div class="tab-label">Monthly</div>
+            <div class="tab-sub" id="subMonthly">0/0</div>
+          </div>
+          <div id="adhocTabBtn" class="tab tab-adhoc" onclick="switchTab('Adhoc', this)">
+            <div class="tab-label">⚡ One-Time</div>
+            <div class="tab-sub" id="subAdhoc">0 Tasks</div>
+          </div>
         </div>
 
         <div id="tabContentArea"></div>
@@ -800,7 +958,11 @@
 
               if(roleClean === "store manager") {
                 if(!document.getElementById("orderTabBtn")) {
-                  document.getElementById("navTabs").innerHTML += '<div id="orderTabBtn" class="tab" onclick="switchTab(\'Orders\', this)" style="color:#2ea043;">📦 Orders</div>';
+                  var navTabsEl = document.getElementById("navTabs");
+                  if (navTabsEl) {
+                    navTabsEl.classList.add("has-5-tabs");
+                    navTabsEl.innerHTML += '<div id="orderTabBtn" class="tab" onclick="switchTab(\'Orders\', this)" style="border-color:#2ea043;"><div class="tab-label" style="color:#2ea043;">📦 Orders</div><div class="tab-sub" style="color:#2ea043;">0 Due</div></div>';
+                  }
                 }
               }
               loadStaffDashboard();
@@ -839,6 +1001,12 @@
 
       function logout() {
         loggedInUser = null;
+        var orderTab = document.getElementById("orderTabBtn");
+        if (orderTab) orderTab.remove();
+        var navTabs = document.getElementById("navTabs");
+        if (navTabs) navTabs.classList.remove("has-5-tabs");
+        var noticeBanner = document.getElementById("adhocNoticeBanner");
+        if (noticeBanner) noticeBanner.style.display = "none";
         document.getElementById("adminPortal").classList.add("hidden");
         document.getElementById("staffPortal").classList.add("hidden");
         document.getElementById("loginScreen").classList.remove("hidden");
@@ -1157,7 +1325,13 @@
         currentActiveTab = tabName;
         var tabs = document.querySelectorAll('.tab');
         for(var i=0; i<tabs.length; i++) tabs[i].classList.remove('active');
-        if(el) el.classList.add('active');
+        if(el) {
+          el.classList.add('active');
+        } else {
+          var targetId = tabName === 'Daily' ? 'tabDaily' : (tabName === 'Weekly' ? 'tabWeekly' : (tabName === 'Monthly' ? 'tabMonthly' : (tabName === 'Adhoc' ? 'adhocTabBtn' : 'orderTabBtn')));
+          var targetEl = document.getElementById(targetId);
+          if (targetEl) targetEl.classList.add('active');
+        }
         renderStaffContent(); 
       }
 
@@ -1423,16 +1597,55 @@
         }
 
         var tD = document.getElementById("tabDaily");
-        if(tD) tD.innerHTML = "Daily (" + counts.Daily.d + "/" + counts.Daily.t + ")";
+        if(tD) {
+          tD.innerHTML = '<div class="tab-label">Daily</div><div class="tab-sub">' + counts.Daily.d + '/' + counts.Daily.t + '</div>';
+        }
         var tW = document.getElementById("tabWeekly");
-        if(tW) tW.innerHTML = "Weekly (" + counts.Weekly.d + "/" + counts.Weekly.t + ")";
+        if(tW) {
+          tW.innerHTML = '<div class="tab-label">Weekly</div><div class="tab-sub">' + counts.Weekly.d + '/' + counts.Weekly.t + '</div>';
+        }
         var tM = document.getElementById("tabMonthly");
-        if(tM) tM.innerHTML = "Monthly (" + counts.Monthly.d + "/" + counts.Monthly.t + ")";
+        if(tM) {
+          tM.innerHTML = '<div class="tab-label">Monthly</div><div class="tab-sub">' + counts.Monthly.d + '/' + counts.Monthly.t + '</div>';
+        }
         
         var adhocBtn = document.getElementById("adhocTabBtn");
+        var adhocPending = 0;
         if(adhocBtn) {
-           var adhocPending = extraTasks.filter(function(e){ return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); }).length;
-           adhocBtn.innerHTML = "🔔 Extra Tasks (" + adhocPending + ")";
+           adhocPending = extraTasks.filter(function(e){ return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); }).length;
+           if (adhocPending > 0) {
+             adhocBtn.classList.add('has-pending-adhoc');
+             adhocBtn.innerHTML = '<div class="tab-label" style="color:#ff7b72;">⚡ One-Time</div><div class="tab-sub" style="color:#ffd33d; font-weight:bold;">🔥 ' + adhocPending + ' Due!</div>';
+           } else {
+             adhocBtn.classList.remove('has-pending-adhoc');
+             adhocBtn.innerHTML = '<div class="tab-label">⚡ One-Time</div><div class="tab-sub">' + extraTasks.length + ' Tasks</div>';
+           }
+        }
+
+        var noticeBanner = document.getElementById("adhocNoticeBanner");
+        if (noticeBanner) {
+          if (adhocPending > 0 && currentActiveTab !== 'Adhoc') {
+            noticeBanner.style.display = "flex";
+            noticeBanner.innerHTML = '<div style="display:flex; align-items:center; gap:8px;">' +
+              '<span style="font-size:18px;">⚠️</span>' +
+              '<div>' +
+                '<div style="font-size:12px; font-weight:bold; color:#ffffff;">CEO ne aapko ' + adhocPending + ' One-Time Task assign kiya hai!</div>' +
+                '<div style="font-size:10px; color:#ffe3e3;">Inhe complete karna zaroori hai. Yahan tap karke open karein ➔</div>' +
+              '</div>' +
+            '</div>' +
+            '<span style="background:#ffffff; color:#da3633; font-weight:bold; font-size:10px; padding:4px 8px; border-radius:12px; white-space:nowrap;">VIEW ➔</span>';
+            noticeBanner.onclick = function() {
+              switchTab('Adhoc');
+            };
+          } else {
+            noticeBanner.style.display = "none";
+          }
+        }
+
+        var orderTabBtn = document.getElementById("orderTabBtn");
+        if (orderTabBtn) {
+          var pendingOrders = orderTasks.filter(function(o){ return !o.status.includes("Completed"); }).length;
+          orderTabBtn.innerHTML = '<div class="tab-label" style="color:#2ea043;">📦 Orders</div><div class="tab-sub" style="color:#2ea043;">' + pendingOrders + ' Due</div>';
         }
 
         var area = document.getElementById("tabContentArea");
