@@ -501,33 +501,92 @@
 
         <!-- 1. ASSIGN TASK TAB -->
         <div id="adminTabAssign" class="card hidden">
+          <div style="background:#161b22; padding:12px; border-radius:8px; border-left:4px solid #1f6feb; margin-bottom:15px;">
+            <h3 style="margin:0 0 4px 0; color:#58a6ff; font-size:15px;">➕ Assign & Schedule Task (Permanent Sheet Add)</h3>
+            <p style="margin:0; font-size:11px; color:#8b949e;">Daily, Weekly aur Monthly tasks staff ki Google Sheet me permanently save honge aur unke routine schedule me show honge.</p>
+          </div>
+
           <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Task Priority Level:</label>
-          <select id="adminTaskPriority" style="margin-bottom:10px;">
+          <select id="adminTaskPriority" style="margin-bottom:12px;">
             <option value="🔴 High (Urgent)">🔴 Urgent / High Priority</option>
             <option value="🟡 Normal" selected>🟡 Standard Routine</option>
             <option value="🟢 Low">🟢 Flexible / Low Priority</option>
           </select>
-          <label style="color:#8b949e; font-size:13px;">Team ya Staff ko Task dein:</label>
-          <select id="adminStaffSelect"><option>Loading...</option></select>
+
+          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Team ya Staff ko Task dein:</label>
+          <select id="adminStaffSelect" style="margin-bottom:12px;"><option>Loading...</option></select>
           
-          <label style="color:#8b949e; font-size:12px; margin-top:10px; display:block;">Task Frequency:</label>
-          <select id="adminTaskFrequency">
-            <option value="Extra (One Time)">⚡ Extra Task (One Time)</option>
-            <option value="Daily Task">📅 Daily Task (Roz ka)</option>
+          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Task Frequency (Kaam kitni baar hona chahiye):</label>
+          <select id="adminTaskFrequency" onchange="onTaskFrequencyChange()" style="margin-bottom:12px;">
+            <option value="Daily Task" selected>📅 Daily Task (Roz ka)</option>
             <option value="Weekly Task">📆 Weekly Task (Hafte ka)</option>
             <option value="Monthly Task">🗓️ Monthly Task (Mahine ka)</option>
+            <option value="Extra (One Time)">⚡ Extra Task (One Time)</option>
           </select>
 
-          <input type="text" id="adminAdhocTask" placeholder="Naya kaam (Task Description)...">
+          <!-- DYNAMIC SCHEDULING CONTROLS -->
+          <!-- 1. Daily Shift Slot -->
+          <div id="groupDailySlot" style="margin-bottom:12px;">
+            <label style="color:#58a6ff; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">🕒 Shift Time Slot:</label>
+            <select id="adminDailySlot">
+              <option value="morning">🌅 Morning Shift (09:00 - 11:30 AM)</option>
+              <option value="midday">☀️ Midday Shift (11:30 - 02:00 PM)</option>
+              <option value="afternoon">☕ Afternoon Shift (02:00 - 05:00 PM)</option>
+              <option value="closing" selected>🌙 Closing Shift (05:00 - 08:00 PM)</option>
+            </select>
+          </div>
+
+          <!-- 2. Weekly Day Selector -->
+          <div id="groupWeeklyDay" style="display:none; margin-bottom:12px; background:#161b22; padding:10px; border-radius:6px; border:1px solid #30363d;">
+            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">📆 Hafte ke konse din kaam hona chahiye (Day of Week):</label>
+            <select id="adminWeeklyDay">
+              <option value="Monday" selected>Har Somwar (Monday)</option>
+              <option value="Tuesday">Har Mangalwar (Tuesday)</option>
+              <option value="Wednesday">Har Budhwar (Wednesday)</option>
+              <option value="Thursday">Har Guruwar (Thursday)</option>
+              <option value="Friday">Har Shukrawar (Friday)</option>
+              <option value="Saturday">Har Shaniwar (Saturday)</option>
+              <option value="Sunday">Har Raviwar (Sunday)</option>
+            </select>
+          </div>
+
+          <!-- 3. Monthly Date Selector -->
+          <div id="groupMonthlyDate" style="display:none; margin-bottom:12px; background:#161b22; padding:10px; border-radius:6px; border:1px solid #30363d;">
+            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">🗓️ Har mahine ki konsi taareekh ko kaam hona chahiye (Date of Month):</label>
+            <select id="adminMonthlyDate">
+              <option value="1">1st of Month</option><option value="2">2nd of Month</option><option value="3">3rd of Month</option><option value="4">4th of Month</option><option value="5">5th of Month</option><option value="6">6th of Month</option><option value="7">7th of Month</option><option value="8">8th of Month</option><option value="9">9th of Month</option><option value="10">10th of Month</option><option value="11">11th of Month</option><option value="12">12th of Month</option><option value="13">13th of Month</option><option value="14">14th of Month</option><option value="15">15th of Month</option><option value="16">16th of Month</option><option value="17">17th of Month</option><option value="18">18th of Month</option><option value="19">19th of Month</option><option value="20">20th of Month</option><option value="21">21st of Month</option><option value="22">22nd of Month</option><option value="23">23rd of Month</option><option value="24">24th of Month</option><option value="25">25th of Month</option><option value="26">26th of Month</option><option value="27">27th of Month</option><option value="28">28th of Month</option><option value="29">29th of Month</option><option value="30">30th of Month</option><option value="31">31st of Month (Month-End)</option>
+            </select>
+          </div>
+
+          <!-- 4. Recurring Deadline Time (For Daily, Weekly, Monthly) -->
+          <div id="groupRecurringTime" style="margin-bottom:12px;">
+            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">⏰ Expected Deadline Time:</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="time" id="adminRecurringTime" value="19:00" style="flex:1;">
+              <span style="font-size:11px; color:#8b949e;">(HH:MM)</span>
+            </div>
+          </div>
+
+          <!-- 5. One-Time Deadline (Only for Extra Task) -->
+          <div id="groupOneTimeDeadline" style="display:none; margin-bottom:12px;">
+            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">⏰ One-Time Deadline (Date & Time):</label>
+            <input type="datetime-local" id="adminAdhocDeadline">
+          </div>
+
+          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Kaam ka Naam (Task Title):</label>
+          <input type="text" id="adminAdhocTask" placeholder="Naya kaam (e.g. Bank Statement Tally, Cash Book check)..." style="margin-bottom:10px;">
           
-          <label style="color:#8b949e; font-size:12px; margin-top:5px; display:block;">Deadline (Date & Time Chunein):</label>
-          <input type="datetime-local" id="adminAdhocDeadline">
+          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Sub-Task / Guidance (Optional):</label>
+          <input type="text" id="adminTaskSubDesc" placeholder="Specific instructions ya sub-item..." style="margin-bottom:10px;">
 
-          <label style="color:#8b949e; font-size:12px; margin-top:10px; display:block;">Reference Photos (Multiple Select kar sakte hain 📷):</label>
-          <input type="file" id="adminTaskPhotoFile" accept="image/*" multiple style="background:#0d1117; padding:8px; border:1px solid #30363d; border-radius:6px; margin-top:5px; width:100%; box-sizing:border-box;">
+          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Step-by-Step SOP (Optional - Staff ko sikhane ke liye):</label>
+          <textarea id="adminTaskSOP" rows="2" placeholder="Step 1... Step 2... (Empty chhodenge toh standard role SOP auto-set hoga)" style="width:100%; box-sizing:border-box; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; padding:8px; font-size:12px; resize:vertical; margin-bottom:10px;"></textarea>
 
-          <button onclick="sendAdhocTask()" class="btn-info" style="margin-top:15px;" id="btnAssignAdhoc">Assign Task 🚀</button>
-          <p id="adminMsg" style="color: #2ea043; font-weight: bold; text-align:center;"></p>
+          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Reference Photos / Documents (Multiple 📷):</label>
+          <input type="file" id="adminTaskPhotoFile" accept="image/*" multiple style="background:#0d1117; padding:8px; border:1px solid #30363d; border-radius:6px; margin-bottom:14px; width:100%; box-sizing:border-box;">
+
+          <button onclick="sendPermanentTask()" class="btn-info" style="margin-top:5px; padding:12px; font-size:14px; font-weight:bold;" id="btnAssignAdhoc">Assign & Save to Permanent Sheet 🚀</button>
+          <p id="adminMsg" style="color: #2ea043; font-weight: bold; text-align:center; margin-top:10px;"></p>
         </div>
 
         <!-- 2. OWNER ALL-STAFF SCOREBOARD TAB -->
@@ -828,19 +887,108 @@
       }
 
       // 📌 SEND ADHOC WITH MULTIPLE PHOTOS
-      function sendAdhocTask() {
+      function onTaskFrequencyChange() {
+        var freq = document.getElementById("adminTaskFrequency").value;
+        var gDaily = document.getElementById("groupDailySlot");
+        var gWeekly = document.getElementById("groupWeeklyDay");
+        var gMonthly = document.getElementById("groupMonthlyDate");
+        var gRecTime = document.getElementById("groupRecurringTime");
+        var gOneTime = document.getElementById("groupOneTimeDeadline");
+
+        if (gDaily) gDaily.style.display = "none";
+        if (gWeekly) gWeekly.style.display = "none";
+        if (gMonthly) gMonthly.style.display = "none";
+        if (gRecTime) gRecTime.style.display = "block";
+        if (gOneTime) gOneTime.style.display = "none";
+
+        if (freq === "Daily Task") {
+          if (gDaily) gDaily.style.display = "block";
+        } else if (freq === "Weekly Task") {
+          if (gWeekly) gWeekly.style.display = "block";
+        } else if (freq === "Monthly Task") {
+          if (gMonthly) gMonthly.style.display = "block";
+        } else if (freq === "Extra (One Time)") {
+          if (gRecTime) gRecTime.style.display = "none";
+          if (gOneTime) gOneTime.style.display = "block";
+        }
+      }
+
+      function formatTime24to12(timeStr) {
+        if (!timeStr) return "07:00 PM";
+        var parts = timeStr.split(':');
+        var h = parseInt(parts[0], 10);
+        var m = parts[1] || '00';
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        if (h === 0) h = 12;
+        return (h < 10 ? '0' + h : h) + ':' + m + ' ' + ampm;
+      }
+
+      function getOrdinalSuffix(n) {
+        var s = ["th", "st", "nd", "rd"];
+        var v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+      }
+
+      function sendPermanentTask() {
         var staff = document.getElementById("adminStaffSelect").value;
-        var typeVal = document.getElementById("adminTaskFrequency").value;
-        var desc = document.getElementById("adminAdhocTask").value;
-        var rawDeadline = document.getElementById("adminAdhocDeadline").value;
-        var dead = formatDateTimeLocal(rawDeadline); 
+        var freqVal = document.getElementById("adminTaskFrequency").value;
+        var taskTitle = document.getElementById("adminAdhocTask").value.trim();
+        var subDesc = document.getElementById("adminTaskSubDesc") ? document.getElementById("adminTaskSubDesc").value.trim() : "";
+        var sopText = document.getElementById("adminTaskSOP") ? document.getElementById("adminTaskSOP").value.trim() : "";
+        var priority = document.getElementById("adminTaskPriority") ? document.getElementById("adminTaskPriority").value : "Normal";
         var photoInput = document.getElementById("adminTaskPhotoFile");
         var btn = document.getElementById("btnAssignAdhoc");
 
-        if(!staff || !desc) { alert("Staff aur Task bharna zaroori hai!"); return; }
+        if (!staff || staff === "" || staff.includes("----")) { alert("Kripya staff ya team chunein!"); return; }
+        if (!taskTitle) { alert("Kripya task ka naam bharein!"); return; }
+
+        var deadlineStr = "";
+        var timeSlot = "closing";
+
+        if (freqVal === "Daily Task") {
+          var recTime = document.getElementById("adminRecurringTime").value || "19:00";
+          var time12 = formatTime24to12(recTime);
+          timeSlot = document.getElementById("adminDailySlot").value || "closing";
+          deadlineStr = time12;
+        } else if (freqVal === "Weekly Task") {
+          var dayVal = document.getElementById("adminWeeklyDay").value || "Monday";
+          var recTime = document.getElementById("adminRecurringTime").value || "18:00";
+          var time12 = formatTime24to12(recTime);
+          deadlineStr = dayVal + ", " + time12;
+          timeSlot = "closing";
+          if (!subDesc) subDesc = "Scheduled: Har " + dayVal + " (Weekly)";
+        } else if (freqVal === "Monthly Task") {
+          var dateNum = parseInt(document.getElementById("adminMonthlyDate").value, 10) || 1;
+          var suffix = getOrdinalSuffix(dateNum);
+          var recTime = document.getElementById("adminRecurringTime").value || "19:00";
+          var time12 = formatTime24to12(recTime);
+          deadlineStr = suffix + " of Month, " + time12;
+          timeSlot = "closing";
+          if (!subDesc) subDesc = "Scheduled: Har Mahine ki " + suffix + " Taareekh";
+        } else {
+          // Extra (One Time)
+          var rawDeadline = document.getElementById("adminAdhocDeadline").value;
+          deadlineStr = formatDateTimeLocal(rawDeadline) || "Jald";
+          timeSlot = "adhoc";
+        }
 
         btn.disabled = true;
         var files = photoInput.files;
+
+        function executeAssign(photoArray) {
+          btn.innerText = "Saving to Google Sheet...";
+          google.script.run.withSuccessHandler(function(res) {
+            btn.disabled = false; btn.innerText = "Assign & Save to Permanent Sheet 🚀";
+            document.getElementById("adminMsg").innerText = res;
+            document.getElementById("adminAdhocTask").value = "";
+            if (document.getElementById("adminTaskSubDesc")) document.getElementById("adminTaskSubDesc").value = "";
+            if (document.getElementById("adminTaskSOP")) document.getElementById("adminTaskSOP").value = "";
+            photoInput.value = "";
+            setTimeout(function() { document.getElementById("adminMsg").innerText = ""; }, 5000);
+            loadAdminHistory();
+          }).assignTaskPermanently(staff, freqVal, taskTitle, subDesc, deadlineStr, timeSlot, sopText, photoArray, priority);
+        }
 
         if (files.length > 0) {
           btn.innerText = "Reading " + files.length + " Photo(s)...";
@@ -857,32 +1005,19 @@
                 });
                 readCount++;
                 if (readCount === files.length) {
-                  btn.innerText = "Uploading & Assigning...";
-                  google.script.run.withSuccessHandler(function(res) {
-                    btn.disabled = false; btn.innerText = "Assign Task 🚀";
-                    document.getElementById("adminMsg").innerText = res;
-                    document.getElementById("adminAdhocTask").value = "";
-                    document.getElementById("adminAdhocDeadline").value = "";
-                    photoInput.value = "";
-                    setTimeout(function() { document.getElementById("adminMsg").innerText = ""; }, 4000);
-                    loadAdminHistory(); 
-                  }).assignAdhocTask(staff, typeVal, desc, dead, photoArray);
+                  executeAssign(photoArray);
                 }
               };
               reader.readAsDataURL(file);
             })(files[i]);
           }
         } else {
-          btn.innerText = "Assigning Task...";
-          google.script.run.withSuccessHandler(function(res) {
-            btn.disabled = false; btn.innerText = "Assign Task 🚀";
-            document.getElementById("adminMsg").innerText = res;
-            document.getElementById("adminAdhocTask").value = "";
-            document.getElementById("adminAdhocDeadline").value = "";
-            setTimeout(function() { document.getElementById("adminMsg").innerText = ""; }, 4000);
-            loadAdminHistory(); 
-          }).assignAdhocTask(staff, typeVal, desc, dead, []);
+          executeAssign([]);
         }
+      }
+
+      function sendAdhocTask() {
+        sendPermanentTask();
       }
 
       // 📌 LOAD OWNER ALL-STAFF SCOREBOARD
@@ -1046,20 +1181,52 @@
 
       function parseDeadline(deadlineStr) {
         if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return null;
-        var d = new Date(deadlineStr);
-        if (!isNaN(d.getTime())) return d;
-        var match = deadlineStr.match(/(\d+):(\d+)\s(AM|PM)/i);
-        if (match) {
-          var dToday = new Date();
-          var hrs = parseInt(match[1]);
-          var mins = parseInt(match[2]);
-          var ampm = match[3].toUpperCase();
+        var now = new Date();
+        var lower = deadlineStr.toLowerCase();
+
+        var timeMatch = deadlineStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+        var hrs = 19;
+        var mins = 0;
+        if (timeMatch) {
+          hrs = parseInt(timeMatch[1], 10);
+          mins = parseInt(timeMatch[2], 10);
+          var ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : "";
           if (ampm === "PM" && hrs < 12) hrs += 12;
           if (ampm === "AM" && hrs === 12) hrs = 0;
-          dToday.setHours(hrs, mins, 0, 0);
-          return dToday;
         }
-        return null;
+
+        // Weekly Day Check
+        var daysMap = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+        for (var day in daysMap) {
+          if (lower.indexOf(day) !== -1) {
+            var targetDay = daysMap[day];
+            var curDay = now.getDay();
+            var diff = targetDay - curDay;
+            if (diff < 0) diff += 7;
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff, hrs, mins, 0);
+          }
+        }
+
+        // Monthly Date Check
+        var dateMatch = deadlineStr.match(/(\d{1,2})(st|nd|rd|th)/i);
+        if (dateMatch) {
+          var targetDateNum = parseInt(dateMatch[1], 10);
+          var curDateNum = now.getDate();
+          var targetMonth = now.getMonth();
+          var targetYear = now.getFullYear();
+          if (curDateNum > targetDateNum) {
+            targetMonth++;
+            if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+          }
+          return new Date(targetYear, targetMonth, targetDateNum, hrs, mins, 0);
+        }
+
+        // Direct Date Check
+        var d = new Date(deadlineStr);
+        if (!isNaN(d.getTime()) && deadlineStr.indexOf("-") !== -1) return d;
+
+        // Fallback to today at parsed time
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hrs, mins, 0);
       }
 
       function updateLiveTimers() {
@@ -1354,7 +1521,33 @@
             var isAllDone = group.every(function(x) { return x.data.status.includes("Uploaded") || x.data.status.includes("Completed") || x.data.status.includes("Skipped"); });
             var rawDeadRoutine = firstTask.deadline || "N/A";
             html += "<div style='background:#0d1117; padding:10px; border-radius:8px; margin: 10px 0; border:1px solid #30363d;'>";
-            html += "<p style='margin:0; font-size:12px; color:#ffd33d;'>⏰ <b>Deadline:</b> " + rawDeadRoutine;
+            var scheduleBadge = "";
+            var nowObj = new Date();
+            var lowerDead = rawDeadRoutine.toLowerCase();
+            if (currentActiveTab.toLowerCase() === "weekly") {
+              var daysArr = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+              var todayDayName = daysArr[nowObj.getDay()];
+              var matchedDay = daysArr.find(function(d){ return lowerDead.indexOf(d) !== -1; });
+              if (matchedDay) {
+                var capDay = matchedDay.charAt(0).toUpperCase() + matchedDay.slice(1);
+                if (matchedDay === todayDayName) {
+                  scheduleBadge = "<span style='display:inline-block; background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold; margin-right:6px;'>🔥 Due Today (" + capDay + ")!</span>";
+                } else {
+                  scheduleBadge = "<span style='display:inline-block; background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600; margin-right:6px;'>📆 Har " + capDay + "</span>";
+                }
+              }
+            } else if (currentActiveTab.toLowerCase() === "monthly") {
+              var mMatch = rawDeadRoutine.match(/(\d{1,2})(st|nd|rd|th)/i);
+              if (mMatch) {
+                var targetDateNum = parseInt(mMatch[1], 10);
+                if (nowObj.getDate() === targetDateNum) {
+                  scheduleBadge = "<span style='display:inline-block; background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold; margin-right:6px;'>🔥 Due Today (" + targetDateNum + "th)!</span>";
+                } else {
+                  scheduleBadge = "<span style='display:inline-block; background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600; margin-right:6px;'>🗓️ Har Mahine ki " + targetDateNum + "th</span>";
+                }
+              }
+            }
+            html += "<p style='margin:0; font-size:12px; color:#ffd33d;'>" + scheduleBadge + "⏰ <b>Deadline:</b> " + rawDeadRoutine;
             html += " <span class='live-timer' data-deadline='" + rawDeadRoutine + "' data-completed='" + isAllDone + "'></span>";
             html += " <span style='float:right;'>🎯 10 Pts</span></p>";
             html += "</div>";
