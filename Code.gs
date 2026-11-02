@@ -1053,12 +1053,20 @@ function getOrCreatePhotoFolder() {
 }
 
 // 📌 ASSIGN TASK WITH MULTIPLE PHOTOS & SEAMLESS DAILY/WEEKLY/MONTHLY/EXTRA SUPPORT
-function assignAdhocTask(assigneeInfo, taskTypeVal, taskDesc, deadline, photoArray) {
+// =====================================================================
+// 📌 CEO TASK ASSIGNMENT: PERMANENT GOOGLE SHEET SCHEDULE WRITER
+// Writes Daily, Weekly & Monthly tasks permanently to the staff's 14-col sheet
+// =====================================================================
+function assignTaskPermanently(assigneeInfo, taskTypeVal, taskName, subTask, deadlineStr, timeSlot, sopText, photoArray, priority) {
   if (!assigneeInfo || assigneeInfo.includes("----")) return "Error: Kripya valid staff ya team chunein!";
+  if (!taskName || taskName.trim() === "") return "Error: Kripya task ka naam bharein!";
+
   var cleanName = assigneeInfo.replace("🏢 Team: ", "").replace("👤 ", "").replace("👥 ", "").trim();
+  var isAllStaff = assigneeInfo.includes("👥 All Staff") || cleanName.toLowerCase() === "all staff" || cleanName.toLowerCase() === "all";
+  var isTeam = assigneeInfo.includes("🏢 Team: ");
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // Save all photos to Drive folder
+  // 1. Save reference photos to Drive if any
   var photoUrls = [];
   if (photoArray && photoArray.length > 0) {
     try {
@@ -1066,7 +1074,7 @@ function assignAdhocTask(assigneeInfo, taskTypeVal, taskDesc, deadline, photoArr
       for (var p = 0; p < photoArray.length; p++) {
         var pItem = photoArray[p];
         if (pItem.base64Data && pItem.fileName) {
-          var blob = Utilities.newBlob(Utilities.base64Decode(pItem.base64Data), pItem.mimeType, pItem.fileName);
+          var blob = Utilities.newBlob(Utilities.base64Decode(pItem.base64Data), pItem.mimeType || "image/jpeg", pItem.fileName);
           var file = folder.createFile(blob);
           try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch(e){}
           photoUrls.push(file.getUrl());
@@ -1076,20 +1084,114 @@ function assignAdhocTask(assigneeInfo, taskTypeVal, taskDesc, deadline, photoArr
   }
   var photoLinksString = photoUrls.length > 0 ? photoUrls.join(" , ") : "No Photo";
 
-  // 📌 Store in 'Adhoc_Tasks' with Frequency column
-  var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
-  if (!adhocSheet) {
-    adhocSheet = ss.insertSheet("Adhoc_Tasks");
-    adhocSheet.appendRow(["Assign Date", "Staff Name", "Task Description", "Deadline", "Status", "Reference Photo", "Task Frequency"]);
+  var freqClean = "Daily";
+  var tLower = (taskTypeVal || "").toLowerCase();
+  if (tLower.includes("daily")) freqClean = "Daily";
+  else if (tLower.includes("weekly")) freqClean = "Weekly";
+  else if (tLower.includes("monthly")) freqClean = "Monthly";
+  else if (tLower.includes("extra") || tLower.includes("one time")) freqClean = "Extra (One Time)";
+
+  // If Extra (One Time), record in Adhoc_Tasks sheet
+  if (freqClean === "Extra (One Time)") {
+    var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
+    if (!adhocSheet) {
+      adhocSheet = ss.insertSheet("Adhoc_Tasks");
+      adhocSheet.appendRow(["Assign Date", "Staff Name", "Task Description", "Deadline", "Status", "Reference Photo", "Task Frequency"]);
+    }
+    adhocSheet.appendRow([new Date(), cleanName, taskName + (subTask ? " - " + subTask : ""), deadlineStr, "Pending ⏳", photoLinksString, "Extra (One Time)"]);
+    return "⚡ Extra One-Time Task assigned to " + cleanName + " 🚀";
   }
 
-  // Ensure header has Col 7 if missing
-  if (adhocSheet.getLastColumn() < 7) {
-    adhocSheet.getRange(1, 7).setValue("Task Frequency");
+  // For Daily, Weekly, Monthly: Build 14-Column permanent row
+  var smartDefaults = getSmartRoleDefaults(isTeam ? cleanName : getStaffRoleByName(cleanName), taskName, subTask);
+  var finalSop = (sopText && sopText.trim() !== "") ? sopText.trim() : smartDefaults.sopSteps.join("\n");
+  var finalSlot = (timeSlot && timeSlot.trim() !== "") ? timeSlot.trim() : getTimeSlotFromDeadline(deadlineStr);
+
+  var newRow = [
+    freqClean,                                                    // 1. Frequency (Daily, Weekly, Monthly)
+    taskName.trim(),                                              // 2. Task Name
+    (subTask || taskName).trim(),                                 // 3. SubTask / Item
+    deadlineStr.trim(),                                           // 4. Deadline
+    finalSlot,                                                    // 5. Shift Time Slot
+    10,                                                           // 6. Points
+    finalSop,                                                     // 7. Step-by-Step SOP
+    smartDefaults.goodSample || "Verified clean entry with unblurred photo / document matching exact figures.", // 8. Good Sample
+    "",                                                           // 9. Good Photo URL
+    smartDefaults.badSample || "Incomplete execution, delay past deadline, or blurry/empty proof.",             // 10. Bad Sample
+    "",                                                           // 11. Bad Photo URL
+    smartDefaults.troubleshoot || "Agar koi issue ya discrepancy aaye toh supervisor ya CEO ko report karein.", // 12. Troubleshoot
+    photoLinksString,                                             // 13. Reference Form Photo URL
+    ""                                                            // 14. Training Video URL
+  ];
+
+  function appendToTargetSheet(sheetName, roleForHeaders) {
+    if (!sheetName) return;
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) {
+      setupStaffTaskSheet(sheetName, roleForHeaders || sheetName);
+      sh = ss.getSheetByName(sheetName);
+    }
+    if (sh) {
+      sh.appendRow(newRow);
+    }
   }
 
-  adhocSheet.appendRow([new Date(), cleanName, taskDesc, deadline, "Pending ⏳", photoLinksString, taskTypeVal]);
-  return taskTypeVal + " Assigned Successfully to " + cleanName + " 🚀";
+  var targetsAppended = [];
+
+  if (isAllStaff) {
+    var masterSheet = ss.getSheetByName("staff master");
+    if (masterSheet) {
+      var mData = masterSheet.getDataRange().getValues();
+      for (var m = 1; m < mData.length; m++) {
+        var sName = mData[m][1] ? mData[m][1].toString().trim() : "";
+        var sRole = mData[m][5] ? mData[m][5].toString().trim() : (mData[m][4] ? mData[m][4].toString().trim() : "Staff");
+        var rLow = sRole.toLowerCase();
+        if (sName && rLow !== "owner" && rLow !== "ceo" && rLow !== "admin") {
+          appendToTargetSheet(sName, sRole);
+          if (targetsAppended.indexOf(sName) === -1) targetsAppended.push(sName);
+        }
+      }
+    }
+  } else if (isTeam) {
+    appendToTargetSheet(cleanName, cleanName);
+    targetsAppended.push("Team: " + cleanName);
+
+    var masterSheet = ss.getSheetByName("staff master");
+    if (masterSheet) {
+      var mData = masterSheet.getDataRange().getValues();
+      for (var m = 1; m < mData.length; m++) {
+        var sName = mData[m][1] ? mData[m][1].toString().trim() : "";
+        var sRole = mData[m][5] ? mData[m][5].toString().trim() : (mData[m][4] ? mData[m][4].toString().trim() : "Staff");
+        if (sName && sRole.toLowerCase() === cleanName.toLowerCase()) {
+          var existingSh = ss.getSheetByName(sName);
+          if (existingSh) {
+            existingSh.appendRow(newRow);
+            if (targetsAppended.indexOf(sName) === -1) targetsAppended.push(sName);
+          }
+        }
+      }
+    }
+  } else {
+    var staffRole = getStaffRoleByName(cleanName);
+    appendToTargetSheet(cleanName, staffRole);
+    targetsAppended.push(cleanName);
+  }
+
+  // Audit log in Adhoc_Tasks
+  try {
+    var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
+    if (!adhocSheet) {
+      adhocSheet = ss.insertSheet("Adhoc_Tasks");
+      adhocSheet.appendRow(["Assign Date", "Staff Name", "Task Description", "Deadline", "Status", "Reference Photo", "Task Frequency"]);
+    }
+    adhocSheet.appendRow([new Date(), cleanName, taskName + (subTask ? " - " + subTask : ""), deadlineStr, "Permanent Sheet Added ✅", photoLinksString, freqClean]);
+  } catch(e) {}
+
+  return "✅ " + freqClean + " task permanently added to Google Sheet (" + targetsAppended.join(", ") + ")! 🚀";
+}
+
+function assignAdhocTask(assigneeInfo, taskTypeVal, taskDesc, deadline, photoArray) {
+  return assignTaskPermanently(assigneeInfo, taskTypeVal, taskDesc, "", deadline, "", "", photoArray, "Normal");
 }
 
 // 📌 FETCH ONLY EXTRA (ONE TIME) TASKS FOR EXTRA TASKS TAB
