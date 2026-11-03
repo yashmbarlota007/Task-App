@@ -576,7 +576,81 @@
       font-size: 12px;
     }
 
-  </style>
+  
+      /* 📦 9-STAGE ORDER PROCESSING & 1-HOUR SLA STYLES */
+      .order-card-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .task-card.order.has-overdue {
+        border-left-color: #da3633 !important;
+        box-shadow: 0 0 12px rgba(218, 54, 51, 0.25);
+      }
+      .order-sla-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      .order-sla-pill.ontime-pill {
+        background: rgba(46, 160, 67, 0.15);
+        color: #3fb950;
+        border: 1px solid #2ea043;
+      }
+      .order-sla-pill.overdue-pill {
+        background: rgba(218, 54, 51, 0.2);
+        color: #f85149;
+        border: 1px solid #da3633;
+        animation: pulse-adhoc-tab 1.5s infinite;
+      }
+      .btn-open-order-app {
+        background: linear-gradient(135deg, #1f6feb, #238636);
+        color: #ffffff !important;
+        font-weight: bold;
+        font-size: 12px !important;
+        padding: 8px 14px !important;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
+        transition: 0.2s;
+      }
+      .btn-open-order-app:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+      }
+      .ceo-order-radar-box {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 16px;
+      }
+      .order-bottleneck-row {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .order-bottleneck-row.overdue-row {
+        border-color: #da3633;
+        background: rgba(218, 54, 51, 0.08);
+      }
+
+</style>
 
   </head>
   <body>
@@ -916,6 +990,8 @@
 
     <script>
       var loggedInUser = null;
+      var cachedOrderPipelineData = null;
+      var roleOrderTasks = [];
       var roleTasks = [], extraTasks = [], orderTasks = [];
       var currentActiveTab = 'Daily';
       var selectedTaskObj = null; 
@@ -1387,16 +1463,59 @@
             roleTasks = tasks || []; 
             google.script.run.withSuccessHandler(function(adhocs) { 
                 extraTasks = adhocs || []; 
-                if (loggedInUser.role.toLowerCase().trim() === "store manager") {
-                  google.script.run.withSuccessHandler(function(orders) { 
-                    orderTasks = orders || []; 
+                var rLower = loggedInUser.role.toLowerCase().trim();
+                var isOrderRole = (rLower === "accountant" || rLower === "store manager" || rLower === "crm" || rLower === "smm" || rLower === "manager" || rLower === "ceo" || rLower === "owner");
+                
+                if (isOrderRole) {
+                  // Ensure Orders tab is in navTabs
+                  var navTabsEl = document.getElementById("navTabs");
+                  if (navTabsEl && !document.getElementById("orderTabBtn")) {
+                    navTabsEl.classList.add("has-5-tabs");
+                    navTabsEl.innerHTML += '<div id="orderTabBtn" class="tab" onclick="switchTab(\'Orders\', this)" style="border-color:#2ea043;"><div class="tab-label" style="color:#2ea043;">📦 Orders</div><div class="tab-sub" id="orderTabCount">0 Due</div></div>';
+                  }
+                  
+                  google.script.run.withSuccessHandler(function(orderData) { 
+                    cachedOrderPipelineData = orderData;
+                    orderTasks = (orderData && orderData.orders) ? orderData.orders : [];
+                    var dueCount = orderTasks.filter(function(o){ return !o.isFullyCompleted; }).length;
+                    var oTabCountEl = document.getElementById("orderTabCount");
+                    if (oTabCountEl) {
+                      oTabCountEl.innerText = dueCount > 0 ? ("🔥 " + dueCount + " Due") : "0 Due";
+                    }
+                    var oTabBtn = document.getElementById("orderTabBtn");
+                    if (oTabBtn) {
+                      if (dueCount > 0) oTabBtn.classList.add("has-pending-adhoc");
+                      else oTabBtn.classList.remove("has-pending-adhoc");
+                    }
                     renderStaffContent(); 
-                  }).getLiveOrdersForManager();
+                  }).getOrdersForRole(loggedInUser.role, loggedInUser.name);
                 } else {
                   renderStaffContent(); 
                 }
             }).getAdhocTasksForStaff(loggedInUser.name);
         }).getTasksForRole(loggedInUser.role, loggedInUser.name);
+      }
+
+      function refreshStaffOrders() {
+        if (!loggedInUser) return;
+        var oTabCountEl = document.getElementById("orderTabCount");
+        if (oTabCountEl) oTabCountEl.innerText = "⏳ Syncing...";
+        google.script.run.withSuccessHandler(function(orderData) {
+          cachedOrderPipelineData = orderData;
+          orderTasks = (orderData && orderData.orders) ? orderData.orders : [];
+          var dueCount = orderTasks.filter(function(o){ return !o.isFullyCompleted; }).length;
+          if (oTabCountEl) {
+            oTabCountEl.innerText = dueCount > 0 ? ("🔥 " + dueCount + " Due") : "0 Due";
+          }
+          var oTabBtn = document.getElementById("orderTabBtn");
+          if (oTabBtn) {
+            if (dueCount > 0) oTabBtn.classList.add("has-pending-adhoc");
+            else oTabBtn.classList.remove("has-pending-adhoc");
+          }
+          if (currentActiveTab === 'Orders') {
+            renderStaffContent();
+          }
+        }).getOrdersForRole(loggedInUser.role, loggedInUser.name);
       }
 
       function parseDeadline(deadlineStr) {
@@ -1699,18 +1818,80 @@
         var count = 0;
 
         if (currentActiveTab === 'Orders') {
-          if(orderTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Aaj ke saare Orders process ho gaye hain! 🎉</div>"; updateLiveTimers(); return; }
-          for(var i=0; i<orderTasks.length; i++) {
-            var o = orderTasks[i];
-            var isOrderCompleted = o.status.includes("Completed");
-            html += "<div class='task-card order' " + (isOrderCompleted ? "style='opacity:0.6;'" : "") + ">";
-            html += "<div style='display:flex; justify-content:space-between; align-items:center;'><p style='margin:0; font-size:16px; font-weight:bold; color:#2ea043; " + (isOrderCompleted ? "text-decoration:line-through;" : "") + "'>📦 Order: " + o.orderId + "</p><span style='font-size:11px; background:#2ea043; color:white; padding:3px 8px; border-radius:12px;'>⏱️ " + o.orderTime + "</span></div>";
-            html += "<p style='margin:8px 0 5px 0; font-size:14px; color:#c9d1d9;'><b>Shop:</b> " + o.shopName + "</p>";
-            html += "<p style='margin:5px 0; font-size:13px; color:#8b949e; background:#0d1117; padding:8px; border-radius:6px;'><b>Items to Pack:</b><br>" + o.items + "</p>";
-            if (isOrderCompleted) { html += "<p style='margin:10px 0 0 0; font-size:14px; font-weight:bold; color:#2ea043; text-align:center;'>" + o.status + "</p>"; } 
-            else { html += "<button style='background:#2ea043; color:white; width:100%; font-size:14px; padding:10px; margin-top:10px;' onclick='confirmAndCompleteOrder(" + i + ", " + o.rowIndex + ", this)'>✅ Confirm & Process</button>"; }
+          // 🚚 7:00 PM EVENING DISPATCH CUT-OFF BANNER
+          var cutoff = (cachedOrderPipelineData && cachedOrderPipelineData.cutoff) ? cachedOrderPipelineData.cutoff : { cutoffTime: "07:00 PM", remainingMins: 0, isPassed: false };
+          var cutoffText = cutoff.isPassed ? "⚠️ Aaj ka 07:00 PM Cut-Off Samapt!" : ("⏳ Cut-Off Remaining: " + Math.max(0, cutoff.remainingMins) + " mins");
+          var cutoffColor = cutoff.isPassed ? "#da3633" : "#d29922";
+
+          html += "<div style='background: linear-gradient(135deg, rgba(210,153,34,0.2), rgba(35,134,54,0.2)); border: 1.5px solid " + cutoffColor + "; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;'>";
+          html += "  <div style='display:flex; align-items:center; gap:10px;'>";
+          html += "    <span style='font-size:24px;'>🚚</span>";
+          html += "    <div>";
+          html += "      <div style='font-size:13px; font-weight:bold; color:#ffd33d;'>Evening Dispatch Cut-Off: " + cutoff.cutoffTime + "</div>";
+          html += "      <div style='font-size:11px; color:#c9d1d9;'>" + cutoffText + " | Shaam 7 PM se pehle sabhi orders pack & ready hone zaroori hain.</div>";
+          html += "    </div>";
+          html += "  </div>";
+          html += "  <button onclick='refreshStaffOrders()' style='background:#238636; border:none; color:white; font-size:11px; font-weight:bold; padding:6px 12px; border-radius:6px; cursor:pointer;'>🔄 Sync Status</button>";
+          html += "</div>";
+
+          var activeList = orderTasks.filter(function(o){ return !o.isFullyCompleted; });
+          if(activeList.length === 0) { 
+            html += "<div class='card' style='text-align:center; color:#8b949e; padding:30px;'>🎉 Aapke role ke liye abhi koi order pending nahi hai! Saare orders processed hain.</div>"; 
+            area.innerHTML = html; 
+            updateLiveTimers(); 
+            return; 
+          }
+
+          html += "<div class='order-card-wrapper'>";
+          for(var i=0; i<activeList.length; i++) {
+            var o = activeList[i];
+            var isOverdue = o.isOverdue;
+            var timerPillClass = isOverdue ? "order-sla-pill overdue-pill" : "order-sla-pill ontime-pill";
+            var timerPillText = isOverdue ? ("⚠️ Overdue " + o.overdueMinutes + "m (-5 P)") : ("⏱️ " + Math.max(0, o.remainingMinutes) + "m SLA Left");
+
+            html += "<div class='task-card order " + (isOverdue ? "has-overdue" : "") + "' style='border-left-color: " + (isOverdue ? "#da3633" : "#2ea043") + "; background: #161b22; margin-bottom: 12px;'>";
+            
+            // CARD HEADER
+            html += "  <div style='display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;'>";
+            html += "    <div>";
+            html += "      <span style='font-size:15px; font-weight:bold; color:#2ea043;'>📦 Order: #" + o.orderId + "</span>";
+            html += "      <span style='font-size:11px; background:#21262d; border:1px solid #30363d; color:#58a6ff; padding:2px 8px; border-radius:12px; margin-left:6px; font-weight:600;'>Step " + o.currentStageNum + "/9: " + o.currentStageName + "</span>";
+            html += "    </div>";
+            html += "    <div><span class='" + timerPillClass + "'>" + timerPillText + "</span></div>";
+            html += "  </div>";
+
+            // SHOP DETAILS
+            html += "  <div style='margin: 8px 0 6px 0; display:flex; justify-content:space-between; align-items:center;'>";
+            html += "    <span style='font-size:13px; font-weight:bold; color:#c9d1d9;'>🏪 " + o.shopName + "</span>";
+            html += "    <span style='font-size:10px; background:#30363d; color:#ffd33d; padding:2px 6px; border-radius:4px; font-weight:600;'>Mode: " + o.paymentMode + "</span>";
+            html += "  </div>";
+
+            // ITEMS SUMMARY
+            html += "  <div style='background:#0d1117; padding:8px 10px; border-radius:6px; border:1px solid #30363d; margin-bottom:8px;'>";
+            html += "    <div style='font-size:10px; color:#8b949e; text-transform:uppercase; font-weight:bold; margin-bottom:2px;'>📋 Items to Process:</div>";
+            html += "    <div style='font-size:12px; color:#c9d1d9; line-height:1.4;'>" + o.items + "</div>";
+            html += "  </div>";
+
+            // AUTO-FETCHED PROOFS
+            if(o.proofUrls) {
+              html += "  <div style='margin-bottom:6px;'>";
+              html += "    <div style='font-size:10px; color:#58a6ff; font-weight:bold; margin-bottom:2px;'>📷 Proofs Auto-Fetched from Order App:</div>";
+              html += renderPhotoPills(o.proofUrls);
+              html += "  </div>";
+            }
+
+            // ACTION FOOTER
+            html += "  <div style='display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid #21262d;'>";
+            html += "    <div style='font-size:11px; color:#ffd33d; font-weight:bold;'>🎯 10 Pts <span style='font-size:9.5px; color:#8b949e; font-weight:normal;'>(5P Done + 5P On-Time) | Deadline: " + o.slaDeadlineText + "</span></div>";
+            html += "    <div style='display:flex; gap:6px;'>";
+            html += "      <a href='https://yash-marketing-backend-app.vercel.app/' target='_blank' class='btn-open-order-app'>🚀 Open in Order App ➔</a>";
+            html += "      <button onclick='refreshStaffOrders()' style='background:#21262d; border:1px solid #30363d; color:#8b949e; font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;'>🔄 Sync</button>";
+            html += "    </div>";
+            html += "  </div>";
+
             html += "</div>";
           }
+          html += "</div>";
         } 
         else if (currentActiveTab === 'Adhoc') {
           if(extraTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Koi extra task nahi hai! 🎉</div>"; updateLiveTimers(); return; }
@@ -2065,6 +2246,57 @@
           return;
         }
 
+        var orderPipe = cachedRadarData.orderPipeline;
+        var orderRadarHtml = "";
+
+        if (orderPipe) {
+          var cutoff = orderPipe.cutoff || { cutoffTime: "07:00 PM", remainingMins: 0, isPassed: false };
+          var cutoffText = cutoff.isPassed ? "⚠️ Cut-Off Passed" : (cutoff.remainingMins + "m Left");
+
+          orderRadarHtml += "<div class='ceo-order-radar-box'>";
+          orderRadarHtml += "  <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;'>";
+          orderRadarHtml += "    <div style='display:flex; align-items:center; gap:8px;'>";
+          orderRadarHtml += "      <span style='font-size:20px;'>🚚</span>";
+          orderRadarHtml += "      <div>";
+          orderRadarHtml += "        <div style='font-size:14px; font-weight:bold; color:#ffffff;'>Live Order Processing Cockpit (9-Step Pipeline)</div>";
+          orderRadarHtml += "        <div style='font-size:10.5px; color:#8b949e;'>Strict 1-Hour SLA & 7:00 PM Dispatch Cut-off Engine</div>";
+          orderRadarHtml += "      </div>";
+          orderRadarHtml += "    </div>";
+          orderRadarHtml += "    <span style='font-size:11px; background:#21262d; border:1px solid #d29922; color:#ffd33d; padding:3px 8px; border-radius:12px; font-weight:bold;'>Cut-off: " + cutoff.cutoffTime + " (" + cutoffText + ")</span>";
+          orderRadarHtml += "  </div>";
+
+          // ORDER PULSE METRICS
+          orderRadarHtml += "  <div class='radar-pulse-bar' style='margin-bottom:12px;'>";
+          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>Active Orders</div><div class='pulse-val' style='color:#58a6ff;'>" + orderPipe.totalActive + "</div></div>";
+          orderRadarHtml += "    <div class='pulse-card success'><div class='pulse-lbl'>Done Today</div><div class='pulse-val' style='color:#2ea043;'>" + orderPipe.totalCompletedToday + "</div></div>";
+          orderRadarHtml += "    <div class='pulse-card alert'><div class='pulse-lbl'>Overdue (>1 hr)</div><div class='pulse-val' style='color:#f85149;'>" + orderPipe.totalOverdue + "</div></div>";
+          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>In Billing (Acc)</div><div class='pulse-val'>" + ((orderPipe.stageBreakdown.balanceCheck || 0) + (orderPipe.stageBreakdown.invoicing || 0)) + "</div></div>";
+          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>In Packing (Store)</div><div class='pulse-val'>" + ((orderPipe.stageBreakdown.stockPicking || 0) + (orderPipe.stageBreakdown.packingDispatch || 0)) + "</div></div>";
+          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>In Comms (CRM)</div><div class='pulse-val'>" + ((orderPipe.stageBreakdown.confirmation || 0) + (orderPipe.stageBreakdown.deliveryComms || 0) + (orderPipe.stageBreakdown.finalRating || 0)) + "</div></div>";
+          orderRadarHtml += "  </div>";
+
+          // BOTTLENECK LIST (ACTIVE ORDERS)
+          if (orderPipe.activeOrders && orderPipe.activeOrders.length > 0) {
+            orderRadarHtml += "  <div style='font-size:11px; font-weight:bold; color:#8b949e; text-transform:uppercase; margin-bottom:8px;'>⚠️ Active Pipeline Bottlenecks (Click to Nudge Staff):</div>";
+            for (var b = 0; b < Math.min(6, orderPipe.activeOrders.length); b++) {
+              var bo = orderPipe.activeOrders[b];
+              var isBOverdue = bo.isOverdue;
+              orderRadarHtml += "  <div class='order-bottleneck-row " + (isBOverdue ? "overdue-row" : "") + "'>";
+              orderRadarHtml += "    <div>";
+              orderRadarHtml += "      <span style='font-size:12px; font-weight:bold; color:#c9d1d9;'>#" + bo.orderId + " (" + bo.shopName + ")</span>";
+              orderRadarHtml += "      <span style='font-size:10px; color:#58a6ff; margin-left:6px; background:#161b22; padding:2px 6px; border-radius:4px;'>Step " + bo.currentStageNum + ": " + bo.currentStageName + "</span>";
+              orderRadarHtml += "      <div style='font-size:10px; color:#8b949e; margin-top:2px;'>Assigned: <b style='color:#ffd33d;'>" + bo.assignedRole + "</b></div>";
+              orderRadarHtml += "    </div>";
+              orderRadarHtml += "    <div style='display:flex; align-items:center; gap:8px;'>";
+              orderRadarHtml += "      <span style='font-size:11px; font-weight:bold; color:" + (isBOverdue ? "#f85149" : "#2ea043") + ";'>" + (isBOverdue ? ("🔴 " + bo.overdueMinutes + "m late") : ("⏱️ " + bo.remainingMinutes + "m left")) + "</span>";
+              orderRadarHtml += "      <a href='https://wa.me/?text=" + encodeURIComponent("Urgent: Order #" + bo.orderId + " (" + bo.shopName + ") 1-Hour SLA cross ho raha hai at Step " + bo.currentStageNum + " (" + bo.currentStageName + "). Please process immediately!") + "' target='_blank' style='background:#238636; color:white; font-size:10px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none;'>📲 Nudge WA</a>";
+              orderRadarHtml += "    </div>";
+              orderRadarHtml += "  </div>";
+            }
+          }
+          orderRadarHtml += "</div>";
+        }
+
         var list = cachedRadarData.staffList;
         var filtered = list.filter(function(s) {
           if (activeRadarFilter === 'overdue') return s.overdue > 0;
@@ -2124,7 +2356,7 @@
           html += "</div>";
         }
 
-        container.innerHTML = html;
+        container.innerHTML = orderRadarHtml + html;
       }
 
       function nudgeStaffOnWhatsapp(staffName, staffPhone, taskTitleEncoded, deadline) {
