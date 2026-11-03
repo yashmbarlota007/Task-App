@@ -1032,12 +1032,12 @@
               if (bannerTitleEl) bannerTitleEl.innerText = "Day-1 Role Blueprint: " + res.role;
               applyScorecardUI(res.scores);
 
-              if(roleClean === "store manager") {
+              if(roleClean === "store manager" || roleClean === "mis" || roleClean === "accountant" || roleClean === "crm" || roleClean === "smm" || roleClean === "manager") {
                 if(!document.getElementById("orderTabBtn")) {
                   var navTabsEl = document.getElementById("navTabs");
                   if (navTabsEl) {
                     navTabsEl.classList.add("has-5-tabs");
-                    navTabsEl.innerHTML += '<div id="orderTabBtn" class="tab" onclick="switchTab(\'Orders\', this)" style="border-color:#2ea043;"><div class="tab-label" style="color:#2ea043;">📦 Orders</div><div class="tab-sub" style="color:#2ea043;">0 Due</div></div>';
+                    navTabsEl.innerHTML += '<div id="orderTabBtn" class="tab" onclick="switchTab(\'Orders\', this)" style="border-color:#2ea043;"><div class="tab-label" style="color:#2ea043;">📦 Orders</div><div class="tab-sub" id="orderTabCount" style="color:#2ea043;">0 Due</div></div>';
                   }
                 }
               }
@@ -1464,7 +1464,7 @@
             google.script.run.withSuccessHandler(function(adhocs) { 
                 extraTasks = adhocs || []; 
                 var rLower = loggedInUser.role.toLowerCase().trim();
-                var isOrderRole = (rLower === "accountant" || rLower === "store manager" || rLower === "crm" || rLower === "smm" || rLower === "manager" || rLower === "ceo" || rLower === "owner");
+                var isOrderRole = (rLower === "accountant" || rLower === "store manager" || rLower === "crm" || rLower === "smm" || rLower === "mis" || rLower === "manager" || rLower === "ceo" || rLower === "owner" || rLower === "admin");
                 
                 if (isOrderRole) {
                   // Ensure Orders tab is in navTabs
@@ -1809,8 +1809,10 @@
 
         var orderTabBtn = document.getElementById("orderTabBtn");
         if (orderTabBtn) {
-          var pendingOrders = orderTasks.filter(function(o){ return !o.status.includes("Completed"); }).length;
-          orderTabBtn.innerHTML = '<div class="tab-label" style="color:#2ea043;">📦 Orders</div><div class="tab-sub" style="color:#2ea043;">' + pendingOrders + ' Due</div>';
+          var dueCount = orderTasks.filter(function(o){ return !o.isFullyCompleted; }).length;
+          orderTabBtn.innerHTML = '<div class="tab-label" style="color:#2ea043;">📦 Orders</div><div class="tab-sub" id="orderTabCount" style="color:#2ea043;">' + (dueCount > 0 ? ("🔥 " + dueCount + " Due") : "0 Due") + '</div>';
+          if (dueCount > 0) orderTabBtn.classList.add("has-pending-adhoc");
+          else orderTabBtn.classList.remove("has-pending-adhoc");
         }
 
         var area = document.getElementById("tabContentArea");
