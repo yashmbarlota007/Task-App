@@ -1208,13 +1208,13 @@
             html += "<tr>";
             html += "<td style='font-weight:bold; color:#c9d1d9;'>" + medal + s.name + "</td>";
             html += "<td style='color:#8b949e;'>" + s.role + "</td>";
-            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('daily', '" + s.name + "')\">" + s.daily + "</span></td>";
-            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('weekly', '" + s.name + "')\">" + s.weekly + "</span></td>";
-            html += "<td><span class='score-pill-btn' style='color:#ffd33d;' onclick=\"openPointsLedger('monthly', '" + s.name + "')\">" + s.monthly + "</span></td>";
-            html += "<td>" + s.lastMonth + "</td>";
-            html += "<td>" + s.currentQuarter + "</td>";
-            html += "<td>" + s.lastQuarter + "</td>";
-            html += "<td style='color:#ffd33d; font-weight:bold;'>" + s.yearly + "</td>";
+            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('daily', '" + s.name + "')\">" + formatScoreCell(s.daily) + "</span></td>";
+            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('weekly', '" + s.name + "')\">" + formatScoreCell(s.weekly) + "</span></td>";
+            html += "<td><span class='score-pill-btn' style='color:#ffd33d;' onclick=\"openPointsLedger('monthly', '" + s.name + "')\">" + formatScoreCell(s.monthly) + "</span></td>";
+            html += "<td>" + formatScoreCell(s.lastMonth) + "</td>";
+            html += "<td>" + formatScoreCell(s.currentQuarter) + "</td>";
+            html += "<td>" + formatScoreCell(s.lastQuarter) + "</td>";
+            html += "<td style='color:#ffd33d; font-weight:bold;'>" + formatScoreCell(s.yearly) + "</td>";
             html += "</tr>";
           }
           html += "</tbody></table>";
@@ -1241,6 +1241,48 @@
         return h;
       }
 
+
+      function formatScoreBoxHtml(label, scoreObj, period, staffName, isHighlight) {
+        var pct = 0;
+        var earned = 0;
+        var max = 0;
+        if (scoreObj) {
+          if (typeof scoreObj === 'object') {
+            pct = (scoreObj.percentage !== undefined) ? scoreObj.percentage : (scoreObj.pct || 0);
+            earned = (scoreObj.earned !== undefined) ? scoreObj.earned : (scoreObj.pts || 0);
+            max = scoreObj.max || 0;
+          } else if (typeof scoreObj === 'number') {
+            pct = scoreObj;
+            earned = scoreObj;
+            max = scoreObj;
+          } else if (typeof scoreObj === 'string') {
+            var m = scoreObj.match(/(\d+)%/);
+            if (m) pct = parseInt(m[1], 10);
+            return "<div class='score-box " + (isHighlight ? "highlight" : "") + "' onclick=\"openPointsLedger('" + (period || 'daily') + "', '" + (staffName || '') + "')\" style='cursor:pointer;' title='Click to view Points Ledger'>" +
+              "<div class='score-lbl'>" + label + "</div>" +
+              "<div class='score-val'>" + scoreObj + "</div>" +
+            "</div>";
+          }
+        }
+        var subText = (max > 0) ? (earned + " / " + max + " P") : (earned + " P");
+        return "<div class='score-box " + (isHighlight ? "highlight" : "") + "' onclick=\"openPointsLedger('" + (period || 'daily') + "', '" + (staffName || '') + "')\" style='cursor:pointer;' title='Click to view " + label + " Points Ledger'>" +
+          "<div class='score-lbl'>" + label + "</div>" +
+          "<div class='score-val'>" + pct + "%</div>" +
+          "<div class='score-pts-sub' style='color:#ffd33d; font-size:10px; margin-top:2px; font-weight:bold;'>" + subText + "</div>" +
+        "</div>";
+      }
+
+      function formatScoreCell(val) {
+        if (!val && val !== 0) return "0% (0 P)";
+        if (typeof val === 'object') {
+          var pct = (val.percentage !== undefined) ? val.percentage : (val.pct || 0);
+          var earned = (val.earned !== undefined) ? val.earned : (val.pts || 0);
+          var max = val.max || 0;
+          return pct + "% (" + earned + (max > 0 ? "/" + max : "") + " P)";
+        }
+        return val;
+      }
+
       function fetchStaffProgress() {
         var sel = document.getElementById("adminViewStaffSelect").value;
         if(!sel) { document.getElementById("staffProgressContent").innerHTML = ""; return; }
@@ -1252,13 +1294,17 @@
           
           if (res.scores) {
             html += "<div class='score-grid' style='margin-top:10px;'>";
-            html += "<div class='score-box'><div class='score-lbl'>Today</div><div class='score-val'>" + res.scores.daily + "</div></div>";
-            html += "<div class='score-box'><div class='score-lbl'>Week</div><div class='score-val'>" + res.scores.weekly + "</div></div>";
-            html += "<div class='score-box highlight'><div class='score-lbl'>Month</div><div class='score-val'>" + res.scores.monthly + "</div></div>";
-            html += "<div class='score-box'><div class='score-lbl'>Last Mo.</div><div class='score-val'>" + res.scores.lastMonth + "</div></div>";
-            html += "<div class='score-box'><div class='score-lbl'>Qtr</div><div class='score-val'>" + res.scores.currentQuarter + "</div></div>";
-            html += "<div class='score-box'><div class='score-lbl'>Last Qtr</div><div class='score-val'>" + res.scores.lastQuarter + "</div></div>";
-            html += "<div class='score-box highlight'><div class='score-lbl'>Year</div><div class='score-val'>" + res.scores.yearly + "</div></div>";
+            html += formatScoreBoxHtml("Today", res.scores.daily, "daily", cleanName, false);
+            html += formatScoreBoxHtml("Week", res.scores.weekly, "weekly", cleanName, false);
+            html += formatScoreBoxHtml("Month", res.scores.monthly, "monthly", cleanName, true);
+            html += formatScoreBoxHtml("Last Mo.", res.scores.lastMonth, "lastMonth", cleanName, false);
+            html += formatScoreBoxHtml("Qtr", res.scores.currentQuarter, "currentQuarter", cleanName, false);
+            html += formatScoreBoxHtml("Last Qtr", res.scores.lastQuarter, "lastQuarter", cleanName, false);
+            html += formatScoreBoxHtml("Year", res.scores.yearly, "yearly", cleanName, true);
+            html += "</div>";
+            html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:6px; margin-bottom:12px; font-size:11px;'>";
+            html += "<span style='color:#8b949e;'>💡 Rule: Task = 5 P Complete + 5 P On-Time (10 P total)</span>";
+            html += "<span style='color:#58a6ff; cursor:pointer; font-weight:600;' onclick=\"openPointsLedger('daily', '" + cleanName + "')\">📊 Open Points Ledger ➔</span>";
             html += "</div>";
           }
           html += "</div>";
@@ -1852,15 +1898,10 @@
 
       function updatePointsUI(pts) {
         if (!pts) return;
-        var scD = document.getElementById('scDaily');
-        if (scD) {
-          scD.innerText = ((parseInt(scD.innerText) || 0) + pts) + " P";
-          var scW = document.getElementById('scWeekly');
-          if (scW) scW.innerText = ((parseInt(scW.innerText) || 0) + pts) + " P";
-          var scM = document.getElementById('scMonthly');
-          if (scM) scM.innerText = ((parseInt(scM.innerText) || 0) + pts) + " P";
-          var scY = document.getElementById('scYearly');
-          if (scY) scY.innerText = ((parseInt(scY.innerText) || 0) + pts) + " P";
+        if (loggedInUser && loggedInUser.name) {
+          google.script.run.withSuccessHandler(function(sc) {
+            applyScorecardUI(sc);
+          }).getStaffScoresBreakdown(loggedInUser.name);
         }
       }
 
