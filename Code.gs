@@ -1008,6 +1008,225 @@ function setupStaffTaskSheet(targetName, roleName) {
 }
 
 
+
+// =====================================================================
+// 📦 9-STAGE LIVE ORDER PROCESSING & 1-HOUR SLA ENGINE
+// =====================================================================
+var ORDER_PROCESSING_API_URL = "https://script.google.com/macros/s/AKfycbyXHJaFTSkjwu6C8ze4czs2Q42NQsgzjW814j8OLA7ztMXTW-nqmh2gkpjebmdSW4YJjA/exec";
+
+var ORDER_STAGE_NAMES = [
+  "Balance Check",                // Step 1: Accountant
+  "WhatsApp 1 (Confirmation)",    // Step 2: CRM
+  "Processed (Stock)",            // Step 3: Store Manager
+  "Invoiced",                     // Step 4: Accountant
+  "Dispatched",                   // Step 5: Store Manager
+  "Logistics Allocation",         // Step 6: Store Manager
+  "Delivery Comms (Call/WA)",     // Step 7: CRM
+  "Delivered",                    // Step 8: Store Manager / Delivery
+  "Final Call (Rating)"           // Step 9: CRM
+];
+
+var ORDER_STAGE_ROLES = [
+  "Accountant",     // Step 1
+  "CRM",            // Step 2
+  "Store Manager",  // Step 3
+  "Accountant",     // Step 4
+  "Store Manager",  // Step 5
+  "Store Manager",  // Step 6
+  "CRM",            // Step 7
+  "Store Manager",  // Step 8
+  "CRM"             // Step 9
+];
+
+function fetchLiveOrderPipeline() {
+  try {
+    var options = {
+      method: "post",
+      contentType: "text/plain",
+      payload: JSON.stringify({ action: "getOrders", staffName: "CEO" }),
+      muteHttpExceptions: true,
+      followRedirects: true
+    };
+    var response = UrlFetchApp.fetch(ORDER_PROCESSING_API_URL, options);
+    var json = JSON.parse(response.getContentText());
+    if (json && json.status === "success" && json.data && Array.isArray(json.data)) {
+      return json.data;
+    }
+  } catch(e) {
+    Logger.log("Order App API fetch error: " + e.toString());
+  }
+
+  // Fallback to local Orders sheet
+  return getLocalOrdersFallback();
+}
+
+function getLocalOrdersFallback() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Orders");
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  var list = [];
+  var tz = Session.getScriptTimeZone();
+  var todayStr = Utilities.formatDate(new Date(), tz, "yyyy-MM-dd");
+
+  for (var i = 1; i < data.length; i++) {
+    var rawDate = data[i][0];
+    if (!rawDate) continue;
+    var dStr = Utilities.formatDate(new Date(rawDate), tz, "yyyy-MM-dd");
+    if (dStr !== todayStr) continue;
+
+    var orderId = data[i][1] ? data[i][1].toString().trim() : "";
+    var shopName = data[i][2] ? data[i][2].toString().trim() : "";
+    var items = data[i][4] ? data[i][4].toString().trim() : "";
+    var status = data[i][8] ? data[i][8].toString().trim() : "";
+
+    if (orderId !== "") {
+      list.push({
+        orderId: orderId,
+        shopName: shopName,
+        items: items,
+        date: Utilities.formatDate(new Date(rawDate), tz, "yyyy-MM-dd HH:mm:ss"),
+        completedStages: (status.indexOf("Completed") !== -1 ? 9 : 2),
+        stageUrls: [],
+        paymentMode: "PREPAID"
+      });
+    }
+  }
+  return list;
+}
+
+function parseOrderDateString(dateStr, fallbackDate) {
+  if (!dateStr) return fallbackDate;
+  try {
+    var d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+  } catch(e) {}
+  return fallbackDate;
+}
+
+function getEnrichedOrderPipeline() {
+  var rawOrders = fetchLiveOrderPipeline();
+  if (!rawOrders || !Array.isArray(rawOrders)) return [];
+
+  var now = new Date();
+  var tz = Session.getScriptTimeZone();
+  var enriched = [];
+
+  for (var i = 0; i < rawOrders.length; i++) {
+    var o = rawOrders[i];
+    if (!o || !o.orderId) continue;
+
+    var completed = Number(o.completedStages || 0);
+    var isFullyCompleted = (completed >= 9);
+    var currentStageNum = isFullyCompleted ? 9 : (completed + 1);
+    var currentStageName = isFullyCompleted ? "Fully Completed" : ORDER_STAGE_NAMES[completed];
+    var currentAssignedRole = isFullyCompleted ? "Completed" : ORDER_STAGE_ROLES[completed];
+
+    // Stage entry timestamp
+    var stageEnteredTime = now;
+    if (completed === 0) {
+      stageEnteredTime = parseOrderDateString(o.date, now);
+    } else if (o.stageUrls && o.stageUrls[completed - 1]) {
+      var prevCell = String(o.stageUrls[completed - 1]);
+      var tsMatch = prevCell.match(/TIMESTAMP:\s*([^\n|]+)/i);
+      if (tsMatch) {
+        stageEnteredTime = parseOrderDateString(tsMatch[1].trim(), now);
+      } else {
+        stageEnteredTime = parseOrderDateString(o.date, now);
+      }
+    } else {
+      stageEnteredTime = parseOrderDateString(o.date, now);
+    }
+
+    // 1-Hour SLA Deadline (+60 mins)
+    var deadlineTime = new Date(stageEnteredTime.getTime() + 60 * 60 * 1000);
+    var diffMs = deadlineTime.getTime() - now.getTime();
+    var remainingMins = Math.round(diffMs / 60000);
+    var isOverdue = (!isFullyCompleted && remainingMins < 0);
+    var overdueMins = isOverdue ? Math.abs(remainingMins) : 0;
+
+    // Proof photo URLs
+    var stageProof = "";
+    if (o.stageUrls && Array.isArray(o.stageUrls)) {
+      stageProof = o.stageUrls.filter(function(u){ return u && String(u).indexOf("http") !== -1; }).join(" , ");
+    }
+
+    enriched.push({
+      orderId: o.orderId,
+      shopName: o.shopName || o.dealerName || "Dealer",
+      phone: o.dealerPhone || o.phone || "",
+      items: o.items || "Order Items",
+      orderDate: Utilities.formatDate(stageEnteredTime, tz, "dd MMM, hh:mm a"),
+      dateRaw: o.date,
+      paymentMode: o.paymentMode || "PREPAID",
+      completedStages: completed,
+      currentStageNum: currentStageNum,
+      currentStageName: currentStageName,
+      assignedRole: currentAssignedRole,
+      isFullyCompleted: isFullyCompleted,
+      isOverdue: isOverdue,
+      remainingMinutes: remainingMins,
+      overdueMinutes: overdueMins,
+      slaDeadlineText: Utilities.formatDate(deadlineTime, tz, "hh:mm a"),
+      slaDeadlineEpoch: deadlineTime.getTime(),
+      proofUrls: stageProof,
+      stageUrls: o.stageUrls || []
+    });
+  }
+
+  // Sort: Overdue orders first, then shortest remaining time
+  enriched.sort(function(a, b) {
+    if (a.isFullyCompleted !== b.isFullyCompleted) return a.isFullyCompleted ? 1 : -1;
+    if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
+    return a.remainingMinutes - b.remainingMinutes;
+  });
+
+  return enriched;
+}
+
+function getOrdersForRole(role, staffName) {
+  var allEnriched = getEnrichedOrderPipeline();
+  var roleClean = role ? role.toString().trim().toLowerCase() : "";
+
+  // 7:00 PM Dispatch Cut-off calculations
+  var now = new Date();
+  var cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 19, 0, 0, 0);
+  var cutoffDiffMins = Math.round((cutoffDate.getTime() - now.getTime()) / 60000);
+  var cutoffStatus = {
+    cutoffTime: "07:00 PM",
+    remainingMins: cutoffDiffMins,
+    isPassed: cutoffDiffMins < 0
+  };
+
+  if (roleClean === "owner" || roleClean === "ceo" || roleClean === "admin") {
+    return {
+      cutoff: cutoffStatus,
+      orders: allEnriched
+    };
+  }
+
+  var filtered = allEnriched.filter(function(o) {
+    if (o.isFullyCompleted) return false;
+    var assignedLower = o.assignedRole.toLowerCase();
+
+    if (roleClean === "accountant") {
+      return assignedLower === "accountant";
+    }
+    if (roleClean === "store manager") {
+      return assignedLower === "store manager";
+    }
+    if (roleClean === "crm" || roleClean === "smm") {
+      return assignedLower === "crm" || assignedLower === "smm";
+    }
+    return assignedLower === roleClean;
+  });
+
+  return {
+    cutoff: cutoffStatus,
+    orders: filtered
+  };
+}
+
 function getLiveOrdersForManager() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Orders"); 
@@ -1505,6 +1724,25 @@ function getCeoOperationsRadar() {
 
   var overallRate = totalTasksDue > 0 ? Math.round((totalCompleted / totalTasksDue) * 100) : 100;
 
+  // 📦 INJECT LIVE ORDER PROCESSING RADAR
+  var orderData = getOrdersForRole("CEO", "");
+  var allOrders = orderData.orders || [];
+  var activeOrders = allOrders.filter(function(o){ return !o.isFullyCompleted; });
+  var completedOrders = allOrders.filter(function(o){ return o.isFullyCompleted; });
+  var overdueOrders = activeOrders.filter(function(o){ return o.isOverdue; });
+
+  var stageBreakdown = {
+    balanceCheck: activeOrders.filter(function(o){ return o.currentStageNum === 1; }).length,
+    confirmation: activeOrders.filter(function(o){ return o.currentStageNum === 2; }).length,
+    stockPicking: activeOrders.filter(function(o){ return o.currentStageNum === 3; }).length,
+    invoicing: activeOrders.filter(function(o){ return o.currentStageNum === 4; }).length,
+    packingDispatch: activeOrders.filter(function(o){ return o.currentStageNum === 5; }).length,
+    logistics: activeOrders.filter(function(o){ return o.currentStageNum === 6; }).length,
+    deliveryComms: activeOrders.filter(function(o){ return o.currentStageNum === 7; }).length,
+    delivered: activeOrders.filter(function(o){ return o.currentStageNum === 8; }).length,
+    finalRating: activeOrders.filter(function(o){ return o.currentStageNum === 9; }).length
+  };
+
   return {
     pulse: {
       totalStaff: activeStaff.length,
@@ -1514,7 +1752,15 @@ function getCeoOperationsRadar() {
       totalPending: totalPending,
       executionRate: overallRate
     },
-    staffList: staffResults
+    staffList: staffResults,
+    orderPipeline: {
+      totalActive: activeOrders.length,
+      totalCompletedToday: completedOrders.length,
+      totalOverdue: overdueOrders.length,
+      cutoff: orderData.cutoff,
+      stageBreakdown: stageBreakdown,
+      activeOrders: activeOrders.slice(0, 30)
+    }
   };
 }
 
