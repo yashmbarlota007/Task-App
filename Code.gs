@@ -1174,11 +1174,12 @@ function getEnrichedOrderPipeline() {
     });
   }
 
-  // Sort: Overdue orders first, then shortest remaining time
+  // Sort: Incomplete orders first, and newest orders (Today's fresh orders) right at the top!
   enriched.sort(function(a, b) {
     if (a.isFullyCompleted !== b.isFullyCompleted) return a.isFullyCompleted ? 1 : -1;
-    if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
-    return a.remainingMinutes - b.remainingMinutes;
+    var timeA = a.dateRaw ? new Date(a.dateRaw).getTime() : 0;
+    var timeB = b.dateRaw ? new Date(b.dateRaw).getTime() : 0;
+    return timeB - timeA;
   });
 
   return enriched;
@@ -1198,7 +1199,8 @@ function getOrdersForRole(role, staffName) {
     isPassed: cutoffDiffMins < 0
   };
 
-  if (roleClean === "owner" || roleClean === "ceo" || roleClean === "admin") {
+  // Management, CEO, Admin, MIS, and Manager oversee all pipeline orders
+  if (roleClean === "owner" || roleClean === "ceo" || roleClean === "admin" || roleClean === "mis" || roleClean === "manager") {
     return {
       cutoff: cutoffStatus,
       orders: allEnriched
