@@ -739,6 +739,13 @@
           </select>
 
           <!-- DYNAMIC SCHEDULING CONTROLS -->
+          <div style="background:#0d1117; border:1.5px solid #30363d; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:11px; line-height:1.6; color:#c9d1d9;">
+            <b style="color:#ffd33d;">💡 Auto-Trigger & Deadline Rules:</b><br>
+            • <b>Daily Task:</b> Shift slot chunein. Yeh task <u>roz auto-trigger</u> hoga.<br>
+            • <b>Weekly Task:</b> Weekday chunein (e.g. <code>Monday, 07:00 PM</code>). Yeh task <u>sirf uss weekday ko trigger</u> hoga!<br>
+            • <b>Monthly Task:</b> Taareekh chunein (e.g. <code>1st of Month, 07:00 PM</code>). Yeh task <u>sirf uss taareekh ko trigger</u> hoga!<br>
+            • <b>Sheet me Column D me likhna ho toh:</b> Weekly ke liye <code>Monday, 07:00 PM</code> aur Monthly ke liye <code>1st of Month, 07:00 PM</code> likhein.
+          </div>
           <!-- 1. Daily Shift Slot -->
           <div id="groupDailySlot" style="margin-bottom:12px;">
             <label style="color:#58a6ff; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">🕒 Shift Time Slot:</label>
@@ -1520,52 +1527,7 @@
 
       function parseDeadline(deadlineStr) {
         if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return null;
-        var now = new Date();
-        var lower = deadlineStr.toLowerCase();
-
-        var timeMatch = deadlineStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-        var hrs = 19;
-        var mins = 0;
-        if (timeMatch) {
-          hrs = parseInt(timeMatch[1], 10);
-          mins = parseInt(timeMatch[2], 10);
-          var ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : "";
-          if (ampm === "PM" && hrs < 12) hrs += 12;
-          if (ampm === "AM" && hrs === 12) hrs = 0;
-        }
-
-        // Weekly Day Check
-        var daysMap = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
-        for (var day in daysMap) {
-          if (lower.indexOf(day) !== -1) {
-            var targetDay = daysMap[day];
-            var curDay = now.getDay();
-            var diff = targetDay - curDay;
-            if (diff < 0) diff += 7;
-            return new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff, hrs, mins, 0);
-          }
-        }
-
-        // Monthly Date Check
-        var dateMatch = deadlineStr.match(/(\d{1,2})(st|nd|rd|th)/i);
-        if (dateMatch) {
-          var targetDateNum = parseInt(dateMatch[1], 10);
-          var curDateNum = now.getDate();
-          var targetMonth = now.getMonth();
-          var targetYear = now.getFullYear();
-          if (curDateNum > targetDateNum) {
-            targetMonth++;
-            if (targetMonth > 11) { targetMonth = 0; targetYear++; }
-          }
-          return new Date(targetYear, targetMonth, targetDateNum, hrs, mins, 0);
-        }
-
-        // Direct Date Check
-        var d = new Date(deadlineStr);
-        if (!isNaN(d.getTime()) && deadlineStr.indexOf("-") !== -1) return d;
-
-        // Fallback to today at parsed time
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hrs, mins, 0);
+        return parseDeadlineToDate(deadlineStr, new Date());
       }
 
       function updateLiveTimers() {
@@ -1749,15 +1711,174 @@
         if (el) el.style.display = (el.style.display === 'block') ? 'none' : 'block';
       }
 
+      function parseRoutineSchedule(deadlineStr, frequency) {
+        var now = new Date();
+        var freq = (frequency || "Daily").toLowerCase();
+        var str = String(deadlineStr || "").trim();
+        var lower = str.toLowerCase();
+
+        var timeStr = "07:00 PM";
+        var timeMatch = str.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
+        if (timeMatch) {
+          var h = parseInt(timeMatch[1], 10);
+          var m = timeMatch[2];
+          var ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : (h >= 12 ? 'PM' : 'AM');
+          if (h > 12) h -= 12;
+          if (h === 0) h = 12;
+          timeStr = (h < 10 ? '0' + h : h) + ':' + m + ' ' + ampm;
+        } else {
+          var simpleHour = str.match(/(\d{1,2})\s*(AM|PM)/i);
+          if (simpleHour) {
+            var sh = parseInt(simpleHour[1], 10);
+            timeStr = (sh < 10 ? '0' + sh : sh) + ':00 ' + simpleHour[2].toUpperCase();
+          }
+        }
+
+        if (freq.indexOf("daily") !== -1) {
+          return {
+            freq: "Daily",
+            isDueToday: true,
+            time: timeStr,
+            scheduleText: "Roz " + timeStr,
+            badgeHtml: "<span style='color:#58a6ff; font-size:11px; font-weight:bold;'>⏰ Roz " + timeStr + "</span>"
+          };
+        }
+
+        if (freq.indexOf("weekly") !== -1) {
+          var daysArr = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+          var daysHindi = ["Raviwar", "Somwar", "Mangalwar", "Budhwar", "Guruwar", "Shukrawar", "Shaniwar"];
+          var curDayIdx = now.getDay();
+
+          var targetDayIdx = -1;
+          for (var i = 0; i < daysArr.length; i++) {
+            if (lower.indexOf(daysArr[i]) !== -1 || lower.indexOf(daysArr[i].slice(0, 3)) !== -1) {
+              targetDayIdx = i;
+              break;
+            }
+          }
+          if (targetDayIdx === -1) targetDayIdx = 1;
+
+          var targetDayName = daysArr[targetDayIdx];
+          var capDay = targetDayName.charAt(0).toUpperCase() + targetDayName.slice(1);
+          var hindiDay = daysHindi[targetDayIdx];
+          var isDueToday = (curDayIdx === targetDayIdx);
+
+          return {
+            freq: "Weekly",
+            weekday: targetDayName,
+            isDueToday: isDueToday,
+            time: timeStr,
+            scheduleText: "Har " + capDay + " (" + hindiDay + ") " + timeStr,
+            badgeHtml: isDueToday
+              ? "<span style='background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;'>🔥 Triggered Today (" + capDay + ") by " + timeStr + "!</span>"
+              : "<span style='background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600;'>📆 Har " + capDay + " (" + hindiDay + ") " + timeStr + "</span>"
+          };
+        }
+
+        if (freq.indexOf("monthly") !== -1) {
+          var curDate = now.getDate();
+          var targetDate = 1;
+          var dateMatch = str.match(/(\d{1,2})(?:st|nd|rd|th)?/i);
+          if (dateMatch) {
+            targetDate = parseInt(dateMatch[1], 10);
+          }
+          if (targetDate < 1) targetDate = 1;
+          if (targetDate > 31) targetDate = 31;
+
+          var suffix = targetDate + "th";
+          if (targetDate >= 11 && targetDate <= 13) suffix = targetDate + "th";
+          else if (targetDate % 10 === 1) suffix = targetDate + "st";
+          else if (targetDate % 10 === 2) suffix = targetDate + "nd";
+          else if (targetDate % 10 === 3) suffix = targetDate + "rd";
+
+          var isDueToday = (curDate === targetDate);
+
+          return {
+            freq: "Monthly",
+            monthDate: targetDate,
+            isDueToday: isDueToday,
+            time: timeStr,
+            scheduleText: "Har Mahine ki " + suffix + " Taareekh ko " + timeStr,
+            badgeHtml: isDueToday
+              ? "<span style='background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;'>🔥 Triggered Today (" + suffix + " of Month) by " + timeStr + "!</span>"
+              : "<span style='background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600;'>🗓️ Har Mahine ki " + suffix + " Taareekh ko " + timeStr + "</span>"
+          };
+        }
+
+        return { freq: "Extra", isDueToday: true, time: timeStr, scheduleText: str, badgeHtml: "" };
+      }
+
+      function parseDeadlineToDate(deadlineStr, baseDate) {
+        if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return null;
+        var now = baseDate || new Date();
+        var lower = String(deadlineStr).toLowerCase().trim();
+
+        var hrs = 19;
+        var mins = 0;
+        var timeMatch = lower.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+        if (timeMatch) {
+          hrs = parseInt(timeMatch[1], 10);
+          mins = parseInt(timeMatch[2], 10);
+          var ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : "";
+          if (ampm === "PM" && hrs < 12) hrs += 12;
+          if (ampm === "AM" && hrs === 12) hrs = 0;
+        }
+
+        // Weekly Day Check
+        var daysArr = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        for (var d = 0; d < daysArr.length; d++) {
+          var day = daysArr[d];
+          if (lower.indexOf(day) !== -1 || lower.indexOf(day.slice(0, 3)) !== -1) {
+            var targetDay = d;
+            var curDay = now.getDay();
+            var diff = targetDay - curDay;
+            if (diff < 0) diff += 7;
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff, hrs, mins, 0);
+          }
+        }
+
+        // Monthly Date Check
+        var dateMatch = lower.match(/(\d{1,2})(?:st|nd|rd|th)?(?:\s*of\s*month)?/i);
+        if (dateMatch && (lower.indexOf("month") !== -1 || lower.indexOf("st") !== -1 || lower.indexOf("nd") !== -1 || lower.indexOf("rd") !== -1 || lower.indexOf("th") !== -1 || !isNaN(Number(lower.split(/[,\s]/)[0])))) {
+          var targetDateNum = parseInt(dateMatch[1], 10);
+          if (targetDateNum >= 1 && targetDateNum <= 31) {
+            var curDateNum = now.getDate();
+            var targetMonth = now.getMonth();
+            var targetYear = now.getFullYear();
+            if (curDateNum > targetDateNum) {
+              targetMonth++;
+              if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+            }
+            return new Date(targetYear, targetMonth, targetDateNum, hrs, mins, 0);
+          }
+        }
+
+        // Direct ISO / Full Date Check
+        if (lower.indexOf("-") !== -1 && (lower.indexOf("202") !== -1 || lower.indexOf("t") !== -1)) {
+          var directD = new Date(deadlineStr);
+          if (!isNaN(directD.getTime())) return directD;
+        }
+
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hrs, mins, 0);
+      }
+
+
       function renderStaffContent() {
         var isOwner = (loggedInUser.role.toLowerCase().trim() === "ceo" || loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin");
         
-        var counts = { Daily: {t:0, d:0}, Weekly: {t:0, d:0}, Monthly: {t:0, d:0} };
+        var counts = { Daily: {t:0, d:0}, Weekly: {t:0, d:0, dueToday:0, doneToday:0}, Monthly: {t:0, d:0, dueToday:0, doneToday:0} };
         for(var k=0; k<roleTasks.length; k++) {
             var tItem = roleTasks[k];
+            var sched = parseRoutineSchedule(tItem.deadline, tItem.type);
+            tItem.sched = sched;
             if(counts[tItem.type]) {
                 counts[tItem.type].t++;
-                if(tItem.status.includes("Uploaded") || tItem.status.includes("Completed") || tItem.status.includes("Skipped")) { counts[tItem.type].d++; }
+                var isDone = tItem.status.includes("Uploaded") || tItem.status.includes("Completed") || tItem.status.includes("Skipped");
+                if(isDone) { counts[tItem.type].d++; }
+                if(sched.isDueToday) {
+                  counts[tItem.type].dueToday++;
+                  if(isDone) counts[tItem.type].doneToday++;
+                }
             }
         }
 
@@ -1767,11 +1888,13 @@
         }
         var tW = document.getElementById("tabWeekly");
         if(tW) {
-          tW.innerHTML = '<div class="tab-label">Weekly</div><div class="tab-sub">' + counts.Weekly.d + '/' + counts.Weekly.t + '</div>';
+          var wSub = counts.Weekly.dueToday > 0 ? (counts.Weekly.doneToday + '/' + counts.Weekly.dueToday + ' Due Today') : ('0 Due (' + counts.Weekly.t + ' Sched.)');
+          tW.innerHTML = '<div class="tab-label">Weekly</div><div class="tab-sub">' + wSub + '</div>';
         }
         var tM = document.getElementById("tabMonthly");
         if(tM) {
-          tM.innerHTML = '<div class="tab-label">Monthly</div><div class="tab-sub">' + counts.Monthly.d + '/' + counts.Monthly.t + '</div>';
+          var mSub = counts.Monthly.dueToday > 0 ? (counts.Monthly.doneToday + '/' + counts.Monthly.dueToday + ' Due Today') : ('0 Due (' + counts.Monthly.t + ' Sched.)');
+          tM.innerHTML = '<div class="tab-label">Monthly</div><div class="tab-sub">' + mSub + '</div>';
         }
         
         var adhocBtn = document.getElementById("adhocTabBtn");
@@ -1962,33 +2085,10 @@
             
             var isAllDone = group.every(function(x) { return x.data.status.includes("Uploaded") || x.data.status.includes("Completed") || x.data.status.includes("Skipped"); });
             var rawDeadRoutine = firstTask.deadline || "N/A";
-            html += "<div style='background:#0d1117; padding:10px; border-radius:8px; margin: 10px 0; border:1px solid #30363d;'>";
-            var scheduleBadge = "";
-            var nowObj = new Date();
-            var lowerDead = rawDeadRoutine.toLowerCase();
-            if (currentActiveTab.toLowerCase() === "weekly") {
-              var daysArr = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-              var todayDayName = daysArr[nowObj.getDay()];
-              var matchedDay = daysArr.find(function(d){ return lowerDead.indexOf(d) !== -1; });
-              if (matchedDay) {
-                var capDay = matchedDay.charAt(0).toUpperCase() + matchedDay.slice(1);
-                if (matchedDay === todayDayName) {
-                  scheduleBadge = "<span style='display:inline-block; background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold; margin-right:6px;'>🔥 Due Today (" + capDay + ")!</span>";
-                } else {
-                  scheduleBadge = "<span style='display:inline-block; background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600; margin-right:6px;'>📆 Har " + capDay + "</span>";
-                }
-              }
-            } else if (currentActiveTab.toLowerCase() === "monthly") {
-              var mMatch = rawDeadRoutine.match(/(\d{1,2})(st|nd|rd|th)/i);
-              if (mMatch) {
-                var targetDateNum = parseInt(mMatch[1], 10);
-                if (nowObj.getDate() === targetDateNum) {
-                  scheduleBadge = "<span style='display:inline-block; background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold; margin-right:6px;'>🔥 Due Today (" + targetDateNum + "th)!</span>";
-                } else {
-                  scheduleBadge = "<span style='display:inline-block; background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600; margin-right:6px;'>🗓️ Har Mahine ki " + targetDateNum + "th</span>";
-                }
-              }
-            }
+            var sched = parseRoutineSchedule(rawDeadRoutine, currentActiveTab);
+            var isDueToday = sched.isDueToday;
+            html += "<div style='background:#0d1117; padding:10px; border-radius:8px; margin: 10px 0; border:1px solid " + (isDueToday && !isAllDone ? "#2ea043" : "#30363d") + ";'>";
+            var scheduleBadge = sched.badgeHtml;
             html += "<p style='margin:0; font-size:12px; color:#ffd33d;'>" + scheduleBadge + "⏰ <b>Deadline:</b> " + rawDeadRoutine;
             html += " <span class='live-timer' data-deadline='" + rawDeadRoutine + "' data-completed='" + isAllDone + "'></span>";
             html += " <span style='float:right;'>🎯 10 Pts</span></p>";
