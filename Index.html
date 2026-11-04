@@ -2,684 +2,847 @@
 <html>
   <head>
     <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Task Management App</title>
     <style>
-      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 0; padding: 15px; }
-      .container { max-width: 650px; margin: auto; background: #161b22; padding: 20px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #30363d; }
-      h2, h3, h4 { color: #58a6ff; margin-top:0; }
-      input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #30363d; border-radius: 8px; box-sizing: border-box; background: #0d1117; color: #c9d1d9; font-size: 14px; font-family: inherit;}
-      input[type="time"], input[type="datetime-local"] { color-scheme: dark; cursor: pointer; }
-      button { background: #238636; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-      button:hover { background: #2ea043; }
-      .btn-danger { background: #da3633; }
-      .btn-info { background: #1f6feb; }
-      .card { background: #21262d; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #30363d; }
-      .profile-header { background: linear-gradient(135deg, #1f6feb, #238636); padding: 15px; border-radius: 10px; color: white; margin-bottom: 15px; }
-      
-      /* 📑 STAFF ZERO-SCROLL 4-COLUMN TAB BAR */
-      .tabs { 
-        display: grid; 
-        grid-template-columns: repeat(4, 1fr); 
-        gap: 6px; 
-        background: #0d1117; 
-        padding: 6px; 
-        border-radius: 10px; 
-        margin-bottom: 15px; 
-        font-weight: bold; 
-        font-size: 11px; 
-        border: 1px solid #30363d; 
-        width: 100%; 
-        box-sizing: border-box; 
-      }
-      .tabs.has-5-tabs { 
-        grid-template-columns: repeat(5, 1fr); 
-      }
-      .tab { 
-        padding: 6px 2px; 
-        border-radius: 8px; 
-        color: #8b949e; 
-        text-align: center; 
-        position: relative; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        justify-content: center; 
-        background: #161b22; 
-        border: 1px solid #30363d; 
-        cursor: pointer; 
-        transition: all 0.2s ease; 
-        min-height: 48px; 
-        box-sizing: border-box; 
-      }
-      .tab:hover { 
-        border-color: #58a6ff; 
-        color: #c9d1d9; 
-      }
-      .tab.active { 
-        background: #21262d; 
-        color: #58a6ff; 
-        border-color: #388bfd; 
-        box-shadow: 0 0 10px rgba(56, 139, 253, 0.25); 
-      }
-      .tab .tab-label { 
-        font-size: 11px; 
-        font-weight: bold; 
-        white-space: nowrap; 
-      }
-      .tab .tab-sub { 
-        font-size: 9px; 
-        margin-top: 2px; 
-        color: #8b949e; 
-        font-weight: normal; 
-        white-space: nowrap; 
-      }
-      .tab.active .tab-sub { 
-        color: #58a6ff; 
-        font-weight: 600; 
-      }
-      .tab.tab-adhoc { 
-        border-color: #d29922; 
-      }
-      .tab.tab-adhoc .tab-label { 
-        color: #ffd33d; 
-      }
-      .tab.has-pending-adhoc { 
-        background: rgba(248, 81, 73, 0.18) !important; 
-        border: 1.5px solid #f85149 !important; 
-        box-shadow: 0 0 12px rgba(248, 81, 73, 0.4) !important; 
-        animation: pulse-adhoc-tab 1.5s infinite; 
-      }
-      @keyframes pulse-adhoc-tab {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.02); }
-        100% { transform: scale(1); }
-      }
-      
-      .admin-tabs { 
-        display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
-        gap: 6px; 
-        background: #0d1117; 
-        padding: 6px; 
-        border-radius: 10px; 
-        margin-bottom: 15px; 
-        font-weight: bold; 
-        font-size: 11px; 
-        cursor: pointer; 
-        border: 1px solid #30363d; 
-        box-sizing: border-box; 
-      }
-      .admin-tab { 
-        padding: 8px 6px; 
-        border-radius: 6px; 
-        color: #8b949e; 
-        text-align: center; 
-        background: #161b22; 
-        border: 1px solid #30363d; 
-        transition: 0.2s; 
-      }
-      .admin-tab.active { 
-        background: #58a6ff; 
-        color: #0d1117; 
-        border-color: #58a6ff; 
-      }
-      
-      .task-card { background: #161b22; border-left: 5px solid #58a6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-top: 1px solid #30363d; border-right: 1px solid #30363d; border-bottom: 1px solid #30363d; }
-      .task-card.order { border-left-color: #2ea043; background: #1a231d; transition: 0.3s; }
-      
-      .subtask-container { background: #0d1117; padding: 12px; border-radius: 8px; border: 1px solid #30363d; margin-top: 10px; }
-      .subtask-header { font-size: 11px; color: #8b949e; margin-bottom: 10px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
-      .subtask-row { display: flex; flex-direction: column; background: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 12px 10px; margin-bottom: 8px; }
-      .subtask-row.completed { opacity: 0.8; }
-      .subtask-name { font-size: 14px; font-weight: 500; color: #c9d1d9; margin-bottom: 8px; }
-      
-      .subtask-actions { display: flex; gap: 8px; flex-direction: row; justify-content: flex-end; align-items: center; }
-      .btn-complete { background: #2ea043; color: white; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; font-weight: bold; cursor: pointer; width: auto !important; margin: 0 !important; }
-      .btn-capture { background: #58a6ff; color: #0d1117; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; font-weight: bold; cursor: pointer; width: auto !important; margin: 0 !important; }
-      .btn-skip { background: #484f58; color: #c9d1d9; border: none; padding: 6px 12px !important; border-radius: 6px; font-size: 12px !important; cursor: pointer; width: auto !important; margin: 0 !important; }
 
-      .status-text { font-size: 12px; font-weight: bold; text-align: right; margin-top:5px; }
-      
-      .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px 0;}
-      .modal-content { background: #161b22; margin: auto; padding: 20px; border: 1px solid #30363d; width: 90%; max-width: 420px; border-radius: 12px; text-align: left; }
-      #photoPreview { border: 2px solid #238636; margin-top: 10px; margin-bottom: 15px; width: 100%; max-height: 250px; border-radius:8px;}
-      .hidden { display: none !important; }
-      
-      /* 🏆 SCORECARD GRIDS */
-      .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; margin-bottom: 15px; }
-      .score-box { background: #1f242c; padding: 10px 6px; border-radius: 8px; border: 1px solid #30363d; text-align: center; }
-      .score-box.highlight { border-color: #ffd33d; background: #262c36; }
-      .score-lbl { font-size: 10px; color: #8b949e; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
-      .score-val { font-size: 16px; font-weight: bold; color: #ffd33d; }
-
-      .ref-photo-thumb { display: inline-block; margin-right: 6px; margin-bottom: 6px; }
-      .ref-photo-thumb img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #58a6ff; cursor: pointer; }
-      
-      /* Leaderboard Table */
-      .scoreboard-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; margin-top: 10px; }
-      .scoreboard-table th { background: #0d1117; color: #58a6ff; padding: 8px 6px; border: 1px solid #30363d; position: sticky; top: 0; }
-      .scoreboard-table td { padding: 8px 6px; border: 1px solid #30363d; }
-      .scoreboard-table tr:nth-child(even) { background: #1a1e24; }
-      .scoreboard-table tr:hover { background: #21262d; }
+  :root {
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #fcfdfe;
+    --bg-subtle: #f1f5f9;
+    --bg-subtle-hover: #e2e8f0;
     
-      /* ============================================================
-         PHASE 1: ZERO-TRAINING & DAY-1 ONBOARDING STYLES
-         ============================================================ */
-      .onboarding-guide-banner {
-        background: linear-gradient(135deg, #1f6feb 0%, #388bfd 50%, #238636 100%);
-        border: 1px solid #388bfd;
-        border-radius: 10px;
-        padding: 12px 14px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 4px 14px rgba(31, 111, 235, 0.3);
-      }
-      .onboarding-guide-banner:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(31, 111, 235, 0.45);
-      }
-      .onboarding-guide-banner .banner-icon { font-size: 24px; }
-      .onboarding-guide-banner .banner-title { font-weight: bold; font-size: 13px; color: #ffffff; }
-      .onboarding-guide-banner .banner-sub { font-size: 11px; color: #e1e4e8; margin-top: 2px; }
-      .onboarding-guide-banner .banner-badge {
-        background: rgba(255, 255, 255, 0.25);
-        color: #ffffff;
-        padding: 5px 10px;
-        border-radius: 14px;
-        font-size: 11px;
-        font-weight: bold;
-        white-space: nowrap;
-        border: 1px solid rgba(255, 255, 255, 0.35);
-      }
-
-      /* TIMELINE SLOTS RIBBON */
-      /* 🕒 VISUAL SHIFT TIMELINE RIBBON - 100% ZERO-SCROLL RESPONSIVE */
-      .timeline-bar-wrapper {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin-bottom: 12px;
-        box-sizing: border-box;
-      }
-      .timeline-bar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        font-size: 11px;
-        font-weight: bold;
-        color: #58a6ff;
-      }
-      .timeline-slots-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .timeline-slot-all {
-        background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        padding: 7px 12px;
-        color: #8b949e;
-        font-size: 11.5px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: 0.2s;
-        box-sizing: border-box;
-        width: 100%;
-      }
-      .timeline-slot-all:hover { border-color: #58a6ff; color: #c9d1d9; }
-      .timeline-slot-all.active {
-        background: #1f6feb;
-        color: #ffffff;
-        border-color: #388bfd;
-        font-weight: bold;
-        box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
-      }
-      .timeline-shifts-row {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 5px;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .timeline-slot-btn {
-        background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        padding: 6px 2px;
-        color: #8b949e;
-        font-size: 10px;
-        cursor: pointer;
-        text-align: center;
-        transition: 0.2s;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-      }
-      .timeline-slot-btn:hover { border-color: #58a6ff; color: #c9d1d9; }
-      .timeline-slot-btn.active {
-        background: #1f6feb;
-        color: #ffffff;
-        border-color: #388bfd;
-        font-weight: bold;
-        box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
-      }
-      .timeline-slot-btn .slot-time {
-        font-size: 8px;
-        display: block;
-        opacity: 0.85;
-        margin-top: 2px;
-        white-space: nowrap;
-      }
-
-      /* TASK SOP STEPPER ACCORDION */
-      .task-stepper-box {
-        background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        padding: 8px 10px;
-        margin: 8px 0;
-      }
-      .stepper-header {
-        font-size: 12px;
-        font-weight: bold;
-        color: #58a6ff;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .stepper-content { margin-top: 8px; display: none; }
-      .stepper-step {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 6px;
-        font-size: 11px;
-        line-height: 1.4;
-      }
-      .stepper-step:last-child { margin-bottom: 0; }
-      .stepper-num {
-        background: #1f6feb;
-        color: white;
-        border-radius: 50%;
-        width: 16px;
-        height: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 9px;
-        font-weight: bold;
-        flex-shrink: 0;
-        margin-top: 1px;
-      }
-
-      /* BENCHMARK COMPARISON BOX */
-      .benchmark-box {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        background: #0d1117;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #30363d;
-        margin: 8px 0;
-      }
-      .benchmark-card {
-        padding: 8px;
-        border-radius: 6px;
-        font-size: 11px;
-      }
-      .benchmark-card.good {
-        background: rgba(46, 160, 67, 0.15);
-        border: 1px solid #2ea043;
-        color: #7ee787;
-      }
-      .benchmark-card.bad {
-        background: rgba(218, 54, 51, 0.15);
-        border: 1px solid #da3633;
-        color: #f85149;
-      }
-      .benchmark-title { font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; font-size: 11px; }
-
-      /* TROUBLESHOOT FAQ ACCORDION */
-      .troubleshoot-box {
-        background: rgba(210, 153, 34, 0.1);
-        border: 1px solid #d29922;
-        border-radius: 8px;
-        padding: 6px 10px;
-        margin: 6px 0;
-        font-size: 11px;
-        color: #e3b341;
-      }
-      .troubleshoot-title { font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; }
-      .troubleshoot-body { font-size: 11px; color: #c9d1d9; margin-top: 5px; line-height: 1.4; display: none; }
-
-      /* PRE-FLIGHT CHECKLIST IN MODAL */
-      .preflight-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #21262d;
-        padding: 8px 10px;
-        border-radius: 6px;
-        margin-bottom: 6px;
-        font-size: 12px;
-        cursor: pointer;
-        border: 1px solid #30363d;
-        text-align: left;
-      }
-      .preflight-item input[type="checkbox"] { width: auto; margin: 0; }
+    --border-light: #f1f5f9;
+    --border-subtle: #e2e8f0;
+    --border-strong: #cbd5e1;
     
-    /* PHASE 2: CEO RADAR, QUALITY GATE & HANDOVER STYLES */
-    .radar-pulse-bar {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-    .pulse-card {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 8px;
-      padding: 10px;
-      text-align: center;
-    }
-    .pulse-val {
-      font-size: 18px;
-      font-weight: 800;
-      color: #58a6ff;
-      margin-top: 2px;
-    }
-    .pulse-lbl {
-      font-size: 10px;
-      color: #8b949e;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-    .pulse-card.alert {
-      border-color: #da3633;
-      background: rgba(218, 54, 51, 0.08);
-    }
-    .pulse-card.alert .pulse-val {
-      color: #f85149;
-    }
-    .pulse-card.success {
-      border-color: #238636;
-      background: rgba(35, 134, 54, 0.08);
-    }
-    .pulse-card.success .pulse-val {
-      color: #3fb950;
-    }
-    .radar-filter-ribbon {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
-    }
-    .radar-filter-btn {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #c9d1d9;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .radar-filter-btn.active {
-      background: #1f6feb;
-      border-color: #388bfd;
-      color: white;
-    }
-    .staff-radar-card {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 12px;
-      transition: all 0.2s ease;
-    }
-    .staff-radar-card.has-overdue {
-      border-left: 4px solid #da3633;
-    }
-    .staff-radar-card.all-done {
-      border-left: 4px solid #238636;
-    }
-    .radar-progress-bg {
-      background: #21262d;
-      height: 8px;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 8px 0;
-    }
-    .radar-progress-fill {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 0.3s ease;
-    }
-    .btn-wa-nudge {
-      background: #25d366;
-      color: #0d1117 !important;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      text-decoration: none;
-    }
-    .btn-wa-nudge:hover {
-      background: #1ebc59;
-    }
-    .radar-task-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 7px 0;
-      border-bottom: 1px solid #21262d;
-      font-size: 12px;
-    }
-    .radar-task-row:last-child {
-      border-bottom: none;
-    }
+    --text-main: #0f172a;
+    --text-body: #334155;
+    --text-muted: #64748b;
+    --text-subtle: #94a3b8;
+    
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #eff6ff;
+    --primary-border: #bfdbfe;
+    
+    --success: #16a34a;
+    --success-hover: #15803d;
+    --success-light: #f0fdf4;
+    --success-border: #bbf7d0;
+    --success-text: #15803d;
+    
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --warning-border: #fde68a;
+    --warning-text: #b45309;
+    
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --danger-border: #fecaca;
+    --danger-text: #b91c1c;
 
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.07), 0 2px 5px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+    --shadow-modal: 0 20px 40px -8px rgba(15, 23, 42, 0.2);
+    
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   
-    /* POINTS LEDGER & SCORE CARD STYLES */
-    .score-pts-sub {
-      font-size: 9px;
-      color: #8b949e;
-      margin-top: 2px;
-      font-weight: normal;
-    }
-    .score-box:hover {
-      border-color: #58a6ff;
-      background: #1c2128;
-      transform: translateY(-2px);
-    }
-    .score-pill-btn {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #ffd33d;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: bold;
-      cursor: pointer;
-      display: inline-block;
-      transition: all 0.2s ease;
-      text-decoration: none;
-    }
-    .score-pill-btn:hover {
-      background: #1f6feb;
-      color: white;
-      border-color: #388bfd;
-    }
-    .ledger-pill-btn {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #c9d1d9;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .ledger-pill-btn.active {
-      background: #1f6feb;
-      border-color: #388bfd;
-      color: white;
-    }
-    .pts-badge-10 {
-      background: rgba(35, 134, 54, 0.2);
-      border: 1px solid #238636;
-      color: #3fb950;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 800;
-      font-size: 12px;
-    }
-    .pts-badge-5 {
-      background: rgba(227, 179, 65, 0.2);
-      border: 1px solid #d29922;
-      color: #e3b341;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 800;
-      font-size: 12px;
-    }
-    .pts-badge-0 {
-      background: rgba(218, 54, 51, 0.2);
-      border: 1px solid #da3633;
-      color: #f85149;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 800;
-      font-size: 12px;
-    }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-page);
+    color: var(--text-body);
+    margin: 0;
+    padding: 12px 10px 40px 10px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
 
-  
-      /* 📦 9-STAGE ORDER PROCESSING & 1-HOUR SLA STYLES */
-      .order-card-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .task-card.order.has-overdue {
-        border-left-color: #da3633 !important;
-        box-shadow: 0 0 12px rgba(218, 54, 51, 0.25);
-      }
-      .order-sla-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: bold;
-        white-space: nowrap;
-      }
-      .order-sla-pill.ontime-pill {
-        background: rgba(46, 160, 67, 0.15);
-        color: #3fb950;
-        border: 1px solid #2ea043;
-      }
-      .order-sla-pill.overdue-pill {
-        background: rgba(218, 54, 51, 0.2);
-        color: #f85149;
-        border: 1px solid #da3633;
-        animation: pulse-adhoc-tab 1.5s infinite;
-      }
-      .btn-open-order-app {
-        background: linear-gradient(135deg, #1f6feb, #238636);
-        color: #ffffff !important;
-        font-weight: bold;
-        font-size: 12px !important;
-        padding: 8px 14px !important;
-        border-radius: 6px;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
-        transition: 0.2s;
-      }
-      .btn-open-order-app:hover {
-        opacity: 0.95;
-        transform: translateY(-1px);
-      }
-      .ceo-order-radar-box {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 12px;
-        padding: 14px;
-        margin-bottom: 16px;
-      }
-      .order-bottleneck-row {
-        background: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        padding: 10px 12px;
-        margin-bottom: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .order-bottleneck-row.overdue-row {
-        border-color: #da3633;
-        background: rgba(218, 54, 51, 0.08);
-      }
+  .container {
+    max-width: 660px;
+    margin: 0 auto;
+    background: transparent;
+  }
 
-</style>
+  /* Form Elements */
+  input, select, textarea {
+    width: 100%;
+    padding: 11px 14px;
+    margin: 6px 0;
+    border: 1.5px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    color: var(--text-main);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+  input[type="time"], input[type="datetime-local"] {
+    color-scheme: light;
+    cursor: pointer;
+  }
 
+  /* Buttons */
+  button {
+    font-family: inherit;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  button:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary:hover { background: var(--primary-hover); }
+
+  .btn-success {
+    background: var(--success);
+    color: #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-success:hover { background: var(--success-hover); }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #ffffff;
+  }
+  .btn-info {
+    background: var(--primary);
+    color: #ffffff;
+  }
+  .btn-outline {
+    background: #ffffff;
+    border: 1.5px solid var(--border-subtle);
+    color: var(--text-body);
+  }
+  .btn-outline:hover {
+    background: var(--bg-subtle);
+    border-color: var(--border-strong);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Top Welcoming Header */
+  .welcome-header {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .welcome-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .user-avatar-circle {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    flex-shrink: 0;
+  }
+  .welcome-greeting {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.2;
+  }
+  .welcome-role-badge {
+    display: inline-block;
+    margin-top: 4px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid var(--primary-border);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .logout-pill-btn {
+    background: #ffffff;
+    border: 1.5px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .logout-pill-btn:hover {
+    color: var(--danger);
+    border-color: var(--danger-border);
+    background: var(--danger-light);
+  }
+
+  /* Today's Overview Hero Card */
+  .today-hero-card {
+    background: #ffffff;
+    border: 1.5px solid var(--primary-border);
+    border-radius: var(--radius-xl);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+    position: relative;
+    overflow: hidden;
+  }
+  .today-hero-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb, #10b981);
+  }
+  .hero-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .hero-title-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
+  .hero-pts-badge {
+    background: var(--success-light);
+    color: var(--success-text);
+    border: 1px solid var(--success-border);
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .hero-progress-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .hero-tasks-text {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+  }
+  .hero-pct-pill {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #10b981);
+    border-radius: var(--radius-full);
+    transition: width 0.4s ease;
+  }
+  .hero-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-light);
+    padding-top: 10px;
+  }
+  .hero-scorecard-link {
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .hero-scorecard-link:hover { text-decoration: underline; }
+
+  /* Role Blueprint Card */
+  .onboarding-guide-banner {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: var(--shadow-xs);
+  }
+  .onboarding-guide-banner:hover {
+    border-color: var(--primary-border);
+    background: var(--primary-light);
+  }
+  .banner-icon { font-size: 22px; flex-shrink: 0; }
+  .banner-title { font-size: 13.5px; font-weight: 700; color: var(--text-main); }
+  .banner-sub { font-size: 11.5px; color: var(--text-muted); }
+  .banner-badge {
+    background: var(--bg-subtle);
+    color: var(--text-body);
+    border: 1px solid var(--border-subtle);
+    padding: 5px 10px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Segmented Nav Tabs (Zero Horizontal Scroll) */
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    background: var(--bg-subtle);
+    padding: 5px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 14px;
+    border: 1px solid var(--border-subtle);
+  }
+  .tabs.has-5-tabs {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .tab {
+    background: transparent;
+    padding: 8px 4px;
+    text-align: center;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .tab:hover { color: var(--text-main); }
+  .tab.active {
+    background: #ffffff;
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    font-weight: 700;
+  }
+  .tab-label {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .tab-sub {
+    font-size: 10px;
+    color: var(--text-subtle);
+    margin-top: 2px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .tab.active .tab-sub {
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  /* Shift Timeline Pills */
+  .timeline-bar-wrapper {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+  }
+  .timeline-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+  .timeline-shifts-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .timeline-shifts-row::-webkit-scrollbar { display: none; }
+  .timeline-slot-btn, .timeline-slot-all {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    padding: 5px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-body);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .timeline-slot-btn:hover, .timeline-slot-all:hover {
+    border-color: var(--primary-border);
+    color: var(--primary);
+  }
+  .timeline-slot-btn.active, .timeline-slot-all.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  }
+  .slot-time { font-size: 9.5px; opacity: 0.85; margin-left: 2px; }
+
+  /* Task Cards (World-Class Clean White Aesthetic) */
+  .task-card {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .task-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+  .task-card.completed-card {
+    border-left-color: var(--success);
+    background: #ffffff;
+  }
+  .task-card.adhoc {
+    border-left-color: #f97316;
+  }
+  .task-card.order {
+    border-left-color: #10b981;
+  }
+  .task-card.order.has-overdue {
+    border-left-color: var(--danger);
+  }
+
+  /* Card Inner Elements */
+  .task-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .task-card-title {
+    margin: 0;
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.3;
+  }
+  .task-meta-badge {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-body);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+
+  .task-deadline-box {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: var(--text-body);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .subtask-container {
+    margin-top: 12px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 10px;
+  }
+  .subtask-row {
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-light);
+  }
+  .subtask-row:last-child { border-bottom: none; }
+  .subtask-row.completed {
+    opacity: 0.75;
+  }
+  .subtask-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 8px;
+  }
+  .subtask-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* Action Buttons */
+  .btn-complete {
+    background: var(--success);
+    color: #ffffff;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+  }
+  .btn-complete:hover { background: var(--success-hover); }
+
+  .btn-capture {
+    background: #ffffff;
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    padding: 8px 14px;
+    font-size: 12.5px;
+    border-radius: var(--radius-md);
+  }
+  .btn-capture:hover { background: var(--primary-light); }
+
+  .btn-skip {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 8px 12px;
+    font-size: 11.5px;
+    border-radius: var(--radius-md);
+  }
+  .btn-skip:hover { background: var(--border-subtle); color: var(--text-main); }
+
+  .status-text {
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Compact SOP & Troubleshoot Accordions */
+  .task-stepper-box, .troubleshoot-box {
+    background: var(--bg-page);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .stepper-header, .troubleshoot-title {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-body);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    transition: 0.15s;
+  }
+  .stepper-header:hover, .troubleshoot-title:hover { background: var(--bg-subtle); }
+  .stepper-content, .troubleshoot-body {
+    display: none;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-body);
+    background: #ffffff;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .stepper-step {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: flex-start;
+  }
+  .stepper-num {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Modals */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    padding: 20px 10px;
+  }
+  .modal-content {
+    background: #ffffff;
+    margin: 20px auto;
+    padding: 22px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    width: 94%;
+    max-width: 540px;
+    box-shadow: var(--shadow-modal);
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  /* CEO Portal */
+  .admin-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 14px;
+    scrollbar-width: none;
+  }
+  .admin-tabs::-webkit-scrollbar { display: none; }
+  .admin-tab {
+    background: #ffffff;
+    border: 1.5px solid var(--border-subtle);
+    color: var(--text-body);
+    padding: 8px 14px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.15s;
+  }
+  .admin-tab:hover { border-color: var(--primary-border); color: var(--primary); }
+  .admin-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Radar Pulse Cards */
+  .radar-pulse-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 500px) {
+    .radar-pulse-bar { grid-template-columns: repeat(3, 1fr); }
+  }
+  .pulse-card {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px 8px;
+    text-align: center;
+    box-shadow: var(--shadow-xs);
+  }
+  .pulse-lbl { font-size: 9.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 3px; }
+  .pulse-val { font-size: 16px; font-weight: 800; color: var(--text-main); }
+  .pulse-card.success .pulse-val { color: var(--success); }
+  .pulse-card.alert .pulse-val { color: var(--danger); }
+
+  /* Scoreboard Table */
+  .scoreboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .scoreboard-table th {
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-subtle);
+  }
+  .scoreboard-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-main);
+  }
+  .scoreboard-table tr:hover td { background: var(--bg-subtle); }
+
+  .hidden { display: none !important; }
+
+  /* Photo thumbnail pills */
+  .ref-photo-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+  }
+
+  /* Ledger Pills */
+  .ledger-pill-btn {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-body);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+  }
+  .ledger-pill-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+  }
+
+  /* Scoreboard Grid (Modal) */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .score-box {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    text-align: center;
+  }
+  .score-box.highlight {
+    background: var(--primary-light);
+    border-color: var(--primary-border);
+  }
+  .score-lbl { font-size: 9.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 2px; }
+  .score-val { font-size: 16px; font-weight: 800; color: var(--text-main); }
+  .score-pts-sub { font-size: 10px; color: var(--text-muted); }
+
+    </style>
   </head>
   <body>
-    <? var portalEmpId = typeof empId !== 'undefined' ? empId : ''; ?>
-    
     <div class="container">
-      <div id="loginScreen" class="card" style="text-align: center; padding: 30px;">
-        <h2>🔐 Secure System Login</h2>
-        <input type="text" id="empId" placeholder="Employee ID">
-        <input type="password" id="empPass" placeholder="Password">
-        <button onclick="loginUser()">Login Karein</button>
-        <p id="loginMsg" style="color: #f85149; font-weight: bold;"></p>
+      
+      <!-- 🔐 1. WELCOMING LOGIN SCREEN -->
+      <div id="loginScreen" class="card" style="text-align: center; padding: 36px 20px; max-width: 440px; margin: 40px auto;">
+        <div style="width: 58px; height: 58px; border-radius: 16px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 16px auto; box-shadow: 0 4px 12px rgba(37,99,235,0.25);">
+          📋
+        </div>
+        <h2 style="color: var(--text-main); margin: 0 0 6px 0; font-size: 20px; font-weight: 800;">Yash Marketing Tasks</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin: 0 0 24px 0;">Sign in to view your routine, orders & daily targets</p>
+        
+        <div style="text-align: left; margin-bottom: 4px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-body);">Employee ID / Username</label>
+        </div>
+        <input type="text" id="empId" placeholder="e.g. Komal Gurap ya EMP-001" autocomplete="username">
+        
+        <div style="text-align: left; margin-top: 10px; margin-bottom: 4px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-body);">Password</label>
+        </div>
+        <input type="password" id="empPass" placeholder="Enter your password" autocomplete="current-password">
+        
+        <button onclick="loginUser()" class="btn-primary" style="width: 100%; padding: 13px; font-size: 14.5px; margin-top: 18px;">
+          Sign In to Portal ➔
+        </button>
+        
+        <p id="loginMsg" style="color: var(--danger); font-weight: 600; font-size: 12.5px; margin-top: 14px; min-height: 18px;"></p>
       </div>
 
-      <!-- ADMIN PORTAL -->
+      <!-- 👑 2. CEO OPERATIONS COCKPIT (WHITE THEME) -->
       <div id="adminPortal" class="hidden">
-        <div class="profile-header" style="background: linear-gradient(135deg, #161b22, #0d1117); border: 1px solid #30363d; border-radius: 10px; padding: 14px 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+        <!-- CEO Header -->
+        <div class="welcome-header">
+          <div class="welcome-user-info">
+            <div class="user-avatar-circle" style="background: linear-gradient(135deg, #d97706, #b45309);">
+              YB
+            </div>
             <div>
-              <h2 style="margin:0; color:white; font-size:18px;">👑 CEO Operations Cockpit</h2>
-              <p style="margin:4px 0 0 0; font-size:11px; color:#58a6ff; font-weight:600;">⚡ Real-time Team Compliance & Quality Radar</p>
+              <h2 class="welcome-greeting">Yash Barlota <span style="font-size:12px; color:var(--warning); font-weight:normal;">(CEO)</span></h2>
+              <span class="welcome-role-badge" style="background:#fffbeb; color:#b45309; border-color:#fde68a;">
+                👑 CEO Operations Cockpit
+              </span>
             </div>
-            <div style="display:flex; gap:6px;">
-              <button onclick="loadAdminRadar()" style="width: auto; padding: 6px 10px; font-size: 11px; background: #238636; border:none; border-radius:6px; color:white; cursor:pointer; font-weight:600;">🔄 Refresh Radar</button>
-              <button onclick="logout()" style="width: auto; padding: 6px 10px; font-size: 11px; background: rgba(218,54,51,0.2); border:1px solid #da3633; color:#f85149; border-radius:6px; cursor:pointer;">Logout</button>
-            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="loadAdminRadar()" class="btn-outline" style="padding: 6px 12px; font-size: 12px;" title="Refresh Radar">
+              🔄 Radar
+            </button>
+            <button onclick="logout()" class="logout-pill-btn">Logout</button>
           </div>
         </div>
 
+        <!-- CEO Navigation Tabs -->
         <div class="admin-tabs">
           <div class="admin-tab active" id="tabBtnRadar" onclick="switchAdminTab('Radar')">📡 Operations Radar</div>
           <div class="admin-tab" id="tabBtnAssign" onclick="switchAdminTab('Assign')">➕ Assign Task</div>
@@ -688,9 +851,8 @@
           <div class="admin-tab" id="tabBtnHistory" onclick="switchAdminTab('History')">📜 Task History</div>
         </div>
 
-        <!-- 0. CEO LIVE OPERATIONS RADAR TAB -->
+        <!-- TAB 1: OPERATIONS RADAR -->
         <div id="adminTabRadar" class="card">
-          <!-- PULSE STATS BAR -->
           <div class="radar-pulse-bar" id="radarPulseBar">
             <div class="pulse-card"><div class="pulse-lbl">Team Active</div><div class="pulse-val" id="pulseTotalStaff">--</div></div>
             <div class="pulse-card"><div class="pulse-lbl">Today's Tasks</div><div class="pulse-val" id="pulseTotalTasks">--</div></div>
@@ -698,244 +860,219 @@
             <div class="pulse-card alert"><div class="pulse-lbl">Overdue</div><div class="pulse-val" id="pulseOverdue">--</div></div>
             <div class="pulse-card"><div class="pulse-lbl">Efficiency</div><div class="pulse-val" id="pulseEfficiency">--%</div></div>
           </div>
-
-          <!-- RADAR FILTER RIBBON -->
-          <div class="radar-filter-ribbon">
-            <button class="radar-filter-btn active" onclick="filterRadarView('all', this)">👥 All Staff</button>
-            <button class="radar-filter-btn" onclick="filterRadarView('overdue', this)">🚨 Overdue Alert</button>
-            <button class="radar-filter-btn" onclick="filterRadarView('pending', this)">⏳ In Progress</button>
-            <button class="radar-filter-btn" onclick="filterRadarView('completed', this)">✅ 100% Done</button>
-          </div>
-
-          <!-- RADAR CARDS CONTAINER -->
           <div id="radarCardsContainer">
-            <p style="color:#8b949e; text-align:center; padding:20px 0;">📡 Loading Live Operations Radar...</p>
+            <p style="text-align:center; color:var(--text-muted); padding:20px;">Loading Live Operations Radar...</p>
           </div>
         </div>
 
-        <!-- 1. ASSIGN TASK TAB -->
+        <!-- TAB 2: ASSIGN TASK -->
         <div id="adminTabAssign" class="card hidden">
-          <div style="background:#161b22; padding:12px; border-radius:8px; border-left:4px solid #1f6feb; margin-bottom:15px;">
-            <h3 style="margin:0 0 4px 0; color:#58a6ff; font-size:15px;">➕ Assign & Schedule Task (Permanent Sheet Add)</h3>
-            <p style="margin:0; font-size:11px; color:#8b949e;">Daily, Weekly aur Monthly tasks staff ki Google Sheet me permanently save honge aur unke routine schedule me show honge.</p>
-          </div>
-
-          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Task Priority Level:</label>
-          <select id="adminTaskPriority" style="margin-bottom:12px;">
-            <option value="🔴 High (Urgent)">🔴 Urgent / High Priority</option>
-            <option value="🟡 Normal" selected>🟡 Standard Routine</option>
-            <option value="🟢 Low">🟢 Flexible / Low Priority</option>
-          </select>
-
-          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Team ya Staff ko Task dein:</label>
-          <select id="adminStaffSelect" style="margin-bottom:12px;"><option>Loading...</option></select>
+          <h3 style="color:var(--text-main); margin-top:0; font-size:16px;">➕ Assign Task to Staff</h3>
           
-          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Task Frequency (Kaam kitni baar hona chahiye):</label>
-          <select id="adminTaskFrequency" onchange="onTaskFrequencyChange()" style="margin-bottom:12px;">
-            <option value="Daily Task" selected>📅 Daily Task (Roz ka)</option>
-            <option value="Weekly Task">📆 Weekly Task (Hafte ka)</option>
-            <option value="Monthly Task">🗓️ Monthly Task (Mahine ka)</option>
-            <option value="Extra (One Time)">⚡ Extra Task (One Time)</option>
+          <div style="background:var(--primary-light); border:1px solid var(--primary-border); border-radius:var(--radius-md); padding:10px 12px; margin-bottom:14px; font-size:12px; color:var(--primary);">
+            💡 <b>Permanent Sheet Sync:</b> Weekly task automatically weekday par trigger hoga, aur Monthly task date of month par trigger hoga.
+          </div>
+
+          <label style="font-size:12px; font-weight:600; color:var(--text-body);">Task Priority:</label>
+          <select id="adminTaskPriority" style="margin-bottom:12px;">
+            <option value="Normal">🟢 Normal Priority (5 Pts)</option>
+            <option value="High" selected>🔥 High Priority (10 Pts)</option>
+            <option value="Urgent">⚡ Urgent Priority (15 Pts)</option>
           </select>
 
-          <!-- DYNAMIC SCHEDULING CONTROLS -->
-          <div style="background:#0d1117; border:1.5px solid #30363d; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:11px; line-height:1.6; color:#c9d1d9;">
-            <b style="color:#ffd33d;">💡 Auto-Trigger & Deadline Rules:</b><br>
-            • <b>Daily Task:</b> Shift slot chunein. Yeh task <u>roz auto-trigger</u> hoga.<br>
-            • <b>Weekly Task:</b> Weekday chunein (e.g. <code>Monday, 07:00 PM</code>). Yeh task <u>sirf uss weekday ko trigger</u> hoga!<br>
-            • <b>Monthly Task:</b> Taareekh chunein (e.g. <code>1st of Month, 07:00 PM</code>). Yeh task <u>sirf uss taareekh ko trigger</u> hoga!<br>
-            • <b>Sheet me Column D me likhna ho toh:</b> Weekly ke liye <code>Monday, 07:00 PM</code> aur Monthly ke liye <code>1st of Month, 07:00 PM</code> likhein.
-          </div>
-          <!-- 1. Daily Shift Slot -->
+          <label style="font-size:12px; font-weight:600; color:var(--text-body);">Staff Member:</label>
+          <select id="adminStaffSelect" style="margin-bottom:12px;"><option>Loading Staff...</option></select>
+
+          <label style="font-size:12px; font-weight:600; color:var(--text-body);">Task Frequency:</label>
+          <select id="adminTaskFrequency" onchange="onTaskFrequencyChange()" style="margin-bottom:12px;">
+            <option value="Daily">📅 Daily Routine (Har Roz)</option>
+            <option value="Weekly">📆 Weekly Routine (Specific Weekday)</option>
+            <option value="Monthly">🗓️ Monthly Routine (Specific Date of Month)</option>
+            <option value="One-Time">⚡ One-Time / Ad-hoc Task</option>
+          </select>
+
+          <!-- Daily Slot -->
           <div id="groupDailySlot" style="margin-bottom:12px;">
-            <label style="color:#58a6ff; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">🕒 Shift Time Slot:</label>
+            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Shift Slot:</label>
             <select id="adminDailySlot">
-              <option value="morning">🌅 Morning Shift (09:00 - 11:30 AM)</option>
-              <option value="midday">☀️ Midday Shift (11:30 - 02:00 PM)</option>
-              <option value="afternoon">☕ Afternoon Shift (02:00 - 05:00 PM)</option>
-              <option value="closing" selected>🌙 Closing Shift (05:00 - 08:00 PM)</option>
+              <option value="Morning">🌅 Morning Shift (09:00 - 11:30 AM)</option>
+              <option value="Midday">☀️ Midday Shift (11:30 - 02:00 PM)</option>
+              <option value="Afternoon">☕ Afternoon Shift (02:00 - 05:00 PM)</option>
+              <option value="Closing" selected>🌙 Closing Shift (05:00 - 08:00 PM)</option>
             </select>
           </div>
 
-          <!-- 2. Weekly Day Selector -->
-          <div id="groupWeeklyDay" style="display:none; margin-bottom:12px; background:#161b22; padding:10px; border-radius:6px; border:1px solid #30363d;">
-            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">📆 Hafte ke konse din kaam hona chahiye (Day of Week):</label>
+          <!-- Weekly Day -->
+          <div id="groupWeeklyDay" style="display:none; margin-bottom:12px; background:var(--bg-subtle); padding:10px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Select Weekday (Auto-triggers on this day):</label>
             <select id="adminWeeklyDay">
-              <option value="Monday" selected>Har Somwar (Monday)</option>
-              <option value="Tuesday">Har Mangalwar (Tuesday)</option>
-              <option value="Wednesday">Har Budhwar (Wednesday)</option>
-              <option value="Thursday">Har Guruwar (Thursday)</option>
-              <option value="Friday">Har Shukrawar (Friday)</option>
-              <option value="Saturday">Har Shaniwar (Saturday)</option>
-              <option value="Sunday">Har Raviwar (Sunday)</option>
+              <option value="Monday" selected>Monday (Har Somwar)</option>
+              <option value="Tuesday">Tuesday (Har Mangalwar)</option>
+              <option value="Wednesday">Wednesday (Har Budhwar)</option>
+              <option value="Thursday">Thursday (Har Guruwar)</option>
+              <option value="Friday">Friday (Har Shukrawar)</option>
+              <option value="Saturday">Saturday (Har Shaniwar)</option>
+              <option value="Sunday">Sunday (Har Raviwar)</option>
             </select>
           </div>
 
-          <!-- 3. Monthly Date Selector -->
-          <div id="groupMonthlyDate" style="display:none; margin-bottom:12px; background:#161b22; padding:10px; border-radius:6px; border:1px solid #30363d;">
-            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">🗓️ Har mahine ki konsi taareekh ko kaam hona chahiye (Date of Month):</label>
+          <!-- Monthly Date -->
+          <div id="groupMonthlyDate" style="display:none; margin-bottom:12px; background:var(--bg-subtle); padding:10px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Select Date of Month (Auto-triggers on this date):</label>
             <select id="adminMonthlyDate">
-              <option value="1">1st of Month</option><option value="2">2nd of Month</option><option value="3">3rd of Month</option><option value="4">4th of Month</option><option value="5">5th of Month</option><option value="6">6th of Month</option><option value="7">7th of Month</option><option value="8">8th of Month</option><option value="9">9th of Month</option><option value="10">10th of Month</option><option value="11">11th of Month</option><option value="12">12th of Month</option><option value="13">13th of Month</option><option value="14">14th of Month</option><option value="15">15th of Month</option><option value="16">16th of Month</option><option value="17">17th of Month</option><option value="18">18th of Month</option><option value="19">19th of Month</option><option value="20">20th of Month</option><option value="21">21st of Month</option><option value="22">22nd of Month</option><option value="23">23rd of Month</option><option value="24">24th of Month</option><option value="25">25th of Month</option><option value="26">26th of Month</option><option value="27">27th of Month</option><option value="28">28th of Month</option><option value="29">29th of Month</option><option value="30">30th of Month</option><option value="31">31st of Month (Month-End)</option>
+              <option value="1st of Month" selected>1st of Month (Har Mahine ki 1 Tarikh)</option>
+              <option value="2nd of Month">2nd of Month</option>
+              <option value="3rd of Month">3rd of Month</option>
+              <option value="4th of Month">4th of Month</option>
+              <option value="5th of Month">5th of Month (Salary / Rent Day)</option>
+              <option value="7th of Month">7th of Month</option>
+              <option value="10th of Month">10th of Month</option>
+              <option value="15th of Month">15th of Month (Mid-Month Review)</option>
+              <option value="20th of Month">20th of Month</option>
+              <option value="25th of Month">25th of Month</option>
+              <option value="Last Day of Month">Last Day of Month (Month-End Wrap Up)</option>
             </select>
           </div>
 
-          <!-- 4. Recurring Deadline Time (For Daily, Weekly, Monthly) -->
+          <!-- Recurring Time -->
           <div id="groupRecurringTime" style="margin-bottom:12px;">
-            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">⏰ Expected Deadline Time:</label>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <input type="time" id="adminRecurringTime" value="19:00" style="flex:1;">
-              <span style="font-size:11px; color:#8b949e;">(HH:MM)</span>
-            </div>
+            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Deadline Time (24h/12h):</label>
+            <input type="time" id="adminRecurringTime" value="19:00">
           </div>
 
-          <!-- 5. One-Time Deadline (Only for Extra Task) -->
+          <!-- One-Time Deadline -->
           <div id="groupOneTimeDeadline" style="display:none; margin-bottom:12px;">
-            <label style="color:#ffd33d; font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">⏰ One-Time Deadline (Date & Time):</label>
+            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Task Deadline (Date & Time):</label>
             <input type="datetime-local" id="adminAdhocDeadline">
           </div>
 
-          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Kaam ka Naam (Task Title):</label>
-          <input type="text" id="adminAdhocTask" placeholder="Naya kaam (e.g. Bank Statement Tally, Cash Book check)..." style="margin-bottom:10px;">
-          
-          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Sub-Task / Guidance (Optional):</label>
-          <input type="text" id="adminTaskSubDesc" placeholder="Specific instructions ya sub-item..." style="margin-bottom:10px;">
+          <label style="font-size:12px; font-weight:600; color:var(--text-body);">Task Title:</label>
+          <input type="text" id="adminAdhocTask" placeholder="e.g. Bank Statement Tally, Cash Book check, Inventory audit...">
 
-          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Step-by-Step SOP (Optional - Staff ko sikhane ke liye):</label>
-          <textarea id="adminTaskSOP" rows="2" placeholder="Step 1... Step 2... (Empty chhodenge toh standard role SOP auto-set hoga)" style="width:100%; box-sizing:border-box; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; padding:8px; font-size:12px; resize:vertical; margin-bottom:10px;"></textarea>
+          <label style="font-size:12px; font-weight:600; color:var(--text-body);">Subtask / Detailed Item (Optional):</label>
+          <input type="text" id="adminTaskSubDesc" placeholder="Specific instruction ya detail...">
 
-          <label style="color:#8b949e; font-size:12px; margin-bottom:4px; display:block;">Reference Photos / Documents (Multiple 📷):</label>
-          <input type="file" id="adminTaskPhotoFile" accept="image/*" multiple style="background:#0d1117; padding:8px; border:1px solid #30363d; border-radius:6px; margin-bottom:14px; width:100%; box-sizing:border-box;">
+          <label style="font-size:12px; font-weight:600; color:var(--text-body);">Standard Operating Procedure (SOP):</label>
+          <textarea id="adminTaskSOP" rows="2" placeholder="Step 1... Step 2... (Khali chhodenge toh standard role SOP auto-set hoga)"></textarea>
 
-          <button onclick="sendPermanentTask()" class="btn-info" style="margin-top:5px; padding:12px; font-size:14px; font-weight:bold;" id="btnAssignAdhoc">Assign & Save to Permanent Sheet 🚀</button>
-          <p id="adminMsg" style="color: #2ea043; font-weight: bold; text-align:center; margin-top:10px;"></p>
+          <label style="font-size:12px; font-weight:600; color:var(--text-body);">Reference / Sample Photos (Optional):</label>
+          <input type="file" id="adminTaskPhotoFile" accept="image/*" multiple>
+
+          <button onclick="sendPermanentTask()" class="btn-primary" style="width:100%; padding:13px; font-size:14px; margin-top:8px;" id="btnAssignAdhoc">
+            Assign & Save to Permanent Sheet 🚀
+          </button>
+          <p id="adminMsg" style="color: var(--success); font-weight: bold; text-align:center; margin-top:10px;"></p>
         </div>
 
-        <!-- 2. OWNER ALL-STAFF SCOREBOARD TAB -->
+        <!-- TAB 3: SCOREBOARD -->
         <div id="adminTabScoreboard" class="card hidden">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h3 style="margin:0; font-size:16px;">🏆 All Staff Performance Scoreboard (CEO View)</h3>
-            <button onclick="loadAdminScoreboard()" style="width:auto; padding:5px 10px; font-size:11px; background:#30363d; margin:0;">🔄 Refresh</button>
-          </div>
-          <div style="overflow-x:auto;">
-            <div id="adminScoreboardContent"></div>
-          </div>
+          <h3 style="color:var(--text-main); margin-top:0; font-size:16px;">🏆 All Staff Live Scoreboard</h3>
+          <div id="adminScoreboardContent" style="overflow-x:auto;">Loading Scoreboard...</div>
         </div>
 
-        <!-- 3. STAFF PROGRESS TAB -->
+        <!-- TAB 4: STAFF INSPECTION -->
         <div id="adminTabProgress" class="card hidden">
-          <label style="color:#8b949e; font-size:13px;">Kiski Report dekhni hai?</label>
+          <h3 style="color:var(--text-main); margin-top:0; font-size:16px;">📊 Staff Detailed Task Inspection</h3>
           <select id="adminViewStaffSelect" onchange="fetchStaffProgress()"></select>
           <div id="staffProgressContent" style="margin-top:15px;"></div>
         </div>
 
-        <!-- 4. TASK HISTORY TAB -->
+        <!-- TAB 5: TASK HISTORY -->
         <div id="adminTabHistory" class="card hidden">
-          <button onclick="loadAdminHistory()" style="margin-bottom:15px; font-size:13px; background:#30363d;">🔄 Refresh History</button>
-          <div id="adminHistoryContent"></div>
+          <h3 style="color:var(--text-main); margin-top:0; font-size:16px;">📜 Recent Tasks & Audit History</h3>
+          <div id="adminHistoryContent">Loading History...</div>
         </div>
       </div>
 
-      <!-- STAFF DASHBOARD -->
+      <!-- 👤 3. WELCOMING STAFF PORTAL (CLEAN WHITE THEME) -->
       <div id="staffPortal" class="hidden">
-        <div class="profile-header">
-          <div style="display: flex; justify-content: space-between;">
-            <h2 id="staffNameDisplay" style="margin:0; color:white;">Hello, User</h2>
-            <button onclick="logout()" style="width: auto; padding: 4px 8px; font-size: 11px; background: rgba(0,0,0,0.3);">Logout</button>
+        
+        <!-- Welcoming User Header -->
+        <div class="welcome-header">
+          <div class="welcome-user-info">
+            <div class="user-avatar-circle" id="staffAvatarCircle">
+              👤
+            </div>
+            <div>
+              <h2 class="welcome-greeting" id="staffNameDisplay">Hello, User</h2>
+              <span class="welcome-role-badge" id="staffRoleDisplay">🏆 Role: Staff</span>
+            </div>
           </div>
-          <p id="staffRoleDisplay" style="margin: 5px 0 0 0; font-size: 13px; color: #ffd33d;">🏆 Role: Staff</p>
+          <button onclick="logout()" class="logout-pill-btn">Logout</button>
         </div>
 
-        <!-- 🚀 DAY-1 ROLE ONBOARDING & SOP BLUEPRINT BANNER -->
+        <!-- 🌟 TODAY'S OVERVIEW HERO CARD (Replaces 7 clutter boxes!) -->
+        <div class="today-hero-card">
+          <div class="hero-top-row">
+            <span class="hero-title-lbl">⚡ Today at a Glance</span>
+            <span class="hero-pts-badge">
+              <span>Points Today:</span>
+              <span id="heroTodayPts">0</span> P
+            </span>
+          </div>
+
+          <div class="hero-progress-stats">
+            <div class="hero-tasks-text">
+              <span id="heroDoneCount">0</span> of <span id="heroTotalCount">0</span> Tasks Done
+            </div>
+            <div class="hero-pct-pill" id="heroProgressPct">0% Done</div>
+          </div>
+
+          <div class="progress-track">
+            <div id="heroProgressBar" class="progress-fill" style="width: 0%;"></div>
+          </div>
+
+          <div class="hero-footer-row">
+            <span style="font-size: 11px; color: var(--text-muted);">Standard: 5 P Complete + 5 P On-Time</span>
+            <a onclick="openPointsLedger()" class="hero-scorecard-link">
+              <span>📊 View Full Scorecard & Ledger</span>
+              <span>➔</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Role Blueprint / SOP Guide Banner -->
         <div class="onboarding-guide-banner" onclick="openRoleOnboardingModal()">
           <div style="display:flex; align-items:center; gap:10px;">
-            <span class="banner-icon">🚀</span>
+            <span class="banner-icon">📘</span>
             <div>
               <div class="banner-title" id="onboardBannerTitle">Day-1 Role Blueprint: Staff</div>
-              <div class="banner-sub">Tap here to view Shift Timeline, Quality Rules & Step-by-Step SOP</div>
+              <div class="banner-sub">Tap here to view Shift Timeline, Quality Rules & SOP</div>
             </div>
           </div>
-          <span class="banner-badge">Open Guide 📖</span>
+          <div class="banner-badge">Open Guide 📖</div>
         </div>
 
-        <!-- 🏆 STAFF 7-PERIOD SCORECARD -->
-        <div class="score-grid" id="staffScoreGrid">
-          <div class="score-box" onclick="openPointsLedger('daily')" style="cursor:pointer;" title="Tap to view Daily Points Ledger">
-            <div class="score-lbl">Daily Score</div>
-            <div class="score-val" id="scDaily">0%</div>
-            <div class="score-pts-sub" id="scDailyPts">0 / 0 P</div>
-          </div>
-          <div class="score-box" onclick="openPointsLedger('weekly')" style="cursor:pointer;" title="Tap to view Weekly Points Ledger">
-            <div class="score-lbl">Weekly Score</div>
-            <div class="score-val" id="scWeekly">0%</div>
-            <div class="score-pts-sub" id="scWeeklyPts">0 / 0 P</div>
-          </div>
-          <div class="score-box highlight" onclick="openPointsLedger('monthly')" style="cursor:pointer;" title="Tap to view Monthly Points Ledger">
-            <div class="score-lbl">Monthly Score</div>
-            <div class="score-val" id="scMonthly">0%</div>
-            <div class="score-pts-sub" id="scMonthlyPts" style="color:#ffd33d;">0 / 0 P</div>
-          </div>
-          <div class="score-box" onclick="openPointsLedger('lastmonth')" style="cursor:pointer;">
-            <div class="score-lbl">Last Mo.</div>
-            <div class="score-val" id="scLastMonth">0%</div>
-            <div class="score-pts-sub" id="scLastMonthPts">0 P</div>
-          </div>
-          <div class="score-box" onclick="openPointsLedger('currentquarter')" style="cursor:pointer;">
-            <div class="score-lbl">Curr. Qtr</div>
-            <div class="score-val" id="scCurrQtr">0%</div>
-            <div class="score-pts-sub" id="scCurrQtrPts">0 P</div>
-          </div>
-          <div class="score-box" onclick="openPointsLedger('lastquarter')" style="cursor:pointer;">
-            <div class="score-lbl">Last Qtr</div>
-            <div class="score-val" id="scLastQtr">0%</div>
-            <div class="score-pts-sub" id="scLastQtrPts">0 P</div>
-          </div>
-          <div class="score-box highlight" onclick="openPointsLedger('yearly')" style="cursor:pointer;">
-            <div class="score-lbl">Yearly</div>
-            <div class="score-val" id="scYearly">0%</div>
-            <div class="score-pts-sub" id="scYearlyPts" style="color:#ffd33d;">0 P</div>
-          </div>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:-6px; margin-bottom:12px; font-size:11px;">
-          <span style="color:#8b949e;">💡 Rule: Task = 5 P Complete + 5 P On-Time (10 P total)</span>
-          <span style="color:#58a6ff; cursor:pointer; font-weight:600;" onclick="openPointsLedger('daily')">📊 Open Points Ledger ➔</span>
-        </div>
-
-        <!-- 🕒 VISUAL HOUR-BY-HOUR SHIFT TIMELINE RIBBON (ZERO-SCROLL RESPONSIVE GRID) -->
+        <!-- Shift Timeline Slot Filter -->
         <div class="timeline-bar-wrapper">
           <div class="timeline-bar-header">
-            <span>🕒 Shift Timeline Filter</span>
-            <span style="font-size:10px; color:#8b949e; font-weight:normal;">Filter tasks by shift</span>
+            <span>Filter by Shift Timeline:</span>
+            <span style="font-size:10.5px; color:var(--text-subtle);">Tap to filter tasks</span>
           </div>
-          <div class="timeline-slots-grid">
+          <div class="timeline-shifts-row">
             <button class="timeline-slot-all active" id="slotBtn-all" onclick="filterByTimelineSlot('all')">
-              <span>🌐 All Shifts (Full Day Tasks)</span>
-              <span class="slot-time" style="font-size:10px; opacity:0.85;">View All</span>
+              All Shifts
             </button>
-            <div class="timeline-shifts-row">
-              <button class="timeline-slot-btn" id="slotBtn-morning" onclick="filterByTimelineSlot('morning')">
-                <span>🌅 Morning</span>
-                <span class="slot-time">09:00 - 11:30 AM</span>
-              </button>
-              <button class="timeline-slot-btn" id="slotBtn-midday" onclick="filterByTimelineSlot('midday')">
-                <span>☀️ Midday</span>
-                <span class="slot-time">11:30 - 02:00 PM</span>
-              </button>
-              <button class="timeline-slot-btn" id="slotBtn-afternoon" onclick="filterByTimelineSlot('afternoon')">
-                <span>☕ Aftern.</span>
-                <span class="slot-time">02:00 - 05:00 PM</span>
-              </button>
-              <button class="timeline-slot-btn" id="slotBtn-closing" onclick="filterByTimelineSlot('closing')">
-                <span>🌙 Closing</span>
-                <span class="slot-time">05:00 - 08:00 PM</span>
-              </button>
-            </div>
+            <button class="timeline-slot-btn" id="slotBtn-morning" onclick="filterByTimelineSlot('morning')">
+              🌅 Morning <span class="slot-time">09:00-11:30</span>
+            </button>
+            <button class="timeline-slot-btn" id="slotBtn-midday" onclick="filterByTimelineSlot('midday')">
+              ☀️ Midday <span class="slot-time">11:30-02:00</span>
+            </button>
+            <button class="timeline-slot-btn" id="slotBtn-afternoon" onclick="filterByTimelineSlot('afternoon')">
+              ☕ Afternoon <span class="slot-time">02:00-05:00</span>
+            </button>
+            <button class="timeline-slot-btn" id="slotBtn-closing" onclick="filterByTimelineSlot('closing')">
+              🌙 Closing <span class="slot-time">05:00-08:00</span>
+            </button>
           </div>
         </div>
 
-        <!-- ⚠️ HIGH-PRIORITY CEO ONE-TIME TASK NOTICE BANNER -->
-        <div id="adhocNoticeBanner" style="display:none; margin-bottom:12px; background:linear-gradient(135deg, rgba(210,153,34,0.25), rgba(248,81,73,0.25)); border:1.5px solid #f85149; border-radius:8px; padding:10px 12px; cursor:pointer; align-items:center; justify-content:space-between; animation:pulse-adhoc-tab 1.8s infinite;"></div>
+        <!-- One-Time Task Urgent Alert Notice -->
+        <div id="adhocNoticeBanner" style="display:none; margin-bottom:14px; background:#fff7ed; border:1.5px solid #f97316; border-radius:var(--radius-lg); padding:12px 14px; cursor:pointer; align-items:center; justify-content:space-between;">
+        </div>
 
-        <!-- 📑 STAFF TABS (ZERO-SCROLL 4-COLUMN GRID) -->
+        <!-- Segmented Navigation Tabs (Zero Horizontal Scroll!) -->
         <div class="tabs" id="navTabs">
           <div id="tabDaily" class="tab active" onclick="switchTab('Daily', this)">
             <div class="tab-label">Daily</div>
@@ -949,53 +1086,314 @@
             <div class="tab-label">Monthly</div>
             <div class="tab-sub" id="subMonthly">0/0</div>
           </div>
-          <div id="adhocTabBtn" class="tab tab-adhoc" onclick="switchTab('Adhoc', this)">
+          <div id="adhocTabBtn" class="tab" onclick="switchTab('Adhoc', this)">
             <div class="tab-label">⚡ One-Time</div>
             <div class="tab-sub" id="subAdhoc">0 Tasks</div>
           </div>
         </div>
 
-        <div id="tabContentArea"></div>
+        <!-- DYNAMIC TASK CONTENT AREA -->
+        <div id="tabContentArea">
+          <p style="text-align:center; color:var(--text-muted); padding:20px;">Loading your tasks...</p>
+        </div>
 
-        <div style="text-align: center; margin-top: 20px;">
-          <button onclick="openShiftHandoverModal()" style="background: linear-gradient(135deg, #1f6feb, #238636); color: #ffffff; font-weight: bold; padding: 13px; border-radius: 8px; font-size: 14px; border:none; cursor:pointer; width:100%; box-shadow: 0 4px 14px rgba(35,134,54,0.3); margin-top:15px;">📋 Daily Shift Handover & EOD Report</button>
+        <!-- Shift Handover & EOD Report Button -->
+        <div style="margin-top:20px; text-align:center;">
+          <button onclick="openShiftHandoverModal()" class="btn-outline" style="width:100%; padding:12px; font-size:13px; font-weight:600; border-radius:var(--radius-lg);">
+            📋 Daily Shift Handover & EOD Report
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 🌟 MODALS (ALL WHITE THEME) -->
+    
+    <!-- 1. Proof Upload Modal -->
+    <div id="proofModal" class="modal">
+      <div class="modal-content" style="text-align: center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:14px;">
+          <h3 style="color:var(--text-main); margin:0; font-size:16px;" id="modalHeading">📸 Capture Proof</h3>
+          <button onclick="closeModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+        <p id="modalTaskTitle" style="font-size: 13.5px; color:var(--primary); font-weight:bold; margin-bottom: 16px;"></p>
+        
+        <label for="proofFile" id="uploadLabel" style="display:block; background:var(--primary-light); color:var(--primary); border:2px dashed var(--primary-border); padding:20px; font-size:14px; border-radius:var(--radius-md); cursor:pointer; font-weight:600; margin-bottom:14px;">
+          📸 Open Camera / Select Photo
+        </label>
+        <input type="file" id="proofFile" accept="image/*" capture="environment" style="display:none;" onchange="showPhotoPreview(event)">
+        
+        <img id="photoPreview" style="display:none; max-width:100%; border-radius:var(--radius-md); margin-bottom:14px; border:1px solid var(--border-subtle);" />
+        
+        <button onclick="confirmSubmitProof()" class="btn-success" style="width:100%; padding:13px; font-size:14px; display:none;" id="uploadBtn">
+          ✅ Submit Proof & Complete (+10 P)
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. SOP Modal -->
+    <div id="sopModal" class="modal">
+      <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:14px;">
+          <h3 style="color:var(--text-main); margin:0; font-size:16px;">📖 Task SOP Guidelines</h3>
+          <button onclick="closeSopModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+        <p id="sopTextContent" style="font-size: 13px; color:var(--text-body); background:var(--bg-subtle); padding:14px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); text-align:left; line-height:1.5;"></p>
+        <button onclick="closeSopModal()" class="btn-outline" style="width:100%; padding:10px; margin-top:10px;">Close Guidelines</button>
+      </div>
+    </div>
+
+    <!-- 3. Video Modal -->
+    <div id="videoModal" class="modal">
+      <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:14px;">
+          <h3 style="color:var(--text-main); margin:0; font-size:16px;">🎥 Training Video</h3>
+          <button onclick="closeVideoModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+        <iframe id="sopVideoPlayer" width="100%" height="280px" style="border:none; border-radius:var(--radius-md);" allow="autoplay"></iframe>
+        <button onclick="closeVideoModal()" class="btn-outline" style="width:100%; padding:10px; margin-top:12px;">Close Video</button>
+      </div>
+    </div>
+
+    <!-- 4. Pre-Flight Self-Audit Modal -->
+    <div id="selfAuditModal" class="modal">
+      <div class="modal-content" style="max-width: 440px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:14px;">
+          <h3 style="color:var(--text-main); margin:0; font-size:16px;">⚡ Task Completion Verification</h3>
+          <button onclick="closeSelfAuditModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+        
+        <div style="background:var(--bg-subtle); padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); margin-bottom:14px;">
+          <span style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Task Name:</span>
+          <div id="selfAuditTaskName" style="color:var(--text-main); font-weight:700; font-size:14px; margin-top:3px;">--</div>
+          <div id="selfAuditDeadline" style="color:var(--primary); font-size:11.5px; margin-top:2px;">⏰ Expected by: --</div>
+        </div>
+
+        <div style="font-size:12.5px; color:var(--text-body); margin-bottom:16px;">
+          <p style="margin:0 0 8px 0; font-weight:600;">Confirm standard completion checklist:</p>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:6px;">
+            <input type="checkbox" id="auditCheck1" style="width:auto; margin:0;">
+            <span>Maine saare steps aur rules complete kar liye hain.</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="auditCheck2" style="width:auto; margin:0;">
+            <span>Quality standards match ho rahe hain.</span>
+          </label>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button onclick="executeSelfAuditedSubmission()" class="btn-success" style="flex:1; padding:11px;">
+            Confirm & Complete (+10 P)
+          </button>
+          <button onclick="closeSelfAuditModal()" class="btn-outline" style="padding:11px;">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- PROOF MODAL FOR TASKS -->
-    <div id="proofModal" class="modal">
-      <div class="modal-content" style="text-align: center;">
-        <h3 style="color:#58a6ff; margin-top:0;" id="modalHeading">📸 Capture Proof</h3>
-        <p id="modalTaskTitle" style="font-size: 14px; color:#ffd33d; font-weight:bold; margin-bottom: 20px;"></p>
-        
-        <label for="proofFile" class="custom-file-upload" id="uploadLabel" style="display:block; background:#58a6ff; color:#0d1117; padding:15px; font-size:16px; border-radius:6px; cursor:pointer; font-weight:bold;">📸 Open Camera / Select Photo</label>
-        <input type="file" id="proofFile" accept="image/*" capture="environment" style="display:none;" onchange="showPhotoPreview(event)">
-        
-        <img id="photoPreview" style="display:none;" />
-        
-        <button onclick="confirmSubmitProof()" style="background:#2ea043; padding: 15px; font-size: 15px; width:100%; display:none;" id="uploadBtn">✅ Submit Proof</button>
-        <button onclick="closeModal()" class="btn-danger" style="margin-top:10px; width:100%;">Cancel</button>
+    <!-- 5. Shift Handover Modal -->
+    <div id="shiftHandoverModal" class="modal">
+      <div class="modal-content" style="max-width: 520px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:12px;">
+          <h3 style="color:var(--text-main); margin:0; font-size:16px;">📋 Daily Shift Handover & EOD Report</h3>
+          <button onclick="closeHandoverModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+
+        <div id="handoverSummaryCard" style="background:var(--bg-subtle); padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); margin-bottom:12px; font-size:12px;">
+          Loading shift summary...
+        </div>
+
+        <label style="color:var(--text-body); font-size:12px; display:block; margin-bottom:4px; font-weight:600;">📝 Handover Notes for CEO / Next Shift:</label>
+        <textarea id="handoverNotesInput" rows="3" placeholder="Closing remarks, cash tally, ya kal subah ka koi pending task..."></textarea>
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button onclick="dispatchShiftHandoverWhatsapp()" class="btn-primary" style="flex:1; padding:12px;">
+            Send Handover via WhatsApp 📲
+          </button>
+          <button onclick="closeHandoverModal()" class="btn-outline" style="padding:12px;">
+            Close
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- SOP MODALS -->
-    <div id="sopModal" class="modal">
-      <div class="modal-content" style="text-align: center;">
-        <h3 style="color:#58a6ff; margin-top:0;">📖 Task SOP Guidelines</h3>
-        <p id="sopTextContent" style="font-size: 14px; color:#c9d1d9; background:#0d1117; padding:15px; border-radius:6px; text-align:left;"></p>
-        <button onclick="closeSopModal()" style="background:#30363d; margin-top:10px;">Close</button>
+    <!-- 6. Scorecard & Points Ledger Modal (Holds 7 Score Boxes + Ledger Table!) -->
+    <div id="pointsLedgerModal" class="modal">
+      <div class="modal-content" style="max-width: 680px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:14px;">
+          <div>
+            <h3 style="color:var(--text-main); margin:0; font-size:17px; font-weight:800;">
+              📊 Performance Scorecard & Points Ledger
+            </h3>
+            <p id="ledgerStaffSubtitle" style="margin:2px 0 0 0; font-size:12px; color:var(--text-muted);">Staff: Loading...</p>
+          </div>
+          <button onclick="closePointsLedgerModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+
+        <!-- 7 Score Breakdown Boxes (Clean Light Cards) -->
+        <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">
+          Compliance Score Across Periods:
+        </div>
+        <div class="score-grid" id="staffScoreGrid">
+          <div class="score-box highlight">
+            <div class="score-lbl">Daily</div>
+            <div class="score-val" id="scDaily">0%</div>
+            <div class="score-pts-sub" id="scDailyPts">0 / 0 P</div>
+          </div>
+          <div class="score-box">
+            <div class="score-lbl">Weekly</div>
+            <div class="score-val" id="scWeekly">0%</div>
+            <div class="score-pts-sub" id="scWeeklyPts">0 / 0 P</div>
+          </div>
+          <div class="score-box">
+            <div class="score-lbl">Monthly</div>
+            <div class="score-val" id="scMonthly">0%</div>
+            <div class="score-pts-sub" id="scMonthlyPts">0 / 0 P</div>
+          </div>
+          <div class="score-box">
+            <div class="score-lbl">Last Mo.</div>
+            <div class="score-val" id="scLastMonth">0%</div>
+            <div class="score-pts-sub" id="scLastMonthPts">0 P</div>
+          </div>
+          <div class="score-box">
+            <div class="score-lbl">Curr. Qtr</div>
+            <div class="score-val" id="scCurrQtr">0%</div>
+            <div class="score-pts-sub" id="scCurrQtrPts">0 P</div>
+          </div>
+          <div class="score-box">
+            <div class="score-lbl">Last Qtr</div>
+            <div class="score-val" id="scLastQtr">0%</div>
+            <div class="score-pts-sub" id="scLastQtrPts">0 P</div>
+          </div>
+          <div class="score-box">
+            <div class="score-lbl">Yearly</div>
+            <div class="score-val" id="scYearly">0%</div>
+            <div class="score-pts-sub" id="scYearlyPts">0 P</div>
+          </div>
+        </div>
+
+        <!-- Period Filter Pills -->
+        <div style="display:flex; gap:6px; margin: 16px 0 12px 0; overflow-x:auto;">
+          <button class="ledger-pill-btn active" id="ledgerPill-daily" onclick="switchLedgerPeriod('daily')">Today</button>
+          <button class="ledger-pill-btn" id="ledgerPill-weekly" onclick="switchLedgerPeriod('weekly')">This Week</button>
+          <button class="ledger-pill-btn" id="ledgerPill-monthly" onclick="switchLedgerPeriod('monthly')">This Month</button>
+          <button class="ledger-pill-btn" id="ledgerPill-all" onclick="switchLedgerPeriod('all')">All Time</button>
+        </div>
+
+        <!-- Summary KPIs -->
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:14px;">
+          <div style="background:var(--bg-subtle); padding:10px 8px; border-radius:var(--radius-md); text-align:center;">
+            <div style="font-size:9.5px; color:var(--text-muted); font-weight:700;">SCORE</div>
+            <div id="ledgerKpiPercent" style="font-size:16px; font-weight:800; color:var(--primary);">0%</div>
+          </div>
+          <div style="background:var(--bg-subtle); padding:10px 8px; border-radius:var(--radius-md); text-align:center;">
+            <div style="font-size:9.5px; color:var(--text-muted); font-weight:700;">POINTS</div>
+            <div id="ledgerKpiPts" style="font-size:16px; font-weight:800; color:var(--success);">0 P</div>
+          </div>
+          <div style="background:var(--bg-subtle); padding:10px 8px; border-radius:var(--radius-md); text-align:center;">
+            <div style="font-size:9.5px; color:var(--text-muted); font-weight:700;">DONE</div>
+            <div id="ledgerKpiComp" style="font-size:16px; font-weight:800; color:var(--text-main);">0/0</div>
+          </div>
+          <div style="background:var(--bg-subtle); padding:10px 8px; border-radius:var(--radius-md); text-align:center;">
+            <div style="font-size:9.5px; color:var(--text-muted); font-weight:700;">ON-TIME</div>
+            <div id="ledgerKpiOnTime" style="font-size:16px; font-weight:800; color:var(--warning);">0</div>
+          </div>
+        </div>
+
+        <!-- Detailed Table -->
+        <div style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <table class="scoreboard-table">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Type</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Timing</th>
+                <th>Points</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTableBody">
+              <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:16px;">Loading points ledger...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-    <div id="videoModal" class="modal">
-      <div class="modal-content" style="text-align: center;">
-        <h3 style="color:#58a6ff; margin-top:0;">🎥 SOP Training Video</h3>
-        <iframe id="sopVideoPlayer" width="100%" height="300px" style="border:none; border-radius:8px;" allow="autoplay"></iframe>
-        <button onclick="closeVideoModal()" style="background:#da3633; margin-top:15px;">Close Video</button>
+
+    <!-- 7. Role Onboarding Blueprint Modal -->
+    <div id="onboardingModal" class="modal">
+      <div class="modal-content" style="max-width: 600px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:12px;">
+          <h3 style="color:var(--text-main); margin:0;" id="onboardModalRoleTitle">🚀 Day-1 Role Blueprint</h3>
+          <button onclick="closeRoleOnboardingModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+
+        <!-- 4 Sub-Tabs -->
+        <div style="display:flex; gap:6px; margin-bottom:12px; overflow-x:auto;">
+          <button id="onboardTab-mission" class="ledger-pill-btn active" onclick="switchOnboardTab('mission')">🎯 Mission</button>
+          <button id="onboardTab-timeline" class="ledger-pill-btn" onclick="switchOnboardTab('timeline')">⏰ Shift Hours</button>
+          <button id="onboardTab-benchmarks" class="ledger-pill-btn" onclick="switchOnboardTab('benchmarks')">⚖️ Good/Bad</button>
+          <button id="onboardTab-faq" class="ledger-pill-btn" onclick="switchOnboardTab('faq')">❓ FAQ / Help</button>
+        </div>
+
+        <div id="onboardContentArea" style="min-height: 200px; max-height: 380px; overflow-y: auto;">
+          Loading role blueprint...
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Benchmark Modal (Good vs Bad Quality Standards) -->
+    <div id="benchmarkModal" class="modal">
+      <div class="modal-content" style="max-width: 540px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-subtle); padding-bottom:10px; margin-bottom:12px;">
+          <h3 style="color:var(--text-main); margin:0; font-size:15px; font-weight:700;">⚖️ Quality Benchmarks (Expected vs Rejected)</h3>
+          <button onclick="closeBenchmarkModal()" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+          <!-- GOOD BENCHMARK -->
+          <div style="background:var(--success-light); border:1px solid var(--success-border); border-radius:var(--radius-md); padding:10px;">
+            <div style="color:var(--success-text); font-weight:bold; font-size:12px; margin-bottom:6px;">✅ Acceptable (Good Work)</div>
+            <div id="bmGoodSample" style="font-size:11.5px; line-height:1.4; color:var(--text-body); margin-bottom:8px;"></div>
+            <div id="bmGoodPhotoContainer">
+              <img id="bmGoodPhotoImg" style="width:100%; height:110px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="openPhotoZoomDirect(this.src, 'Good Sample Benchmark')">
+            </div>
+          </div>
+
+          <!-- BAD BENCHMARK -->
+          <div style="background:var(--danger-light); border:1px solid var(--danger-border); border-radius:var(--radius-md); padding:10px;">
+            <div style="color:var(--danger-text); font-weight:bold; font-size:12px; margin-bottom:6px;">❌ Rejected (Mistake / Bad)</div>
+            <div id="bmBadSample" style="font-size:11.5px; line-height:1.4; color:var(--text-body); margin-bottom:8px;"></div>
+            <div id="bmBadPhotoContainer">
+              <img id="bmBadPhotoImg" style="width:100%; height:110px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="openPhotoZoomDirect(this.src, 'Bad Sample / Mistake')">
+            </div>
+          </div>
+        </div>
+
+        <button onclick="closeBenchmarkModal()" class="btn-outline" style="width:100%; padding:10px;">Close Benchmark</button>
+      </div>
+    </div>
+
+    <!-- 9. Photo Zoom Modal -->
+    <div id="photoZoomModal" class="modal" style="text-align:center;">
+      <div class="modal-content" style="max-width: 600px; padding: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h4 id="zoomModalTitle" style="margin:0; font-size:14px; color:var(--text-main);">Photo Viewer</h4>
+          <button onclick="document.getElementById('photoZoomModal').style.display='none'" class="btn-outline" style="width:28px; height:28px; padding:0; border-radius:50%; font-size:13px;">✕</button>
+        </div>
+        <img id="zoomModalImg" style="max-width:100%; max-height:70vh; border-radius:var(--radius-md); border:1px solid var(--border-subtle); margin-bottom:10px;" />
+        <div>
+          <a id="zoomModalLink" href="#" target="_blank" class="btn-primary" style="padding:8px 16px; font-size:12px; text-decoration:none; display:inline-block;">
+            Open Full Resolution ↗
+          </a>
+        </div>
       </div>
     </div>
 
     <script>
+
       var loggedInUser = null;
       var cachedOrderPipelineData = null;
       var roleOrderTasks = [];
@@ -1059,6 +1457,10 @@
       function applyScorecardUI(sc) {
         if (!sc) return;
         cachedScoresData = sc;
+        var heroTodayPts = document.getElementById("heroTodayPts");
+        if (heroTodayPts && sc.daily) {
+          heroTodayPts.innerText = sc.daily.pts || (sc.daily.earned || 0);
+        }
         setScoreBox('scDaily', 'scDailyPts', sc.daily);
         setScoreBox('scWeekly', 'scWeeklyPts', sc.weekly);
         setScoreBox('scMonthly', 'scMonthlyPts', sc.monthly);
@@ -1274,30 +1676,30 @@
       // 📌 LOAD OWNER ALL-STAFF SCOREBOARD
       function loadAdminScoreboard() {
         var content = document.getElementById("adminScoreboardContent");
-        content.innerHTML = "<p style='color:#8b949e; text-align:center;'>Scoreboard load ho raha hai...</p>";
+        content.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Scoreboard load ho raha hai...</p>";
         google.script.run.withSuccessHandler(function(list) {
           if (!list || list.length === 0) {
-            content.innerHTML = "<p style='color:#8b949e; text-align:center;'>Koi staff data nahi mila.</p>";
+            content.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Koi staff data nahi mila.</p>";
             return;
           }
           var html = "<table class='scoreboard-table'>";
           html += "<thead><tr>";
-          html += "<th>Rank / Staff</th><th>Role</th><th>Today</th><th>Week</th><th style='color:#ffd33d;'>Month</th><th>Last Mo.</th><th>Qtr</th><th>Last Qtr</th><th style='color:#ffd33d;'>Year</th>";
+          html += "<th>Rank / Staff</th><th>Role</th><th>Today</th><th>Week</th><th style='color:var(--text-main);'>Month</th><th>Last Mo.</th><th>Qtr</th><th>Last Qtr</th><th style='color:var(--text-main);'>Year</th>";
           html += "</tr></thead><tbody>";
 
           for (var i = 0; i < list.length; i++) {
             var s = list[i];
             var medal = (i === 0) ? "🥇 " : (i === 1 ? "🥈 " : (i === 2 ? "🥉 " : (i + 1) + ". "));
             html += "<tr>";
-            html += "<td style='font-weight:bold; color:#c9d1d9;'>" + medal + s.name + "</td>";
-            html += "<td style='color:#8b949e;'>" + s.role + "</td>";
+            html += "<td style='font-weight:bold; color:var(--text-body);'>" + medal + s.name + "</td>";
+            html += "<td style='color:var(--text-muted);'>" + s.role + "</td>";
             html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('daily', '" + s.name + "')\">" + formatScoreCell(s.daily) + "</span></td>";
             html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('weekly', '" + s.name + "')\">" + formatScoreCell(s.weekly) + "</span></td>";
-            html += "<td><span class='score-pill-btn' style='color:#ffd33d;' onclick=\"openPointsLedger('monthly', '" + s.name + "')\">" + formatScoreCell(s.monthly) + "</span></td>";
+            html += "<td><span class='score-pill-btn' style='color:var(--text-main);' onclick=\"openPointsLedger('monthly', '" + s.name + "')\">" + formatScoreCell(s.monthly) + "</span></td>";
             html += "<td>" + formatScoreCell(s.lastMonth) + "</td>";
             html += "<td>" + formatScoreCell(s.currentQuarter) + "</td>";
             html += "<td>" + formatScoreCell(s.lastQuarter) + "</td>";
-            html += "<td style='color:#ffd33d; font-weight:bold;'>" + formatScoreCell(s.yearly) + "</td>";
+            html += "<td style='color:var(--text-main); font-weight:bold;'>" + formatScoreCell(s.yearly) + "</td>";
             html += "</tr>";
           }
           html += "</tbody></table>";
@@ -1351,7 +1753,7 @@
         return "<div class='score-box " + (isHighlight ? "highlight" : "") + "' onclick=\"openPointsLedger('" + (period || 'daily') + "', '" + (staffName || '') + "')\" style='cursor:pointer;' title='Click to view " + label + " Points Ledger'>" +
           "<div class='score-lbl'>" + label + "</div>" +
           "<div class='score-val'>" + pct + "%</div>" +
-          "<div class='score-pts-sub' style='color:#ffd33d; font-size:10px; margin-top:2px; font-weight:bold;'>" + subText + "</div>" +
+          "<div class='score-pts-sub' style='color:var(--text-main); font-size:10px; margin-top:2px; font-weight:bold;'>" + subText + "</div>" +
         "</div>";
       }
 
@@ -1370,10 +1772,10 @@
         var sel = document.getElementById("adminViewStaffSelect").value;
         if(!sel) { document.getElementById("staffProgressContent").innerHTML = ""; return; }
         var cleanName = sel.replace("👤 ", "").trim();
-        document.getElementById("staffProgressContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>Progress report nikal rahe hain...</p>";
+        document.getElementById("staffProgressContent").innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Progress report nikal rahe hain...</p>";
         google.script.run.withSuccessHandler(function(res) {
-          var html = "<div style='background:#1f242c; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #58a6ff;'>";
-          html += "<b style='color:#c9d1d9; font-size:15px;'>" + cleanName + "</b> <span style='font-size:12px; color:#8b949e;'>(Role: " + res.role + ")</span>";
+          var html = "<div style='background:#ffffff; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #58a6ff;'>";
+          html += "<b style='color:var(--text-body); font-size:15px;'>" + cleanName + "</b> <span style='font-size:12px; color:var(--text-muted);'>(Role: " + res.role + ")</span>";
           
           if (res.scores) {
             html += "<div class='score-grid' style='margin-top:10px;'>";
@@ -1386,21 +1788,21 @@
             html += formatScoreBoxHtml("Year", res.scores.yearly, "yearly", cleanName, true);
             html += "</div>";
             html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:6px; margin-bottom:12px; font-size:11px;'>";
-            html += "<span style='color:#8b949e;'>💡 Rule: Task = 5 P Complete + 5 P On-Time (10 P total)</span>";
-            html += "<span style='color:#58a6ff; cursor:pointer; font-weight:600;' onclick=\"openPointsLedger('daily', '" + cleanName + "')\">📊 Open Points Ledger ➔</span>";
+            html += "<span style='color:var(--text-muted);'>💡 Rule: Task = 5 P Complete + 5 P On-Time (10 P total)</span>";
+            html += "<span style='color:var(--primary); cursor:pointer; font-weight:600;' onclick=\"openPointsLedger('daily', '" + cleanName + "')\">📊 Open Points Ledger ➔</span>";
             html += "</div>";
           }
           html += "</div>";
 
-          html += "<h4 style='color:#58a6ff; margin-bottom:10px;'>📋 Routine & Assigned Tasks</h4>";
-          if(res.routine.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Koi routine task nahi hai.</p>";
+          html += "<h4 style='color:var(--primary); margin-bottom:10px;'>📋 Routine & Assigned Tasks</h4>";
+          if(res.routine.length === 0) html += "<p style='font-size:13px; color:var(--text-muted);'>Koi routine task nahi hai.</p>";
           for(var i=0; i<res.routine.length; i++) {
              var st = res.routine[i];
              var isDone = st.status.includes("Uploaded") || st.status.includes("Completed") || st.status.includes("Skipped");
              var cColor = st.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
              html += "<div class='subtask-row' style='padding:8px; margin-bottom:6px;'>";
-             html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:#58a6ff;'>[" + st.type + "]</span><span style='font-size:11px; color:#ffd33d;'>⏰ " + (st.deadline || "N/A") + "</span></div>";
-             html += "<div class='subtask-name' style='font-size:13px; margin:4px 0; " + (isDone ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + st.task + (st.subTask ? " - " + st.subTask : "") + "</div>";
+             html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:var(--primary);'>[" + st.type + "]</span><span style='font-size:11px; color:var(--text-main);'>⏰ " + (st.deadline || "N/A") + "</span></div>";
+             html += "<div class='subtask-name' style='font-size:13px; margin:4px 0; " + (isDone ? "text-decoration:line-through; color:var(--text-muted);" : "") + "'>" + st.task + (st.subTask ? " - " + st.subTask : "") + "</div>";
              if(st.refPhoto) html += renderPhotoPills(st.refPhoto);
              html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:4px;'>";
              html += "<div class='status-text' style='font-size:11px; color:" + cColor + "; text-align:left;'>" + st.status + "</div>";
@@ -1411,14 +1813,14 @@
              html += "</div>";
           }
 
-          html += "<h4 style='color:#ffd33d; margin-top:20px; margin-bottom:10px;'>🔔 Extra (One-Time) Tasks</h4>";
-          if(res.adhoc.length === 0) html += "<p style='font-size:13px; color:#8b949e;'>Inko koi extra task assign nahi hai.</p>";
+          html += "<h4 style='color:var(--text-main); margin-top:20px; margin-bottom:10px;'>🔔 Extra (One-Time) Tasks</h4>";
+          if(res.adhoc.length === 0) html += "<p style='font-size:13px; color:var(--text-muted);'>Inko koi extra task assign nahi hai.</p>";
           for(var j=0; j<res.adhoc.length; j++) {
              var at = res.adhoc[j];
              var isDoneA = at.status.includes("Uploaded") || at.status.includes("Completed") || at.status.includes("Skipped");
              var cColorA = at.status.includes("Skipped") ? "#da3633" : (isDoneA ? "#2ea043" : "#e67e22");
              html += "<div class='subtask-container' style='margin-bottom:10px; border-left: 4px solid #e67e22;'>";
-             html += "<div class='subtask-name' style='font-size:13px; margin-bottom:0; " + (isDoneA ? "text-decoration:line-through; color:#8b949e;" : "") + "'>" + at.task + "</div>";
+             html += "<div class='subtask-name' style='font-size:13px; margin-bottom:0; " + (isDoneA ? "text-decoration:line-through; color:var(--text-muted);" : "") + "'>" + at.task + "</div>";
              if(at.refPhoto) html += renderPhotoPills(at.refPhoto);
              html += "<div class='status-text' style='margin-top:4px; font-size:11px; color:" + cColorA + "; text-align:left;'>" + at.status + "</div>";
              html += "</div>";
@@ -1428,19 +1830,19 @@
       }
 
       function loadAdminHistory() {
-        document.getElementById("adminHistoryContent").innerHTML = "<p style='color:#8b949e; text-align:center;'>History load ho rahi hai...</p>";
+        document.getElementById("adminHistoryContent").innerHTML = "<p style='color:var(--text-muted); text-align:center;'>History load ho rahi hai...</p>";
         google.script.run.withSuccessHandler(function(history) {
           var html = "";
-          if(history.length === 0) html = "<p style='text-align:center; color:#8b949e;'>Koi task history nahi hai.</p>";
+          if(history.length === 0) html = "<p style='text-align:center; color:var(--text-muted);'>Koi task history nahi hai.</p>";
           else {
              for(var i=0; i<history.length; i++) {
                 var h = history[i];
                 var isDone = h.status.includes("Completed") || h.status.includes("Uploaded") || h.status.includes("Skipped");
                 var sColor = h.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
-                html += "<div style='background:#1f242c; padding:12px; border-radius:8px; border-left:4px solid "+sColor+"; margin-bottom:10px;'>";
-                html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:#8b949e;'>📅 " + h.date + "</span><span style='font-size:11px; background:#30363d; color:#58a6ff; padding:2px 6px; border-radius:4px;'>" + h.freq + "</span></div>";
-                html += "<p style='margin:4px 0; font-size:14px; font-weight:bold; color:#c9d1d9;'>👤 " + h.assignedTo + "</p>";
-                html += "<p style='margin:0 0 6px 0; font-size:13px; color:#58a6ff;'>" + h.task + "</p>";
+                html += "<div style='background:#ffffff; padding:12px; border-radius:8px; border-left:4px solid "+sColor+"; margin-bottom:10px;'>";
+                html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:var(--text-muted);'>📅 " + h.date + "</span><span style='font-size:11px; background:#30363d; color:var(--primary); padding:2px 6px; border-radius:4px;'>" + h.freq + "</span></div>";
+                html += "<p style='margin:4px 0; font-size:14px; font-weight:bold; color:var(--text-body);'>👤 " + h.assignedTo + "</p>";
+                html += "<p style='margin:0 0 6px 0; font-size:13px; color:var(--primary);'>" + h.task + "</p>";
                 if(h.photos) html += renderPhotoPills(h.photos);
                 html += "<p style='margin:4px 0 0 0; font-size:12px; font-weight:bold; color:" + sColor + ";'>Status: " + h.status + "</p>";
                 html += "</div>";
@@ -1465,7 +1867,7 @@
       }
 
       function loadStaffDashboard() {
-        document.getElementById("tabContentArea").innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Tasks load ho rahe hain...</div>";
+        document.getElementById("tabContentArea").innerHTML = "<div class='card' style='text-align:center; color:var(--text-muted);'>Tasks load ho rahe hain...</div>";
         google.script.run.withSuccessHandler(function(tasks) { 
             roleTasks = tasks || []; 
             google.script.run.withSuccessHandler(function(adhocs) { 
@@ -1583,7 +1985,7 @@
         if (cachedOnboardingGuide && cachedOnboardingGuide.role.toLowerCase() === role.toLowerCase()) {
           renderOnboardTabContent('mission');
         } else {
-          document.getElementById('onboardContentArea').innerHTML = "<div style='text-align:center; padding:20px; color:#8b949e;'>Loading Role SOP Guide...</div>";
+          document.getElementById('onboardContentArea').innerHTML = "<div style='text-align:center; padding:20px; color:var(--text-muted);'>Loading Role SOP Guide...</div>";
           google.script.run.withSuccessHandler(function(res) {
             cachedOnboardingGuide = res || {};
             renderOnboardTabContent('mission');
@@ -1613,12 +2015,12 @@
         var out = "";
 
         if (tabName === 'mission') {
-          out += "<div style='background:#161b22; padding:12px; border-radius:8px; border-left:4px solid #1f6feb; margin-bottom:12px;'>";
-          out += "<h4 style='color:#58a6ff; margin:0 0 6px 0; font-size:14px;'>🎯 Role Purpose & Mission</h4>";
-          out += "<p style='margin:0; font-size:12px; line-height:1.5; color:#c9d1d9;'>" + (g.mission || "Apne daily routine kaam ko time par aur zero-error ke sath deliver karna.") + "</p>";
+          out += "<div style='background:var(--bg-subtle); padding:12px; border-radius:8px; border-left:4px solid #1f6feb; margin-bottom:12px;'>";
+          out += "<h4 style='color:var(--primary); margin:0 0 6px 0; font-size:14px;'>🎯 Role Purpose & Mission</h4>";
+          out += "<p style='margin:0; font-size:12px; line-height:1.5; color:var(--text-body);'>" + (g.mission || "Apne daily routine kaam ko time par aur zero-error ke sath deliver karna.") + "</p>";
           out += "</div>";
 
-          out += "<h4 style='color:#ffd33d; margin:10px 0 6px 0; font-size:13px;'>⚡ 3 Cardinal Rules (Do's & Don'ts):</h4>";
+          out += "<h4 style='color:var(--text-main); margin:10px 0 6px 0; font-size:13px;'>⚡ 3 Cardinal Rules (Do's & Don'ts):</h4>";
           var rules = g.rules || [
             "Deadline ka 100% strict adherence karein.",
             "Bina proof ya accurate entry ke task Done na karein.",
@@ -1629,13 +2031,13 @@
           }
         } 
         else if (tabName === 'timeline') {
-          out += "<h4 style='color:#58a6ff; margin:0 0 10px 0; font-size:13px;'>⏰ Shift Hour-by-Hour Blueprint</h4>";
+          out += "<h4 style='color:var(--primary); margin:0 0 10px 0; font-size:13px;'>⏰ Shift Hour-by-Hour Blueprint</h4>";
           var tl = g.timeline || [];
-          if (tl.length === 0) out += "<p style='color:#8b949e;'>Timeline jald uplabdh hogi.</p>";
+          if (tl.length === 0) out += "<p style='color:var(--text-muted);'>Timeline jald uplabdh hogi.</p>";
           for (var t = 0; t < tl.length; t++) {
-            out += "<div style='background:#161b22; padding:8px 10px; border-radius:6px; border:1px solid #30363d; margin-bottom:8px;'>";
-            out += "<div style='display:flex; justify-content:space-between; margin-bottom:4px;'><b style='color:#ffd33d; font-size:12px;'>" + tl[t].time + "</b><span style='color:#58a6ff; font-size:11px; font-weight:bold;'>" + tl[t].title + "</span></div>";
-            out += "<p style='margin:0; font-size:11px; color:#8b949e;'>" + tl[t].desc + "</p>";
+            out += "<div style='background:var(--bg-subtle); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:8px;'>";
+            out += "<div style='display:flex; justify-content:space-between; margin-bottom:4px;'><b style='color:var(--text-main); font-size:12px;'>" + tl[t].time + "</b><span style='color:var(--primary); font-size:11px; font-weight:bold;'>" + tl[t].title + "</span></div>";
+            out += "<p style='margin:0; font-size:11px; color:var(--text-muted);'>" + tl[t].desc + "</p>";
             out += "</div>";
           }
         } 
@@ -1650,9 +2052,9 @@
           var faq = g.faq || [];
           out += "<h4 style='color:#e3b341; margin:0 0 10px 0; font-size:13px;'>❓ Problem Resolution & Blockers</h4>";
           for (var f = 0; f < faq.length; f++) {
-            out += "<div style='background:#161b22; padding:8px 10px; border-radius:6px; border:1px solid #30363d; margin-bottom:8px;'>";
-            out += "<div style='color:#ffd33d; font-weight:bold; font-size:12px; margin-bottom:3px;'>Q: " + faq[f].q + "</div>";
-            out += "<div style='color:#c9d1d9; font-size:11px;'>Ans: " + faq[f].a + "</div>";
+            out += "<div style='background:var(--bg-subtle); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:8px;'>";
+            out += "<div style='color:var(--text-main); font-weight:bold; font-size:12px; margin-bottom:3px;'>Q: " + faq[f].q + "</div>";
+            out += "<div style='color:var(--text-body); font-size:11px;'>Ans: " + faq[f].a + "</div>";
             out += "</div>";
           }
         }
@@ -1740,7 +2142,7 @@
             isDueToday: true,
             time: timeStr,
             scheduleText: "Roz " + timeStr,
-            badgeHtml: "<span style='color:#58a6ff; font-size:11px; font-weight:bold;'>⏰ Roz " + timeStr + "</span>"
+            badgeHtml: "<span style='color:var(--primary); font-size:11px; font-weight:bold;'>⏰ Roz " + timeStr + "</span>"
           };
         }
 
@@ -1771,7 +2173,7 @@
             scheduleText: "Har " + capDay + " (" + hindiDay + ") " + timeStr,
             badgeHtml: isDueToday
               ? "<span style='background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;'>🔥 Triggered Today (" + capDay + ") by " + timeStr + "!</span>"
-              : "<span style='background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600;'>📆 Har " + capDay + " (" + hindiDay + ") " + timeStr + "</span>"
+              : "<span style='background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-main); font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600;'>📆 Har " + capDay + " (" + hindiDay + ") " + timeStr + "</span>"
           };
         }
 
@@ -1801,7 +2203,7 @@
             scheduleText: "Har Mahine ki " + suffix + " Taareekh ko " + timeStr,
             badgeHtml: isDueToday
               ? "<span style='background:rgba(35,134,54,0.25); border:1px solid #238636; color:#3fb950; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:bold;'>🔥 Triggered Today (" + suffix + " of Month) by " + timeStr + "!</span>"
-              : "<span style='background:#21262d; border:1px solid #30363d; color:#ffd33d; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600;'>🗓️ Har Mahine ki " + suffix + " Taareekh ko " + timeStr + "</span>"
+              : "<span style='background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-main); font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600;'>🗓️ Har Mahine ki " + suffix + " Taareekh ko " + timeStr + "</span>"
           };
         }
 
@@ -1886,6 +2288,18 @@
         if(tD) {
           tD.innerHTML = '<div class="tab-label">Daily</div><div class="tab-sub">' + counts.Daily.d + '/' + counts.Daily.t + '</div>';
         }
+        // Update Hero Progress Card
+        var hDone = counts.Daily.d;
+        var hTot = counts.Daily.t;
+        var hPct = hTot > 0 ? Math.round((hDone / hTot) * 100) : 0;
+        var hDoneEl = document.getElementById("heroDoneCount");
+        var hTotEl = document.getElementById("heroTotalCount");
+        var hBarEl = document.getElementById("heroProgressBar");
+        var hPctEl = document.getElementById("heroProgressPct");
+        if (hDoneEl) hDoneEl.innerText = hDone;
+        if (hTotEl) hTotEl.innerText = hTot;
+        if (hBarEl) hBarEl.style.width = hPct + "%";
+        if (hPctEl) hPctEl.innerText = hPct + "% Done";
         var tW = document.getElementById("tabWeekly");
         if(tW) {
           var wSub = counts.Weekly.dueToday > 0 ? (counts.Weekly.doneToday + '/' + counts.Weekly.dueToday + ' Due Today') : ('0 Due (' + counts.Weekly.t + ' Sched.)');
@@ -1903,7 +2317,7 @@
            adhocPending = extraTasks.filter(function(e){ return !e.status.includes("Uploaded") && !e.status.includes("Completed") && !e.status.includes("Skipped"); }).length;
            if (adhocPending > 0) {
              adhocBtn.classList.add('has-pending-adhoc');
-             adhocBtn.innerHTML = '<div class="tab-label" style="color:#ff7b72;">⚡ One-Time</div><div class="tab-sub" style="color:#ffd33d; font-weight:bold;">🔥 ' + adhocPending + ' Due!</div>';
+             adhocBtn.innerHTML = '<div class="tab-label" style="color:#ff7b72;">⚡ One-Time</div><div class="tab-sub" style="color:var(--text-main); font-weight:bold;">🔥 ' + adhocPending + ' Due!</div>';
            } else {
              adhocBtn.classList.remove('has-pending-adhoc');
              adhocBtn.innerHTML = '<div class="tab-label">⚡ One-Time</div><div class="tab-sub">' + extraTasks.length + ' Tasks</div>';
@@ -1952,8 +2366,8 @@
           html += "  <div style='display:flex; align-items:center; gap:10px;'>";
           html += "    <span style='font-size:24px;'>🚚</span>";
           html += "    <div>";
-          html += "      <div style='font-size:13px; font-weight:bold; color:#ffd33d;'>Evening Dispatch Cut-Off: " + cutoff.cutoffTime + "</div>";
-          html += "      <div style='font-size:11px; color:#c9d1d9;'>" + cutoffText + " | Shaam 7 PM se pehle sabhi orders pack & ready hone zaroori hain.</div>";
+          html += "      <div style='font-size:13px; font-weight:bold; color:var(--text-main);'>Evening Dispatch Cut-Off: " + cutoff.cutoffTime + "</div>";
+          html += "      <div style='font-size:11px; color:var(--text-body);'>" + cutoffText + " | Shaam 7 PM se pehle sabhi orders pack & ready hone zaroori hain.</div>";
           html += "    </div>";
           html += "  </div>";
           html += "  <button onclick='refreshStaffOrders()' style='background:#238636; border:none; color:white; font-size:11px; font-weight:bold; padding:6px 12px; border-radius:6px; cursor:pointer;'>🔄 Sync Status</button>";
@@ -1961,7 +2375,7 @@
 
           var activeList = orderTasks.filter(function(o){ return !o.isFullyCompleted; });
           if(activeList.length === 0) { 
-            html += "<div class='card' style='text-align:center; color:#8b949e; padding:30px;'>🎉 Aapke role ke liye abhi koi order pending nahi hai! Saare orders processed hain.</div>"; 
+            html += "<div class='card' style='text-align:center; color:var(--text-muted); padding:30px;'>🎉 Aapke role ke liye abhi koi order pending nahi hai! Saare orders processed hain.</div>"; 
             area.innerHTML = html; 
             updateLiveTimers(); 
             return; 
@@ -1974,43 +2388,43 @@
             var timerPillClass = isOverdue ? "order-sla-pill overdue-pill" : "order-sla-pill ontime-pill";
             var timerPillText = isOverdue ? ("⚠️ Overdue " + o.overdueMinutes + "m (-5 P)") : ("⏱️ " + Math.max(0, o.remainingMinutes) + "m SLA Left");
 
-            html += "<div class='task-card order " + (isOverdue ? "has-overdue" : "") + "' style='border-left-color: " + (isOverdue ? "#da3633" : "#2ea043") + "; background: #161b22; margin-bottom: 12px;'>";
+            html += "<div class='task-card order " + (isOverdue ? "has-overdue" : "") + "' style='border-left-color: " + (isOverdue ? "#da3633" : "#2ea043") + "; background:var(--bg-subtle); margin-bottom: 12px;'>";
             
             // CARD HEADER
             html += "  <div style='display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;'>";
             html += "    <div>";
             html += "      <span style='font-size:15px; font-weight:bold; color:#2ea043;'>📦 Order: #" + o.orderId + "</span>";
-            html += "      <span style='font-size:11px; background:#21262d; border:1px solid #30363d; color:#58a6ff; padding:2px 8px; border-radius:12px; margin-left:6px; font-weight:600;'>Step " + o.currentStageNum + "/9: " + o.currentStageName + "</span>";
+            html += "      <span style='font-size:11px; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--primary); padding:2px 8px; border-radius:12px; margin-left:6px; font-weight:600;'>Step " + o.currentStageNum + "/9: " + o.currentStageName + "</span>";
             html += "    </div>";
             html += "    <div><span class='" + timerPillClass + "'>" + timerPillText + "</span></div>";
             html += "  </div>";
 
             // SHOP DETAILS
             html += "  <div style='margin: 8px 0 6px 0; display:flex; justify-content:space-between; align-items:center;'>";
-            html += "    <span style='font-size:13px; font-weight:bold; color:#c9d1d9;'>🏪 " + o.shopName + "</span>";
-            html += "    <span style='font-size:10px; background:#30363d; color:#ffd33d; padding:2px 6px; border-radius:4px; font-weight:600;'>Mode: " + o.paymentMode + "</span>";
+            html += "    <span style='font-size:13px; font-weight:bold; color:var(--text-body);'>🏪 " + o.shopName + "</span>";
+            html += "    <span style='font-size:10px; background:#30363d; color:var(--text-main); padding:2px 6px; border-radius:4px; font-weight:600;'>Mode: " + o.paymentMode + "</span>";
             html += "  </div>";
 
             // ITEMS SUMMARY
-            html += "  <div style='background:#0d1117; padding:8px 10px; border-radius:6px; border:1px solid #30363d; margin-bottom:8px;'>";
-            html += "    <div style='font-size:10px; color:#8b949e; text-transform:uppercase; font-weight:bold; margin-bottom:2px;'>📋 Items to Process:</div>";
-            html += "    <div style='font-size:12px; color:#c9d1d9; line-height:1.4;'>" + o.items + "</div>";
+            html += "  <div style='background:var(--bg-page); padding:8px 10px; border-radius:6px; border:1px solid var(--border-subtle); margin-bottom:8px;'>";
+            html += "    <div style='font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:bold; margin-bottom:2px;'>📋 Items to Process:</div>";
+            html += "    <div style='font-size:12px; color:var(--text-body); line-height:1.4;'>" + o.items + "</div>";
             html += "  </div>";
 
             // AUTO-FETCHED PROOFS
             if(o.proofUrls) {
               html += "  <div style='margin-bottom:6px;'>";
-              html += "    <div style='font-size:10px; color:#58a6ff; font-weight:bold; margin-bottom:2px;'>📷 Proofs Auto-Fetched from Order App:</div>";
+              html += "    <div style='font-size:10px; color:var(--primary); font-weight:bold; margin-bottom:2px;'>📷 Proofs Auto-Fetched from Order App:</div>";
               html += renderPhotoPills(o.proofUrls);
               html += "  </div>";
             }
 
             // ACTION FOOTER
             html += "  <div style='display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid #21262d;'>";
-            html += "    <div style='font-size:11px; color:#ffd33d; font-weight:bold;'>🎯 10 Pts <span style='font-size:9.5px; color:#8b949e; font-weight:normal;'>(5P Done + 5P On-Time) | Deadline: " + o.slaDeadlineText + "</span></div>";
+            html += "    <div style='font-size:11px; color:var(--text-main); font-weight:bold;'>🎯 10 Pts <span style='font-size:9.5px; color:var(--text-muted); font-weight:normal;'>(5P Done + 5P On-Time) | Deadline: " + o.slaDeadlineText + "</span></div>";
             html += "    <div style='display:flex; gap:6px;'>";
             html += "      <a href='https://yash-marketing-backend-app.vercel.app/' target='_blank' class='btn-open-order-app'>🚀 Open in Order App ➔</a>";
-            html += "      <button onclick='refreshStaffOrders()' style='background:#21262d; border:1px solid #30363d; color:#8b949e; font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;'>🔄 Sync</button>";
+            html += "      <button onclick='refreshStaffOrders()' style='background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-muted); font-size:11px; padding:6px 10px; border-radius:6px; cursor:pointer;'>🔄 Sync</button>";
             html += "    </div>";
             html += "  </div>";
 
@@ -2019,30 +2433,30 @@
           html += "</div>";
         } 
         else if (currentActiveTab === 'Adhoc') {
-          if(extraTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:#8b949e;'>Koi extra task nahi hai! 🎉</div>"; updateLiveTimers(); return; }
+          if(extraTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:var(--text-muted);'>Koi extra task nahi hai! 🎉</div>"; updateLiveTimers(); return; }
           for(var i=0; i<extraTasks.length; i++) {
             var t = extraTasks[i];
             var isCompleted = t.status.includes("Uploaded") || t.status.includes("Completed") || t.status.includes("Skipped");
             var isSkipped = t.status.includes("Skipped");
-            html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#1f242c;'>";
-            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:#ffd33d;'>🔔 Extra Task: " + t.task + "</p>";
+            html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#ffffff;'>";
+            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:var(--text-main);'>🔔 Extra Task: " + t.task + "</p>";
             
-            html += "<div style='background:#0d1117; padding:10px; border-radius:8px; margin: 10px 0; border:1px solid #30363d;'>";
-            if (t.assignDate) { html += "<p style='margin:0 0 5px 0; font-size:11px; color:#58a6ff;'>🟢 <b>Assigned:</b> " + t.assignDate + "</p>"; }
+            html += "<div style='background:var(--bg-page); padding:10px; border-radius:8px; margin: 10px 0; border:1px solid var(--border-subtle);'>";
+            if (t.assignDate) { html += "<p style='margin:0 0 5px 0; font-size:11px; color:var(--primary);'>🟢 <b>Assigned:</b> " + t.assignDate + "</p>"; }
             var displayDead = t.deadline || "Jald";
-            html += "<p style='margin:0; font-size:12px; color:#ffd33d;'>⏰ <b>Deadline:</b> " + displayDead;
+            html += "<p style='margin:0; font-size:12px; color:var(--text-main);'>⏰ <b>Deadline:</b> " + displayDead;
             html += " <span class='live-timer' data-deadline='" + displayDead + "' data-completed='" + isCompleted + "'></span>";
-            html += " <span style='color:#ffd33d; font-weight:bold; float:right;'>🎯 10 Pts</span></p>";
+            html += " <span style='color:var(--text-main); font-weight:bold; float:right;'>🎯 10 Pts</span></p>";
             html += "</div>";
 
             if(t.refPhoto) html += renderPhotoPills(t.refPhoto);
 
             html += "<div class='subtask-row " + (isCompleted ? "completed" : "") + "'>";
             if(isCompleted) {
-              html += "<div class='subtask-name' style='color:#8b949e; font-size:12px; margin-bottom:0;'>Status: Done</div>";
+              html += "<div class='subtask-name' style='color:var(--text-muted); font-size:12px; margin-bottom:0;'>Status: Done</div>";
               html += "<div class='status-text' style='color:" + (isSkipped ? "#da3633" : "#2ea043") + "; text-align:left;'>" + t.status + "</div>";
             } else {
-              html += "<div class='subtask-name' style='font-size:13px; color:#c9d1d9; margin-bottom:6px;'>👉 Action:</div>";
+              html += "<div class='subtask-name' style='font-size:13px; color:var(--text-body); margin-bottom:6px;'>👉 Action:</div>";
               html += "<div class='subtask-actions'>";
               html += "<button class='btn-complete' onclick='triggerSelfAuditCheck(" + i + ", true, this)'>✅ Done</button>";
               html += "<button class='btn-capture' onclick='openAdhocProofModal(" + i + ")'>📸 Photo</button>";
@@ -2077,7 +2491,7 @@
 
             html += "<div class='task-card'>";
             html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
-            html += "<h3 style='margin:0; font-size:15px; color:#58a6ff;'>📌 " + mainTask + "</h3>";
+            html += "<h3 style='margin:0; font-size:15px; color:var(--primary);'>📌 " + mainTask + "</h3>";
             if (firstTask.timeSlot) {
               html += "<span style='font-size:10px; background:#1f6feb; color:white; padding:2px 8px; border-radius:10px; text-transform:uppercase; font-weight:bold;'>" + firstTask.timeSlot + "</span>";
             }
@@ -2087,9 +2501,9 @@
             var rawDeadRoutine = firstTask.deadline || "N/A";
             var sched = parseRoutineSchedule(rawDeadRoutine, currentActiveTab);
             var isDueToday = sched.isDueToday;
-            html += "<div style='background:#0d1117; padding:10px; border-radius:8px; margin: 10px 0; border:1px solid " + (isDueToday && !isAllDone ? "#2ea043" : "#30363d") + ";'>";
+            html += "<div style='background:var(--bg-page); padding:10px; border-radius:8px; margin: 10px 0; border:1px solid " + (isDueToday && !isAllDone ? "#2ea043" : "#30363d") + ";'>";
             var scheduleBadge = sched.badgeHtml;
-            html += "<p style='margin:0; font-size:12px; color:#ffd33d;'>" + scheduleBadge + "⏰ <b>Deadline:</b> " + rawDeadRoutine;
+            html += "<p style='margin:0; font-size:12px; color:var(--text-main);'>" + scheduleBadge + "⏰ <b>Deadline:</b> " + rawDeadRoutine;
             html += " <span class='live-timer' data-deadline='" + rawDeadRoutine + "' data-completed='" + isAllDone + "'></span>";
             html += " <span style='float:right;'>🎯 10 Pts</span></p>";
             html += "</div>";
@@ -2103,14 +2517,14 @@
               html += "<div class='task-stepper-box'>";
               html += "<div class='stepper-header' onclick='toggleStepper(\"" + stepperId + "\")'>";
               html += "<span>📋 Step-by-Step SOP (Execution Guide)</span>";
-              html += "<span style='font-size:10px; color:#58a6ff;'>Tap to View ▼</span>";
+              html += "<span style='font-size:10px; color:var(--primary);'>Tap to View ▼</span>";
               html += "</div>";
               html += "<div class='stepper-content' id='" + stepperId + "'>";
               for (var s = 0; s < sopSteps.length; s++) {
                 html += "<div class='stepper-step'><span class='stepper-num'>" + (s+1) + "</span><span>" + sopSteps[s] + "</span></div>";
               }
               if (firstTask.refPhoto && firstTask.refPhoto.trim() !== '') {
-                html += "<div style='margin-top:8px;'><a href='#' onclick='openPhotoZoomDirect(\"" + encodeURIComponent(firstTask.refPhoto) + "\", \"Reference Document\"); return false;' style='font-size:11px; color:#58a6ff; text-decoration:none;'>📄 View Reference Document / Template Form</a></div>";
+                html += "<div style='margin-top:8px;'><a href='#' onclick='openPhotoZoomDirect(\"" + encodeURIComponent(firstTask.refPhoto) + "\", \"Reference Document\"); return false;' style='font-size:11px; color:var(--primary); text-decoration:none;'>📄 View Reference Document / Template Form</a></div>";
               }
               if (firstTask.sopVideo && firstTask.sopVideo.trim() !== '') {
                 html += "<div style='margin-top:6px;'><button type='button' style='width:auto; padding:4px 8px; font-size:10px; background:#da3633; color:white;' onclick='openVideoModal(\"" + encodeURIComponent(firstTask.sopVideo) + "\")'>🎥 Watch Training Video</button></div>";
@@ -2124,7 +2538,7 @@
             var bEnc = encodeURIComponent(firstTask.badSample || "");
             var bPhotoEnc = encodeURIComponent(firstTask.badPhoto || "");
             html += "<div style='display:flex; gap:6px; margin-bottom:8px;'>";
-            html += "<button type='button' style='width:auto; padding:5px 10px; font-size:11px; background:#21262d; border:1px solid #30363d; color:#ffd33d;' onclick='openBenchmarkModal(\"" + gEnc + "\", \"" + gPhotoEnc + "\", \"" + bEnc + "\", \"" + bPhotoEnc + "\")'>⚖️ Quality Sample (Good vs Bad)</button>";
+            html += "<button type='button' style='width:auto; padding:5px 10px; font-size:11px; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-main);' onclick='openBenchmarkModal(\"" + gEnc + "\", \"" + gPhotoEnc + "\", \"" + bEnc + "\", \"" + bPhotoEnc + "\")'>⚖️ Quality Sample (Good vs Bad)</button>";
             html += "</div>";
 
             // TROUBLESHOOT ACCORDION (Unique ID per card)
@@ -2137,7 +2551,7 @@
 
             // SOURCE SHEET INDICATOR
             if (firstTask.sourceSheet) {
-              html += "<div style='font-size:9px; color:#8b949e; margin-bottom:8px;'>📊 Sheet: <b>" + firstTask.sourceSheet + "</b> (CEO can edit here)</div>";
+              html += "<div style='font-size:9px; color:var(--text-muted); margin-bottom:8px;'>📊 Sheet: <b>" + firstTask.sourceSheet + "</b> (CEO can edit here)</div>";
             }
 
             if(firstTask.sop || firstTask.sopVideo) {
@@ -2159,7 +2573,7 @@
 
               html += "<div class='subtask-row " + (isDone ? "completed" : "") + "'>";
               if(isDone) {
-                html += "<div class='subtask-name' style='text-decoration: line-through; color:#8b949e; margin-bottom:0;'>" + displayName + "</div>";
+                html += "<div class='subtask-name' style='text-decoration: line-through; color:var(--text-muted); margin-bottom:0;'>" + displayName + "</div>";
                 html += "<div class='status-text' style='color:" + (isSkipped ? "#da3633" : "#2ea043") + "; text-align:left; margin-top:4px;'>" + st.status + "</div>";
               } else {
                 html += "<div class='subtask-name'>" + displayName + "</div>";
@@ -2174,7 +2588,7 @@
             html += "</div></div>";
           }
         }
-        if(currentActiveTab !== 'Orders' && currentActiveTab !== 'Adhoc' && count === 0) html = "<div class='card' style='text-align:center; color:#8b949e;'>Is tab mein abhi koi task nahi hai! 🎉</div>";
+        if(currentActiveTab !== 'Orders' && currentActiveTab !== 'Adhoc' && count === 0) html = "<div class='card' style='text-align:center; color:var(--text-muted);'>Is tab mein abhi koi task nahi hai! 🎉</div>";
         area.innerHTML = html;
         updateLiveTimers(); 
       }
@@ -2313,12 +2727,12 @@
 
       function loadAdminRadar() {
         var container = document.getElementById("radarCardsContainer");
-        container.innerHTML = "<p style='color:#8b949e; text-align:center; padding:20px 0;'>📡 Scanning live team operations...</p>";
+        container.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px 0;'>📡 Scanning live team operations...</p>";
         
         google.script.run.withSuccessHandler(function(radar) {
           cachedRadarData = radar;
           if (!radar || !radar.pulse) {
-            container.innerHTML = "<p style='color:#8b949e; text-align:center;'>No live radar data available.</p>";
+            container.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>No live radar data available.</p>";
             return;
           }
 
@@ -2344,7 +2758,7 @@
       function renderRadarCards() {
         var container = document.getElementById("radarCardsContainer");
         if (!cachedRadarData || !cachedRadarData.staffList) {
-          container.innerHTML = "<p style='color:#8b949e; text-align:center;'>No staff records found.</p>";
+          container.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>No staff records found.</p>";
           return;
         }
 
@@ -2361,15 +2775,15 @@
           orderRadarHtml += "      <span style='font-size:20px;'>🚚</span>";
           orderRadarHtml += "      <div>";
           orderRadarHtml += "        <div style='font-size:14px; font-weight:bold; color:#ffffff;'>Live Order Processing Cockpit (9-Step Pipeline)</div>";
-          orderRadarHtml += "        <div style='font-size:10.5px; color:#8b949e;'>Strict 1-Hour SLA & 7:00 PM Dispatch Cut-off Engine</div>";
+          orderRadarHtml += "        <div style='font-size:10.5px; color:var(--text-muted);'>Strict 1-Hour SLA & 7:00 PM Dispatch Cut-off Engine</div>";
           orderRadarHtml += "      </div>";
           orderRadarHtml += "    </div>";
-          orderRadarHtml += "    <span style='font-size:11px; background:#21262d; border:1px solid #d29922; color:#ffd33d; padding:3px 8px; border-radius:12px; font-weight:bold;'>Cut-off: " + cutoff.cutoffTime + " (" + cutoffText + ")</span>";
+          orderRadarHtml += "    <span style='font-size:11px; background:var(--bg-subtle); border:1px solid #d29922; color:var(--text-main); padding:3px 8px; border-radius:12px; font-weight:bold;'>Cut-off: " + cutoff.cutoffTime + " (" + cutoffText + ")</span>";
           orderRadarHtml += "  </div>";
 
           // ORDER PULSE METRICS
           orderRadarHtml += "  <div class='radar-pulse-bar' style='margin-bottom:12px;'>";
-          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>Active Orders</div><div class='pulse-val' style='color:#58a6ff;'>" + orderPipe.totalActive + "</div></div>";
+          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>Active Orders</div><div class='pulse-val' style='color:var(--primary);'>" + orderPipe.totalActive + "</div></div>";
           orderRadarHtml += "    <div class='pulse-card success'><div class='pulse-lbl'>Done Today</div><div class='pulse-val' style='color:#2ea043;'>" + orderPipe.totalCompletedToday + "</div></div>";
           orderRadarHtml += "    <div class='pulse-card alert'><div class='pulse-lbl'>Overdue (>1 hr)</div><div class='pulse-val' style='color:#f85149;'>" + orderPipe.totalOverdue + "</div></div>";
           orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>In Billing (Acc)</div><div class='pulse-val'>" + ((orderPipe.stageBreakdown.balanceCheck || 0) + (orderPipe.stageBreakdown.invoicing || 0)) + "</div></div>";
@@ -2379,15 +2793,15 @@
 
           // BOTTLENECK LIST (ACTIVE ORDERS)
           if (orderPipe.activeOrders && orderPipe.activeOrders.length > 0) {
-            orderRadarHtml += "  <div style='font-size:11px; font-weight:bold; color:#8b949e; text-transform:uppercase; margin-bottom:8px;'>⚠️ Active Pipeline Bottlenecks (Click to Nudge Staff):</div>";
+            orderRadarHtml += "  <div style='font-size:11px; font-weight:bold; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;'>⚠️ Active Pipeline Bottlenecks (Click to Nudge Staff):</div>";
             for (var b = 0; b < Math.min(6, orderPipe.activeOrders.length); b++) {
               var bo = orderPipe.activeOrders[b];
               var isBOverdue = bo.isOverdue;
               orderRadarHtml += "  <div class='order-bottleneck-row " + (isBOverdue ? "overdue-row" : "") + "'>";
               orderRadarHtml += "    <div>";
-              orderRadarHtml += "      <span style='font-size:12px; font-weight:bold; color:#c9d1d9;'>#" + bo.orderId + " (" + bo.shopName + ")</span>";
-              orderRadarHtml += "      <span style='font-size:10px; color:#58a6ff; margin-left:6px; background:#161b22; padding:2px 6px; border-radius:4px;'>Step " + bo.currentStageNum + ": " + bo.currentStageName + "</span>";
-              orderRadarHtml += "      <div style='font-size:10px; color:#8b949e; margin-top:2px;'>Assigned: <b style='color:#ffd33d;'>" + bo.assignedRole + "</b></div>";
+              orderRadarHtml += "      <span style='font-size:12px; font-weight:bold; color:var(--text-body);'>#" + bo.orderId + " (" + bo.shopName + ")</span>";
+              orderRadarHtml += "      <span style='font-size:10px; color:var(--primary); margin-left:6px; background:var(--bg-subtle); padding:2px 6px; border-radius:4px;'>Step " + bo.currentStageNum + ": " + bo.currentStageName + "</span>";
+              orderRadarHtml += "      <div style='font-size:10px; color:var(--text-muted); margin-top:2px;'>Assigned: <b style='color:var(--text-main);'>" + bo.assignedRole + "</b></div>";
               orderRadarHtml += "    </div>";
               orderRadarHtml += "    <div style='display:flex; align-items:center; gap:8px;'>";
               orderRadarHtml += "      <span style='font-size:11px; font-weight:bold; color:" + (isBOverdue ? "#f85149" : "#2ea043") + ";'>" + (isBOverdue ? ("🔴 " + bo.overdueMinutes + "m late") : ("⏱️ " + bo.remainingMinutes + "m left")) + "</span>";
@@ -2408,7 +2822,7 @@
         });
 
         if (filtered.length === 0) {
-          container.innerHTML = "<div style='text-align:center; padding:25px; color:#8b949e;'><p style='font-size:14px; margin:0;'>✨ Is category mein koi record nahi hai!</p></div>";
+          container.innerHTML = "<div style='text-align:center; padding:25px; color:var(--text-muted);'><p style='font-size:14px; margin:0;'>✨ Is category mein koi record nahi hai!</p></div>";
           return;
         }
 
@@ -2422,7 +2836,7 @@
           html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
           html += "  <div>";
           html += "    <b style='color:#ffffff; font-size:14px;'>👤 " + s.name + "</b>";
-          html += "    <span style='background:#21262d; color:#58a6ff; font-size:11px; padding:2px 8px; border-radius:4px; margin-left:6px; font-weight:600;'>" + s.role + "</span>";
+          html += "    <span style='background:var(--bg-subtle); color:var(--primary); font-size:11px; padding:2px 8px; border-radius:4px; margin-left:6px; font-weight:600;'>" + s.role + "</span>";
           html += "  </div>";
           html += "  <div style='text-align:right;'>";
           html += "    <span style='font-size:12px; font-weight:bold; color:" + progressColor + ";'>" + s.completed + "/" + s.total + " Done (" + s.rate + "%)</span>";
@@ -2444,7 +2858,7 @@
 
               html += "<div class='radar-task-row'>";
               html += "  <div style='flex:1; padding-right:8px;'>";
-              html += "    <span style='color:#c9d1d9;'>" + fullTitle + "</span> ";
+              html += "    <span style='color:var(--text-body);'>" + fullTitle + "</span> ";
               html += "    <div>" + deadBadge + "</div>";
               html += "  </div>";
               html += "  <div>";
@@ -2544,18 +2958,18 @@
         var rate = total > 0 ? Math.round((completedList.length / total) * 100) : 100;
 
         var html = "<div style='display:flex; justify-content:space-between; margin-bottom:8px;'>";
-        html += "<b style='color:#58a6ff;'>👤 " + loggedInUser.name + " (" + loggedInUser.role + ")</b>";
+        html += "<b style='color:var(--primary);'>👤 " + loggedInUser.name + " (" + loggedInUser.role + ")</b>";
         html += "<b style='color:" + (rate === 100 ? "#3fb950" : "#ffd33d") + ";'>" + completedList.length + "/" + total + " Done (" + rate + "%)</b>";
         html += "</div>";
 
         if (completedList.length > 0) {
-          html += "<div style='margin-bottom:8px;'><b style='color:#3fb950;'>✅ Completed Tasks (" + completedList.length + "):</b><ul style='margin:4px 0 0 16px; padding:0; color:#c9d1d9;'>";
+          html += "<div style='margin-bottom:8px;'><b style='color:#3fb950;'>✅ Completed Tasks (" + completedList.length + "):</b><ul style='margin:4px 0 0 16px; padding:0; color:var(--text-body);'>";
           for (var c = 0; c < completedList.length; c++) html += "<li>" + completedList[c] + "</li>";
           html += "</ul></div>";
         }
 
         if (pendingList.length > 0) {
-          html += "<div><b style='color:#e3b341;'>⏳ Pending / Carried Forward (" + pendingList.length + "):</b><ul style='margin:4px 0 0 16px; padding:0; color:#c9d1d9;'>";
+          html += "<div><b style='color:#e3b341;'>⏳ Pending / Carried Forward (" + pendingList.length + "):</b><ul style='margin:4px 0 0 16px; padding:0; color:var(--text-body);'>";
           for (var p = 0; p < pendingList.length; p++) html += "<li>" + pendingList[p].title + " (Due: " + pendingList[p].deadline + ")</li>";
           html += "</ul></div>";
         } else {
@@ -2656,7 +3070,7 @@
         });
 
         var tbody = document.getElementById('ledgerTableBody');
-        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:#8b949e; padding:15px;'>⏳ Loading " + period + " points ledger...</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:var(--text-muted); padding:15px;'>⏳ Loading " + period + " points ledger...</td></tr>";
 
         google.script.run.withSuccessHandler(function(data) {
           renderPointsLedger(data);
@@ -2665,7 +3079,7 @@
 
       function renderPointsLedger(data) {
         if (!data || !data.success) {
-          document.getElementById('ledgerTableBody').innerHTML = "<tr><td colspan='7' style='text-align:center; color:#8b949e; padding:15px;'>Koi ledger data nahi mila.</td></tr>";
+          document.getElementById('ledgerTableBody').innerHTML = "<tr><td colspan='7' style='text-align:center; color:var(--text-muted); padding:15px;'>Koi ledger data nahi mila.</td></tr>";
           return;
         }
 
@@ -2677,7 +3091,7 @@
 
         var tbody = document.getElementById('ledgerTableBody');
         if (!data.entries || data.entries.length === 0) {
-          tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:#8b949e; padding:15px;'>✨ Is period mein koi task submission nahi hai.</td></tr>";
+          tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:var(--text-muted); padding:15px;'>✨ Is period mein koi task submission nahi hai.</td></tr>";
           return;
         }
 
@@ -2687,20 +3101,20 @@
           var badgeClass = e.totalPoints === 10 ? 'pts-badge-10' : (e.totalPoints === 5 ? 'pts-badge-5' : 'pts-badge-0');
 
           var compBadge = e.completionPoints === 5 ? "<span style='color:#3fb950; font-weight:bold;'>✅ +5 P</span>" : "<span style='color:#da3633;'>❌ 0 P</span>";
-          var onTimeBadge = e.onTimePoints === 5 ? "<span style='color:#79c0ff; font-weight:bold;'>⏱️ +5 P</span>" : (e.isPending ? "<span style='color:#8b949e;'>⏳ 0 P</span>" : "<span style='color:#e3b341;'>🚨 Late (+0 P)</span>");
+          var onTimeBadge = e.onTimePoints === 5 ? "<span style='color:#79c0ff; font-weight:bold;'>⏱️ +5 P</span>" : (e.isPending ? "<span style='color:var(--text-muted);'>⏳ 0 P</span>" : "<span style='color:#e3b341;'>🚨 Late (+0 P)</span>");
 
           var proofCell = "";
           if (e.proofLink && e.proofLink.indexOf("http") !== -1) {
             var cleanUrl = e.proofLink.replace(/=HYPERLINK\("([^"]+)".*/, "$1").trim();
-            proofCell = "<a href='" + cleanUrl + "' target='_blank' style='color:#58a6ff; text-decoration:underline;'>📷 View Proof</a>";
+            proofCell = "<a href='" + cleanUrl + "' target='_blank' style='color:var(--primary); text-decoration:underline;'>📷 View Proof</a>";
           } else {
-            proofCell = "<span style='color:#8b949e;'>" + (e.status || "N/A") + "</span>";
+            proofCell = "<span style='color:var(--text-muted);'>" + (e.status || "N/A") + "</span>";
           }
 
           html += "<tr style='" + (e.isPending ? "opacity:0.7; background:rgba(255,255,255,0.02);" : "") + "'>";
-          html += "<td style='font-weight:600; color:#c9d1d9;'>" + e.fullTitle + "</td>";
-          html += "<td style='color:#ffd33d;'>" + e.deadline + "</td>";
-          html += "<td style='color:#8b949e;'>" + e.submitTime + "</td>";
+          html += "<td style='font-weight:600; color:var(--text-body);'>" + e.fullTitle + "</td>";
+          html += "<td style='color:var(--text-main);'>" + e.deadline + "</td>";
+          html += "<td style='color:var(--text-muted);'>" + e.submitTime + "</td>";
           html += "<td style='text-align:center;'>" + compBadge + "</td>";
           html += "<td style='text-align:center;'>" + onTimeBadge + "</td>";
           html += "<td style='text-align:center;'><span class='" + badgeClass + "'>" + e.totalPoints + " P</span></td>";
@@ -2711,200 +3125,7 @@
         tbody.innerHTML = html;
       }
 
-    </script>
-  
     
-    <!-- PHASE 2: PRE-FLIGHT SELF-AUDIT QUALITY GATE MODAL -->
-    <div id="selfAuditModal" class="modal">
-      <div class="modal-content" style="max-width: 440px; text-align: left; padding: 20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:8px; margin-bottom:14px;">
-          <h3 style="color:#58a6ff; margin:0; font-size:16px;">⚡ Pre-Flight Self-Audit Quality Gate</h3>
-          <button onclick="closeSelfAuditModal()" style="width:auto; padding:2px 8px; font-size:14px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
-        </div>
-
-        <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid #30363d; margin-bottom:14px;">
-          <span style="font-size:11px; color:#8b949e; text-transform:uppercase; font-weight:bold;">Task Verification:</span>
-          <div id="selfAuditTaskName" style="color:#ffd33d; font-weight:bold; font-size:14px; margin-top:3px;">Task Name</div>
-          <div id="selfAuditDeadline" style="color:#8b949e; font-size:12px; margin-top:2px;">⏰ Expected by: --</div>
-        </div>
-
-        <div style="font-size:13px; color:#c9d1d9; margin-bottom:16px;">
-          <p style="margin:0 0 10px 0; font-weight:bold; color:#58a6ff; font-size:12px;">Final Submission Check (Self-Verification):</p>
-          <label style="display:flex; align-items:flex-start; gap:8px; margin-bottom:10px; cursor:pointer; font-size:12px; line-height:1.4;">
-            <input type="checkbox" id="auditCheck1" checked style="margin-top:2px; transform:scale(1.2);">
-            <span>Meine actual physical stock / registers / digital entries cross-check kar li hain.</span>
-          </label>
-          <label style="display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; cursor:pointer; font-size:12px; line-height:1.4;">
-            <input type="checkbox" id="auditCheck2" checked style="margin-top:2px; transform:scale(1.2);">
-            <span>SOP standard ke mutabik kaam 100% complete hai aur koi pending mistake nahi hai.</span>
-          </label>
-        </div>
-
-        <div style="display:flex; gap:10px;">
-          <button onclick="executeSelfAuditedSubmission()" id="btnConfirmSelfAudit" style="flex:1; background:#2ea043; color:white; padding:12px; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;">✅ 100% Verified - Submit Task</button>
-          <button onclick="closeSelfAuditModal()" style="width:auto; background:#30363d; color:#c9d1d9; padding:12px; border:none; border-radius:6px; font-size:13px; cursor:pointer;">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- PHASE 2: AUTOMATED SHIFT HANDOVER & EOD REPORT MODAL -->
-    <div id="shiftHandoverModal" class="modal">
-      <div class="modal-content" style="max-width: 520px; text-align: left; padding: 20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:10px; margin-bottom:12px;">
-          <h3 style="color:#58a6ff; margin:0; font-size:16px;">📋 Daily Shift Handover & EOD Report</h3>
-          <button onclick="closeHandoverModal()" style="width:auto; padding:2px 8px; font-size:14px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
-        </div>
-
-        <div id="handoverSummaryCard" style="background:#161b22; padding:12px; border-radius:8px; border:1px solid #30363d; margin-bottom:12px; font-size:12px;">
-          Loading shift summary...
-        </div>
-
-        <label style="color:#8b949e; font-size:12px; display:block; margin-bottom:4px; font-weight:bold;">📝 Handover Notes for CEO / Next Shift:</label>
-        <textarea id="handoverNotesInput" rows="3" placeholder="Closing remarks, cash tally, ya kal subah ka koi pending task..." style="width:100%; box-sizing:border-box; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; padding:10px; font-size:12px; resize:vertical; margin-bottom:14px;"></textarea>
-
-        <div style="display:flex; gap:10px;">
-          <button onclick="dispatchShiftHandoverWhatsapp()" style="flex:1; background:#25d366; color:#0d1117; padding:12px; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;">📲 Dispatch Handover to CEO via WhatsApp</button>
-          <button onclick="closeHandoverModal()" style="width:auto; background:#30363d; color:#c9d1d9; padding:12px; border:none; border-radius:6px; font-size:13px; cursor:pointer;">Close</button>
-        </div>
-      </div>
-    </div>
-
-    
-    <!-- POINTS LEDGER & AUDIT BREAKDOWN MODAL -->
-    <div id="pointsLedgerModal" class="modal">
-      <div class="modal-content" style="max-width: 680px; text-align: left; padding: 20px;">
-        <!-- Modal Header -->
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:10px; margin-bottom:14px;">
-          <div>
-            <h3 style="color:#ffd33d; margin:0; font-size:17px; display:flex; align-items:center; gap:6px;">
-              <span>📊 Points Ledger & Audit Breakdown</span>
-            </h3>
-            <p id="ledgerStaffSubtitle" style="margin:3px 0 0 0; font-size:12px; color:#8b949e;">Staff: Loading...</p>
-          </div>
-          <button onclick="closePointsLedgerModal()" style="width:auto; padding:4px 10px; font-size:14px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
-        </div>
-
-        <!-- Period Filter Pills -->
-        <div class="ledger-period-ribbon" style="display:flex; gap:8px; margin-bottom:14px;">
-          <button class="ledger-pill-btn active" id="ledgerPill-daily" onclick="switchLedgerPeriod('daily')">Daily (Today)</button>
-          <button class="ledger-pill-btn" id="ledgerPill-weekly" onclick="switchLedgerPeriod('weekly')">Weekly (This Week)</button>
-          <button class="ledger-pill-btn" id="ledgerPill-monthly" onclick="switchLedgerPeriod('monthly')">Monthly (This Month)</button>
-        </div>
-
-        <!-- Summary KPI Card -->
-        <div id="ledgerKpiCard" style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:12px; margin-bottom:14px;">
-          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; text-align:center;">
-            <div>
-              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">Score Card</div>
-              <div id="ledgerKpiPercent" style="font-size:22px; font-weight:800; color:#58a6ff; margin-top:2px;">--%</div>
-            </div>
-            <div>
-              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">Points Scored</div>
-              <div id="ledgerKpiPts" style="font-size:16px; font-weight:700; color:#ffd33d; margin-top:5px;">-- / -- P</div>
-            </div>
-            <div>
-              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">Completed (+5 P)</div>
-              <div id="ledgerKpiComp" style="font-size:16px; font-weight:700; color:#3fb950; margin-top:5px;">-- Tasks</div>
-            </div>
-            <div>
-              <div style="font-size:10px; color:#8b949e; text-transform:uppercase;">On-Time (+5 P)</div>
-              <div id="ledgerKpiOnTime" style="font-size:16px; font-weight:700; color:#79c0ff; margin-top:5px;">-- Tasks</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Scoring Rule Notice -->
-        <div style="background:rgba(31,111,235,0.1); border-left:4px solid #1f6feb; padding:8px 12px; border-radius:4px; margin-bottom:14px; font-size:11px; color:#c9d1d9;">
-          💡 <b>Scoring Rule:</b> Har task = <b>10 Points</b> (<b>5 P</b> Execution/Proof complete hone par + <b>5 P</b> Deadline par On-Time complete karne ka bonus).
-        </div>
-
-        <!-- Ledger Table Container -->
-        <div style="overflow-x:auto; max-height: 380px; overflow-y:auto;" id="ledgerTableContainer">
-          <table class="scoreboard-table" style="font-size:12px;">
-            <thead>
-              <tr>
-                <th>Task & SubTask</th>
-                <th>Deadline</th>
-                <th>Submit Time</th>
-                <th>Complete (+5)</th>
-                <th>On-Time (+5)</th>
-                <th style="color:#ffd33d;">Total Points</th>
-                <th>Status / Proof</th>
-              </tr>
-            </thead>
-            <tbody id="ledgerTableBody">
-              <tr><td colspan="7" style="text-align:center; color:#8b949e; padding:15px;">Loading ledger...</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div style="text-align: right; margin-top: 15px; border-top: 1px solid #30363d; padding-top: 10px;">
-          <button onclick="closePointsLedgerModal()" style="background:#30363d; color:#c9d1d9; width:auto; padding:8px 16px; font-size:13px; border:none; border-radius:6px; cursor:pointer;">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- DAY-1 ONBOARDING BLUEPRINT MODAL -->
-    <div id="onboardingModal" class="modal">
-      <div class="modal-content" style="max-width: 600px; text-align: left; padding: 20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:10px; margin-bottom:12px;">
-          <h3 style="color:#58a6ff; margin:0;" id="onboardModalRoleTitle">🚀 Day-1 Role Blueprint</h3>
-          <button onclick="closeRoleOnboardingModal()" style="width:auto; padding:4px 8px; font-size:14px; background:#da3633; border:none; border-radius:4px; color:white; cursor:pointer;">✕</button>
-        </div>
-
-        <!-- 4 TABS -->
-        <div class="tabs" style="margin-bottom:12px;">
-          <div id="onboardTab-mission" class="tab active" onclick="switchOnboardTab('mission')">🎯 Mission</div>
-          <div id="onboardTab-timeline" class="tab" onclick="switchOnboardTab('timeline')">⏰ Shift Hours</div>
-          <div id="onboardTab-benchmarks" class="tab" onclick="switchOnboardTab('benchmarks')">⚖️ Good/Bad</div>
-          <div id="onboardTab-faq" class="tab" onclick="switchOnboardTab('faq')">❓ FAQ / Help</div>
-        </div>
-
-        <div id="onboardContentArea" style="min-height: 220px; font-size: 13px; line-height: 1.5; color: #c9d1d9;"></div>
-
-        <div style="text-align: right; margin-top: 15px; border-top: 1px solid #30363d; padding-top: 10px;">
-          <button onclick="closeRoleOnboardingModal()" style="background:#2ea043; width:auto; padding:8px 16px; font-size:13px;">Got It! Samajh Gaya 👍</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- BENCHMARK SAMPLES COMPARISON MODAL -->
-    <div id="benchmarkModal" class="modal">
-      <div class="modal-content" style="max-width: 540px; text-align: left; padding: 18px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:8px; margin-bottom:12px;">
-          <h3 style="color:#ffd33d; margin:0; font-size:15px;">⚖️ Quality Benchmarks (Expected vs Rejected)</h3>
-          <button onclick="closeBenchmarkModal()" style="width:auto; padding:4px 8px; font-size:12px; background:#da3633; color:white; border:none; border-radius:4px; cursor:pointer;">✕</button>
-        </div>
-
-        <div class="benchmark-box" style="margin-bottom:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <!-- GOOD BENCHMARK -->
-          <div class="benchmark-card good" style="background:rgba(46,160,67,0.1); border:1px solid #2ea043; border-radius:8px; padding:10px;">
-            <div class="benchmark-title" style="color:#2ea043; font-weight:bold; font-size:12px; margin-bottom:6px;">✅ Acceptable (Good Work)</div>
-            <div id="bmGoodSample" style="font-size:11px; line-height:1.4; color:#c9d1d9; margin-bottom:8px;"></div>
-            <div id="bmGoodPhotoContainer" style="display:none; margin-top:8px;">
-              <p style="font-size:10px; color:#8b949e; margin:0 0 4px 0;">📷 Reference Sample Photo:</p>
-              <img id="bmGoodPhotoImg" src="" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; border:1px solid #30363d; cursor:pointer;" onclick="openPhotoZoomDirect(this.src, 'Good Sample Benchmark')"/>
-            </div>
-          </div>
-
-          <!-- BAD BENCHMARK -->
-          <div class="benchmark-card bad" style="background:rgba(218,54,51,0.1); border:1px solid #da3633; border-radius:8px; padding:10px;">
-            <div class="benchmark-title" style="color:#da3633; font-weight:bold; font-size:12px; margin-bottom:6px;">❌ Common Mistake (Rejected)</div>
-            <div id="bmBadSample" style="font-size:11px; line-height:1.4; color:#c9d1d9; margin-bottom:8px;"></div>
-            <div id="bmBadPhotoContainer" style="display:none; margin-top:8px;">
-              <p style="font-size:10px; color:#8b949e; margin:0 0 4px 0;">🚫 Mistake Example Photo:</p>
-              <img id="bmBadPhotoImg" src="" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; border:1px solid #30363d; cursor:pointer;" onclick="openPhotoZoomDirect(this.src, 'Rejected Mistake Example')"/>
-            </div>
-          </div>
-        </div>
-
-        <div style="background:#161b22; padding:8px 10px; border-radius:6px; border:1px solid #30363d; font-size:11px; color:#8b949e; margin-bottom:12px;">
-          💡 <b>CEO Live Control:</b> Ye samples aap Google Sheet mein Column H, I, J, K mein direct change kar sakte hain.
-        </div>
-
-        <button onclick="closeBenchmarkModal()" style="background:#30363d; color:#c9d1d9; width:100%; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Close Benchmark</button>
-      </div>
-    </div>
-  </body>
-
+  </script>
+</body>
 </html>
