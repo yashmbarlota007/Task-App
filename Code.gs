@@ -641,7 +641,12 @@ function getTasksForRole(role, staffName) {
         if (rawTask) lastTask = rawTask;
         var curTask = rawTask || lastTask;
 
-        var rawDead = colMap.deadline !== -1 && row[colMap.deadline] ? formatTimeFriendly(row[colMap.deadline]) : "07:00 PM";
+        var rawDead = colMap.deadline !== -1 && row[colMap.deadline] ? formatTimeFriendly(row[colMap.deadline]) : "";
+        if (!rawDead) {
+          if (curType === 'Weekly') rawDead = "Monday, 07:00 PM";
+          else if (curType === 'Monthly') rawDead = "1st of Month, 07:00 PM";
+          else rawDead = "07:00 PM";
+        }
         var rawSlot = colMap.timeSlot !== -1 && row[colMap.timeSlot] ? String(row[colMap.timeSlot]).trim() : "";
         if (!rawSlot) rawSlot = getTimeSlotFromDeadline(rawDead);
 
@@ -1507,23 +1512,65 @@ function getAllAdhocHistory() {
   return history;
 }
 
+function parseDeadlineToDate(deadlineStr, baseDate) {
+  if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return null;
+  var now = baseDate || new Date();
+  var lower = String(deadlineStr).toLowerCase().trim();
+
+  var hrs = 19;
+  var mins = 0;
+  var timeMatch = lower.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+  if (timeMatch) {
+    hrs = parseInt(timeMatch[1], 10);
+    mins = parseInt(timeMatch[2], 10);
+    var ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : "";
+    if (ampm === "PM" && hrs < 12) hrs += 12;
+    if (ampm === "AM" && hrs === 12) hrs = 0;
+  }
+
+  // Weekly Day Check (e.g., Monday, Every Monday)
+  var daysMap = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+  for (var day in daysMap) {
+    if (lower.indexOf(day) !== -1) {
+      var targetDay = daysMap[day];
+      var curDay = now.getDay();
+      var diff = targetDay - curDay;
+      if (diff < 0) diff += 7;
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff, hrs, mins, 0);
+    }
+  }
+
+  // Monthly Date Check (e.g., 1st, 5th of Month, 25th)
+  var dateMatch = lower.match(/(\d{1,2})(?:st|nd|rd|th)?(?:\s*of\s*month)?/i);
+  if (dateMatch && (lower.indexOf("month") !== -1 || lower.indexOf("st") !== -1 || lower.indexOf("nd") !== -1 || lower.indexOf("rd") !== -1 || lower.indexOf("th") !== -1 || !isNaN(Number(lower.split(/[,\s]/)[0])))) {
+    var targetDateNum = parseInt(dateMatch[1], 10);
+    if (targetDateNum >= 1 && targetDateNum <= 31) {
+      var curDateNum = now.getDate();
+      var targetMonth = now.getMonth();
+      var targetYear = now.getFullYear();
+      if (curDateNum > targetDateNum) {
+        targetMonth++;
+        if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+      }
+      return new Date(targetYear, targetMonth, targetDateNum, hrs, mins, 0);
+    }
+  }
+
+  // Direct ISO / Full Date Check
+  if (lower.indexOf("-") !== -1 && (lower.indexOf("202") !== -1 || lower.indexOf("t") !== -1)) {
+    var d = new Date(deadlineStr);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // Fallback to today at parsed time
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hrs, mins, 0);
+}
+
 function isTaskOnTime(deadlineStr, submitDateObj) {
   if (!deadlineStr || deadlineStr === "N/A" || deadlineStr === "Jald") return true; 
   try {
-    var targetDate = new Date(submitDateObj.getTime()); 
-    if (deadlineStr.includes(",") || deadlineStr.includes("202")) {
-        targetDate = new Date(deadlineStr);
-    } else {
-        var parts = deadlineStr.match(/(\d+):(\d+)\s(AM|PM)/i);
-        if (parts) {
-            var hours = parseInt(parts[1], 10);
-            var minutes = parseInt(parts[2], 10);
-            var ampm = parts[3].toUpperCase();
-            if (ampm === "PM" && hours < 12) hours += 12;
-            if (ampm === "AM" && hours === 12) hours = 0;
-            targetDate.setHours(hours, minutes, 0, 0);
-        }
-    }
+    var targetDate = parseDeadlineToDate(deadlineStr, submitDateObj);
+    if (!targetDate) return true;
     return submitDateObj.getTime() <= targetDate.getTime();
   } catch(e) { return true; }
 }
