@@ -926,6 +926,83 @@
     background: #fef2f2;
   }
 
+    
+  /* Scoreboard Table (Clean SaaS Layout) */
+  .scoreboard-scroll-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: #ffffff;
+    box-shadow: var(--shadow-sm);
+    margin-top: 8px;
+  }
+  .scoreboard-table {
+    width: 100%;
+    min-width: 820px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .scoreboard-table th {
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.5px;
+    padding: 12px 10px;
+    text-align: center;
+    border-bottom: 2px solid var(--border-subtle);
+    white-space: nowrap;
+  }
+  .scoreboard-table th:first-child { text-align: left; padding-left: 14px; }
+  .scoreboard-table th:nth-child(2) { text-align: left; }
+  
+  .scoreboard-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-main);
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .scoreboard-table td:first-child { text-align: left; padding-left: 14px; }
+  .scoreboard-table td:nth-child(2) { text-align: left; }
+  .scoreboard-table tr:hover td { background: var(--bg-subtle); }
+  .scoreboard-table tr:last-child td { border-bottom: none; }
+
+  /* Stacked Score Cell */
+  .sc-cell {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+    padding: 3px 6px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+  }
+  .sc-cell:hover {
+    background: var(--bg-subtle);
+  }
+  .sc-pct {
+    font-size: 13.5px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .sc-pct.good { color: var(--success); }
+  .sc-pct.mid { color: var(--primary); }
+  .sc-pct.zero { color: var(--text-muted); }
+  
+  .sc-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
     </style>
   </head>
   <body>
@@ -1833,96 +1910,82 @@
       // 📌 LOAD OWNER ALL-STAFF SCOREBOARD
       function loadAdminScoreboard() {
         var content = document.getElementById("adminScoreboardContent");
-        content.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Scoreboard load ho raha hai...</p>";
+        content.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px;'>Scoreboard load ho raha hai...</p>";
         google.script.run.withSuccessHandler(function(list) {
           if (!list || list.length === 0) {
             content.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Koi staff data nahi mila.</p>";
             return;
           }
-          var html = "<table class='scoreboard-table'>";
+          var html = "<div class='scoreboard-scroll-wrapper'>";
+          html += "<table class='scoreboard-table'>";
           html += "<thead><tr>";
-          html += "<th>Rank / Staff</th><th>Role</th><th>Today</th><th>Week</th><th style='color:var(--text-main);'>Month</th><th>Last Mo.</th><th>Qtr</th><th>Last Qtr</th><th style='color:var(--text-main);'>Year</th>";
+          html += "  <th>Rank / Staff</th>";
+          html += "  <th>Role</th>";
+          html += "  <th>Today</th>";
+          html += "  <th>This Week</th>";
+          html += "  <th>This Month</th>";
+          html += "  <th>Last Mo.</th>";
+          html += "  <th>Curr. Qtr</th>";
+          html += "  <th>Last Qtr</th>";
+          html += "  <th>Yearly</th>";
           html += "</tr></thead><tbody>";
 
           for (var i = 0; i < list.length; i++) {
             var s = list[i];
             var medal = (i === 0) ? "🥇 " : (i === 1 ? "🥈 " : (i === 2 ? "🥉 " : (i + 1) + ". "));
             html += "<tr>";
-            html += "<td style='font-weight:bold; color:var(--text-body);'>" + medal + s.name + "</td>";
-            html += "<td style='color:var(--text-muted);'>" + s.role + "</td>";
-            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('daily', '" + s.name + "')\">" + formatScoreCell(s.daily) + "</span></td>";
-            html += "<td><span class='score-pill-btn' onclick=\"openPointsLedger('weekly', '" + s.name + "')\">" + formatScoreCell(s.weekly) + "</span></td>";
-            html += "<td><span class='score-pill-btn' style='color:var(--text-main);' onclick=\"openPointsLedger('monthly', '" + s.name + "')\">" + formatScoreCell(s.monthly) + "</span></td>";
-            html += "<td>" + formatScoreCell(s.lastMonth) + "</td>";
-            html += "<td>" + formatScoreCell(s.currentQuarter) + "</td>";
-            html += "<td>" + formatScoreCell(s.lastQuarter) + "</td>";
-            html += "<td style='color:var(--text-main); font-weight:bold;'>" + formatScoreCell(s.yearly) + "</td>";
+            html += "  <td style='font-weight:700; color:var(--text-main);'>" + medal + s.name + "</td>";
+            html += "  <td><span style='background:var(--bg-subtle); color:var(--text-muted); font-size:10.5px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; border:1px solid var(--border-subtle);'>" + s.role + "</span></td>";
+            html += "  <td>" + formatScoreCell(s.daily, 'daily', s.name) + "</td>";
+            html += "  <td>" + formatScoreCell(s.weekly, 'weekly', s.name) + "</td>";
+            html += "  <td>" + formatScoreCell(s.monthly, 'monthly', s.name) + "</td>";
+            html += "  <td>" + formatScoreCell(s.lastMonth, 'monthly', s.name) + "</td>";
+            html += "  <td>" + formatScoreCell(s.currentQuarter, 'monthly', s.name) + "</td>";
+            html += "  <td>" + formatScoreCell(s.lastQuarter, 'monthly', s.name) + "</td>";
+            html += "  <td>" + formatScoreCell(s.yearly, 'monthly', s.name) + "</td>";
             html += "</tr>";
           }
-          html += "</tbody></table>";
+          html += "</tbody></table></div>";
           content.innerHTML = html;
         }).getAllStaffScoreboard();
       }
 
-      function renderPhotoPills(photoString) {
-        if (!photoString || photoString === "No Photo") return "";
-        var urls = photoString.split(" , ");
-        var h = "<div style='margin:6px 0; display:flex; flex-wrap:wrap; gap:6px;'>";
-        for (var u = 0; u < urls.length; u++) {
-          var cleanUrl = urls[u].replace(/=HYPERLINK\("([^"]+)".*/, "$1").trim();
-          if (!cleanUrl || cleanUrl.indexOf("http") === -1) continue;
-          var driveId = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/id=([a-zA-Z0-9_-]+)/);
-          var thumbUrl = driveId ? ("https://drive.google.com/thumbnail?id=" + driveId[1] + "&sz=w150") : "";
-          if (thumbUrl) {
-            h += "<a href='" + cleanUrl + "' target='_blank' class='ref-photo-thumb'><img src='" + thumbUrl + "' title='View Reference " + (u+1) + "'></a>";
-          } else {
-            h += "<a href='" + cleanUrl + "' target='_blank' style='background:#1f6feb; color:white; padding:4px 8px; border-radius:4px; font-size:11px; text-decoration:none;'>📷 Photo " + (u+1) + "</a>";
-          }
+      function formatScoreCell(val, period, staffName) {
+        if (!val && val !== 0) {
+          return '<div class="sc-cell"><span class="sc-pct zero">0%</span><span class="sc-sub">0 P</span></div>';
         }
-        h += "</div>";
-        return h;
-      }
-
-
-      function formatScoreBoxHtml(label, scoreObj, period, staffName, isHighlight) {
+        
         var pct = 0;
         var earned = 0;
         var max = 0;
-        if (scoreObj) {
-          if (typeof scoreObj === 'object') {
-            pct = (scoreObj.percentage !== undefined) ? scoreObj.percentage : (scoreObj.pct || 0);
-            earned = (scoreObj.earned !== undefined) ? scoreObj.earned : (scoreObj.pts || 0);
-            max = scoreObj.max || 0;
-          } else if (typeof scoreObj === 'number') {
-            pct = scoreObj;
-            earned = scoreObj;
-            max = scoreObj;
-          } else if (typeof scoreObj === 'string') {
-            var m = scoreObj.match(/(\d+)%/);
-            if (m) pct = parseInt(m[1], 10);
-            return "<div class='score-box " + (isHighlight ? "highlight" : "") + "' onclick=\"openPointsLedger('" + (period || 'daily') + "', '" + (staffName || '') + "')\" style='cursor:pointer;' title='Click to view Points Ledger'>" +
-              "<div class='score-lbl'>" + label + "</div>" +
-              "<div class='score-val'>" + scoreObj + "</div>" +
-            "</div>";
+        
+        if (typeof val === 'object') {
+          pct = (val.percentage !== undefined) ? val.percentage : (val.pct || 0);
+          earned = (val.earned !== undefined) ? val.earned : (val.pts || 0);
+          max = val.max || 0;
+        } else if (typeof val === 'string') {
+          var m = val.match(/(\d+)%\s*\(([^)]+)\)/);
+          if (m) {
+            pct = parseInt(m[1], 10);
+            var subParts = m[2].split('/');
+            earned = parseFloat(subParts[0]) || 0;
+            if (subParts.length > 1) max = parseFloat(subParts[1]) || 0;
+          } else {
+            var numOnly = parseFloat(val) || 0;
+            earned = numOnly;
+            pct = 0;
           }
         }
-        var subText = (max > 0) ? (earned + " / " + max + " P") : (earned + " P");
-        return "<div class='score-box " + (isHighlight ? "highlight" : "") + "' onclick=\"openPointsLedger('" + (period || 'daily') + "', '" + (staffName || '') + "')\" style='cursor:pointer;' title='Click to view " + label + " Points Ledger'>" +
-          "<div class='score-lbl'>" + label + "</div>" +
-          "<div class='score-val'>" + pct + "%</div>" +
-          "<div class='score-pts-sub' style='color:var(--text-main); font-size:10px; margin-top:2px; font-weight:bold;'>" + subText + "</div>" +
-        "</div>";
-      }
 
-      function formatScoreCell(val) {
-        if (!val && val !== 0) return "0% (0 P)";
-        if (typeof val === 'object') {
-          var pct = (val.percentage !== undefined) ? val.percentage : (val.pct || 0);
-          var earned = (val.earned !== undefined) ? val.earned : (val.pts || 0);
-          var max = val.max || 0;
-          return pct + "% (" + earned + (max > 0 ? "/" + max : "") + " P)";
-        }
-        return val;
+        var colorClass = pct >= 80 ? 'good' : (pct > 0 ? 'mid' : 'zero');
+        var subText = (max > 0) ? (earned + '/' + max + ' P') : (earned + ' P');
+
+        var clickAttr = (period && staffName) ? (' onclick="openPointsLedger(\'' + period + '\', \'' + encodeURIComponent(staffName) + '\')" title="Click to view points ledger"') : '';
+
+        return '<div class="sc-cell"' + clickAttr + '>' +
+               '  <span class="sc-pct ' + colorClass + '">' + pct + '%</span>' +
+               '  <span class="sc-sub">' + subText + '</span>' +
+               '</div>';
       }
 
       function fetchStaffProgress() {
