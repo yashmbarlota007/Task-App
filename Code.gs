@@ -1486,11 +1486,34 @@ function getAdhocTasksForStaff(staffName) {
 }
 
 function getStaffProgressReport(staffName) {
-  var role = getStaffRoleByName(staffName);
-  var routineTasks = getTasksForRole(role, staffName);
-  var adhocTasks = getAdhocTasksForStaff(staffName);
-  var scores = getStaffScoresBreakdown(staffName);
-  return { routine: routineTasks, adhoc: adhocTasks, role: role, scores: scores };
+  try {
+    var role = getStaffRoleByName(staffName) || "Staff";
+    var routineTasks = getTasksForRole(role, staffName) || [];
+    var adhocTasks = getAdhocTasksForStaff(staffName) || [];
+    var scores = null;
+    try {
+      scores = getStaffScoresBreakdown(staffName);
+    } catch(errScores) {
+      Logger.log("Scores calculation error for " + staffName + ": " + errScores);
+    }
+    return {
+      success: true,
+      routine: routineTasks,
+      adhoc: adhocTasks,
+      role: role,
+      scores: scores
+    };
+  } catch(e) {
+    Logger.log("getStaffProgressReport error: " + e);
+    return {
+      success: false,
+      error: e.toString(),
+      routine: [],
+      adhoc: [],
+      role: "Staff",
+      scores: null
+    };
+  }
 }
 
 function getAllAdhocHistory() {
