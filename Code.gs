@@ -296,24 +296,39 @@ function getAllStaffScoreboard() {
   var result = [];
   for (var s = 0; s < staffOrder.length; s++) {
     var raw = staffMap[staffOrder[s]];
+    
     var dailyMax = Math.max(raw.daily, 70);
     var dailyPct = Math.min(100, Math.round((raw.daily / dailyMax) * 100));
+
     var weeklyMax = Math.max(raw.weekly, 300);
     var weeklyPct = Math.min(100, Math.round((raw.weekly / weeklyMax) * 100));
+
     var monthlyMax = Math.max(raw.monthly, 1000);
     var monthlyPct = Math.min(100, Math.round((raw.monthly / monthlyMax) * 100));
+
+    var lastMoMax = Math.max(raw.lastMonth, 2100);
+    var lastMoPct = Math.min(100, Math.round((raw.lastMonth / lastMoMax) * 100));
+
+    var qtrMax = Math.max(raw.currentQuarter, 2100);
+    var qtrPct = Math.min(100, Math.round((raw.currentQuarter / qtrMax) * 100));
+
+    var lastQtrMax = Math.max(raw.lastQuarter, 6300);
+    var lastQtrPct = Math.min(100, Math.round((raw.lastQuarter / lastQtrMax) * 100));
+
+    var yrMax = Math.max(raw.yearly, 25200);
+    var yrPct = Math.min(100, Math.round((raw.yearly / yrMax) * 100));
 
     result.push({
       name: raw.name,
       role: raw.role,
-      daily: dailyPct + "% (" + raw.daily + "/" + dailyMax + " P)",
-      weekly: weeklyPct + "% (" + raw.weekly + "/" + weeklyMax + " P)",
-      monthly: monthlyPct + "% (" + raw.monthly + "/" + monthlyMax + " P)",
       rawMonthly: raw.monthly,
-      lastMonth: raw.lastMonth + " P",
-      currentQuarter: raw.currentQuarter + " P",
-      lastQuarter: raw.lastQuarter + " P",
-      yearly: raw.yearly + " P"
+      daily: { percentage: dailyPct, earned: raw.daily, max: dailyMax },
+      weekly: { percentage: weeklyPct, earned: raw.weekly, max: weeklyMax },
+      monthly: { percentage: monthlyPct, earned: raw.monthly, max: monthlyMax },
+      lastMonth: { percentage: lastMoPct, earned: raw.lastMonth, max: lastMoMax },
+      currentQuarter: { percentage: qtrPct, earned: raw.currentQuarter, max: qtrMax },
+      lastQuarter: { percentage: lastQtrPct, earned: raw.lastQuarter, max: lastQtrMax },
+      yearly: { percentage: yrPct, earned: raw.yearly, max: yrMax }
     });
   }
   result.sort(function(a, b) { return b.rawMonthly - a.rawMonthly; });
