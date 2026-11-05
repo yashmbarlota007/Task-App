@@ -1003,6 +1003,57 @@
     margin-top: 2px;
   }
 
+    
+  /* Ref Photo Thumbnails (Fixed Size & No Bleed) */
+  .photo-pills-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin: 8px 0;
+  }
+  .ref-photo-thumb {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1.5px solid var(--border-subtle);
+    background: var(--bg-subtle);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s, border-color 0.15s;
+    vertical-align: middle;
+  }
+  .ref-photo-thumb:hover {
+    transform: scale(1.05);
+    border-color: var(--primary);
+  }
+  .ref-photo-thumb img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+  }
+
+  /* History Cards (No Overlap) */
+  .history-card {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    clear: both;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .history-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+
     </style>
   </head>
   <body>
@@ -2049,26 +2100,53 @@
         }).getStaffProgressReport(cleanName);
       }
 
+      function renderPhotoPills(photoString) {
+        if (!photoString || photoString === "No Photo" || photoString.trim() === "") return "";
+        var urls = photoString.split(" , ");
+        var h = "<div class='photo-pills-row'>";
+        for (var u = 0; u < urls.length; u++) {
+          var cleanUrl = urls[u].replace(/=HYPERLINK\("([^"]+)".*/, "$1").trim();
+          if (!cleanUrl || cleanUrl.indexOf("http") === -1) continue;
+          var driveId = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/id=([a-zA-Z0-9_-]+)/);
+          var thumbUrl = driveId ? ("https://drive.google.com/thumbnail?id=" + driveId[1] + "&sz=w150") : cleanUrl;
+          
+          h += "<a href='#' onclick='openPhotoZoomDirect(\"" + encodeURIComponent(cleanUrl) + "\", \"Attachment " + (u+1) + "\"); return false;' class='ref-photo-thumb' title='View Photo " + (u+1) + "'>";
+          h += "  <img src='" + thumbUrl + "' alt='Photo " + (u+1) + "' loading='lazy' onerror=\"this.onerror=null; this.src='https://placehold.co/100x100?text=Photo';\">";
+          h += "</a>";
+        }
+        h += "</div>";
+        return h;
+      }
+
       function loadAdminHistory() {
-        document.getElementById("adminHistoryContent").innerHTML = "<p style='color:var(--text-muted); text-align:center;'>History load ho rahi hai...</p>";
+        var content = document.getElementById("adminHistoryContent");
+        content.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding:20px;'>History load ho rahi hai...</p>";
         google.script.run.withSuccessHandler(function(history) {
           var html = "";
-          if(history.length === 0) html = "<p style='text-align:center; color:var(--text-muted);'>Koi task history nahi hai.</p>";
-          else {
-             for(var i=0; i<history.length; i++) {
+          if(!history || history.length === 0) {
+            html = "<div style='text-align:center; padding:30px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); color:var(--text-muted);'><p style='margin:0;'>Koi task history nahi hai.</p></div>";
+          } else {
+             for(var i = 0; i < history.length; i++) {
                 var h = history[i];
                 var isDone = h.status.includes("Completed") || h.status.includes("Uploaded") || h.status.includes("Skipped");
-                var sColor = h.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
-                html += "<div style='background:#ffffff; padding:12px; border-radius:8px; border-left:4px solid "+sColor+"; margin-bottom:10px;'>";
-                html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:var(--text-muted);'>📅 " + h.date + "</span><span style='font-size:11px; background:#30363d; color:var(--primary); padding:2px 6px; border-radius:4px;'>" + h.freq + "</span></div>";
-                html += "<p style='margin:4px 0; font-size:14px; font-weight:bold; color:var(--text-body);'>👤 " + h.assignedTo + "</p>";
-                html += "<p style='margin:0 0 6px 0; font-size:13px; color:var(--primary);'>" + h.task + "</p>";
+                var sColor = h.status.includes("Skipped") ? "var(--danger)" : (isDone ? "var(--success)" : "var(--warning)");
+                var sBg = h.status.includes("Skipped") ? "var(--danger-light)" : (isDone ? "var(--success-light)" : "var(--warning-light)");
+
+                html += "<div class='history-card' style='border-left: 4px solid " + sColor + ";'>";
+                html += "  <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;'>";
+                html += "    <span style='font-size:11.5px; color:var(--text-muted); font-weight:600;'>📅 " + h.date + "</span>";
+                html += "    <span style='font-size:10.5px; background:var(--bg-subtle); color:var(--text-muted); border:1px solid var(--border-subtle); padding:2px 8px; border-radius:var(--radius-full); font-weight:700; text-transform:uppercase;'>" + h.freq + "</span>";
+                html += "  </div>";
+                html += "  <div style='font-size:14.5px; font-weight:800; color:var(--text-main); margin-bottom:4px;'>👤 " + h.assignedTo + "</div>";
+                html += "  <div style='font-size:13px; color:var(--text-body); font-weight:600; line-height:1.4; margin-bottom:6px; word-break:break-word;'>" + h.task + "</div>";
                 if(h.photos) html += renderPhotoPills(h.photos);
-                html += "<p style='margin:4px 0 0 0; font-size:12px; font-weight:bold; color:" + sColor + ";'>Status: " + h.status + "</p>";
+                html += "  <div style='margin-top:8px; padding-top:8px; border-top:1px solid var(--border-light); display:flex; justify-content:space-between; align-items:center;'>";
+                html += "    <span style='font-size:11.5px; font-weight:700; color:" + sColor + "; background:" + sBg + "; padding:3px 10px; border-radius:var(--radius-full);'>Status: " + h.status + "</span>";
+                html += "  </div>";
                 html += "</div>";
              }
           }
-          document.getElementById("adminHistoryContent").innerHTML = html;
+          content.innerHTML = html;
         }).getAllAdhocHistory();
       }
 
