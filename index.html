@@ -789,6 +789,143 @@
   .score-val { font-size: 16px; font-weight: 800; color: var(--text-main); }
   .score-pts-sub { font-size: 10px; color: var(--text-muted); }
 
+    
+  /* Pulse Card Interactive / Clickable */
+  .pulse-card {
+    background: #ffffff;
+    border: 1.5px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px 8px;
+    text-align: center;
+    box-shadow: var(--shadow-xs);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+  }
+  .pulse-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+  }
+  .pulse-card:active {
+    transform: translateY(0);
+  }
+  .pulse-card.active-pulse {
+    border-color: var(--primary) !important;
+    background: var(--primary-light) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+  }
+  .pulse-card.success.active-pulse {
+    border-color: var(--success) !important;
+    background: var(--success-light) !important;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25) !important;
+  }
+  .pulse-card.alert.active-pulse {
+    border-color: var(--danger) !important;
+    background: var(--danger-light) !important;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25) !important;
+  }
+  .pulse-hint {
+    font-size: 8.5px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-weight: 600;
+  }
+
+  /* Staff Radar Cards (Clean White Theme) */
+  .staff-radar-card {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+  }
+  .staff-radar-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+  .staff-radar-card.has-overdue {
+    border-left-color: var(--danger);
+    background: #fffbfa;
+  }
+  .staff-radar-card.all-done {
+    border-left-color: var(--success);
+    background: #fbfdfb;
+  }
+  .radar-progress-bg {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin: 10px 0;
+  }
+  .radar-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+  }
+  .radar-task-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--bg-page);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 6px;
+    font-size: 12.5px;
+  }
+  .btn-wa-nudge {
+    background: #25d366;
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 2px rgba(37,211,102,0.3);
+    transition: 0.15s;
+    white-space: nowrap;
+  }
+  .btn-wa-nudge:hover {
+    background: #1eb853;
+    transform: translateY(-1px);
+  }
+
+  /* Order Cockpit in Radar */
+  .ceo-order-radar-box {
+    background: #ffffff;
+    border: 1.5px solid var(--warning-border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .order-bottleneck-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-page);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .order-bottleneck-row.overdue-row {
+    border-left: 3px solid var(--danger);
+    background: #fef2f2;
+  }
+
     </style>
   </head>
   <body>
@@ -854,11 +991,31 @@
         <!-- TAB 1: OPERATIONS RADAR -->
         <div id="adminTabRadar" class="card">
           <div class="radar-pulse-bar" id="radarPulseBar">
-            <div class="pulse-card"><div class="pulse-lbl">Team Active</div><div class="pulse-val" id="pulseTotalStaff">--</div></div>
-            <div class="pulse-card"><div class="pulse-lbl">Today's Tasks</div><div class="pulse-val" id="pulseTotalTasks">--</div></div>
-            <div class="pulse-card success"><div class="pulse-lbl">Completed</div><div class="pulse-val" id="pulseCompleted">--</div></div>
-            <div class="pulse-card alert"><div class="pulse-lbl">Overdue</div><div class="pulse-val" id="pulseOverdue">--</div></div>
-            <div class="pulse-card"><div class="pulse-lbl">Efficiency</div><div class="pulse-val" id="pulseEfficiency">--%</div></div>
+            <div class="pulse-card active-pulse" id="pulseCardStaff" onclick="filterRadarView('all', this)" title="Show All Active Staff">
+              <div class="pulse-lbl">Team Active</div>
+              <div class="pulse-val" id="pulseTotalStaff">--</div>
+              <div class="pulse-hint">👆 Show All</div>
+            </div>
+            <div class="pulse-card" id="pulseCardTasks" onclick="filterRadarView('all', this)" title="Show All Staff Tasks">
+              <div class="pulse-lbl">Today's Tasks</div>
+              <div class="pulse-val" id="pulseTotalTasks">--</div>
+              <div class="pulse-hint">👆 All Tasks</div>
+            </div>
+            <div class="pulse-card success" id="pulseCardCompleted" onclick="filterRadarView('completed', this)" title="Filter Completed Staff">
+              <div class="pulse-lbl">Completed</div>
+              <div class="pulse-val" id="pulseCompleted">--</div>
+              <div class="pulse-hint">👆 100% Done</div>
+            </div>
+            <div class="pulse-card alert" id="pulseCardOverdue" onclick="filterRadarView('overdue', this)" title="Filter Overdue / Pending Staff">
+              <div class="pulse-lbl">Overdue</div>
+              <div class="pulse-val" id="pulseOverdue">--</div>
+              <div class="pulse-hint">👆 Action Needed</div>
+            </div>
+            <div class="pulse-card" id="pulseCardEfficiency" onclick="filterRadarView('efficiency', this)" title="View Complete Scoreboard">
+              <div class="pulse-lbl">Efficiency</div>
+              <div class="pulse-val" id="pulseEfficiency">--%</div>
+              <div class="pulse-hint">👆 Scoreboard ➔</div>
+            </div>
           </div>
           <div id="radarCardsContainer">
             <p style="text-align:center; color:var(--text-muted); padding:20px;">Loading Live Operations Radar...</p>
@@ -2747,133 +2904,171 @@
         }).getCeoOperationsRadar();
       }
 
-      function filterRadarView(filterType, btn) {
-        activeRadarFilter = filterType;
-        var btns = document.querySelectorAll('.radar-filter-btn');
-        btns.forEach(function(b) { b.classList.remove('active'); });
-        if (btn) btn.classList.add('active');
-        renderRadarCards();
+      var activeRadarFilter = 'all';
+var activeOrderRadarFilter = 'all';
+
+function filterRadarView(filterType, el) {
+  if (filterType === 'efficiency') {
+    switchAdminTab('Scoreboard');
+    return;
+  }
+  activeRadarFilter = filterType;
+  var topCards = document.querySelectorAll('#radarPulseBar .pulse-card');
+  for (var i = 0; i < topCards.length; i++) topCards[i].classList.remove('active-pulse');
+  if (el) el.classList.add('active-pulse');
+  renderRadarCards();
+}
+
+function filterOrderRadar(filterType, el) {
+  activeOrderRadarFilter = filterType;
+  renderRadarCards();
+}
+
+function renderRadarCards() {
+  var container = document.getElementById('radarCardsContainer');
+  if (!cachedRadarData || !cachedRadarData.staffList) {
+    container.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No staff records found.</p>';
+    return;
+  }
+
+  var orderPipe = cachedRadarData.orderPipeline;
+  var orderRadarHtml = '';
+
+  if (orderPipe) {
+    var cutoff = orderPipe.cutoff || { cutoffTime: '07:00 PM', remainingMins: 0, isPassed: false };
+    var cutoffText = cutoff.isPassed ? '⚠️ Cut-Off Passed' : (cutoff.remainingMins + 'm Left');
+
+    orderRadarHtml += '<div class="ceo-order-radar-box">';
+    orderRadarHtml += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;">';
+    orderRadarHtml += '    <div style="display:flex; align-items:center; gap:8px;">';
+    orderRadarHtml += '      <span style="font-size:20px;">🚚</span>';
+    orderRadarHtml += '      <div>';
+    orderRadarHtml += '        <div style="font-size:14.5px; font-weight:800; color:var(--text-main);">Live Order Processing Cockpit (9-Step Pipeline)</div>';
+    orderRadarHtml += '        <div style="font-size:11px; color:var(--text-muted);">Strict 1-Hour SLA & 7:00 PM Dispatch Cut-off Engine</div>';
+    orderRadarHtml += '      </div>';
+    orderRadarHtml += '    </div>';
+    orderRadarHtml += '    <span style="font-size:11px; background:var(--bg-subtle); border:1px solid #d29922; color:var(--text-main); padding:3px 10px; border-radius:12px; font-weight:bold;">Cut-off: ' + cutoff.cutoffTime + ' (' + cutoffText + ')</span>';
+    orderRadarHtml += '  </div>';
+
+    // ORDER PULSE METRICS (ALL CLICKABLE)
+    orderRadarHtml += '  <div class="radar-pulse-bar" style="margin-bottom:12px;">';
+    orderRadarHtml += '    <div class="pulse-card ' + (activeOrderRadarFilter === 'all' ? 'active-pulse' : '') + '" onclick="filterOrderRadar(\'all\', this)" title="Click to show all orders"><div class="pulse-lbl">Active Orders</div><div class="pulse-val" style="color:var(--primary);">' + orderPipe.totalActive + '</div><div class="pulse-hint">👆 Show All</div></div>';
+    orderRadarHtml += '    <div class="pulse-card success ' + (activeOrderRadarFilter === 'done' ? 'active-pulse' : '') + '" onclick="filterOrderRadar(\'done\', this)" title="Click to show completed orders"><div class="pulse-lbl">Done Today</div><div class="pulse-val" style="color:var(--success);">' + orderPipe.totalCompletedToday + '</div><div class="pulse-hint">👆 Done</div></div>';
+    orderRadarHtml += '    <div class="pulse-card alert ' + (activeOrderRadarFilter === 'overdue' ? 'active-pulse' : '') + '" onclick="filterOrderRadar(\'overdue\', this)" title="Click to show overdue orders"><div class="pulse-lbl">Overdue (>1 hr)</div><div class="pulse-val" style="color:var(--danger);">' + orderPipe.totalOverdue + '</div><div class="pulse-hint">👆 Late SLA</div></div>';
+    orderRadarHtml += '    <div class="pulse-card ' + (activeOrderRadarFilter === 'billing' ? 'active-pulse' : '') + '" onclick="filterOrderRadar(\'billing\', this)" title="Click to filter Accountant orders"><div class="pulse-lbl">In Billing (Acc)</div><div class="pulse-val">' + ((orderPipe.stageBreakdown.balanceCheck || 0) + (orderPipe.stageBreakdown.invoicing || 0)) + '</div><div class="pulse-hint">👆 Step 1 & 4</div></div>';
+    orderRadarHtml += '    <div class="pulse-card ' + (activeOrderRadarFilter === 'packing' ? 'active-pulse' : '') + '" onclick="filterOrderRadar(\'packing\', this)" title="Click to filter Store Manager orders"><div class="pulse-lbl">In Packing (Store)</div><div class="pulse-val">' + ((orderPipe.stageBreakdown.stockPicking || 0) + (orderPipe.stageBreakdown.packingDispatch || 0)) + '</div><div class="pulse-hint">👆 Step 3 & 5</div></div>';
+    orderRadarHtml += '    <div class="pulse-card ' + (activeOrderRadarFilter === 'comms' ? 'active-pulse' : '') + '" onclick="filterOrderRadar(\'comms\', this)" title="Click to filter CRM orders"><div class="pulse-lbl">In Comms (CRM)</div><div class="pulse-val">' + ((orderPipe.stageBreakdown.confirmation || 0) + (orderPipe.stageBreakdown.deliveryComms || 0) + (orderPipe.stageBreakdown.finalRating || 0)) + '</div><div class="pulse-hint">👆 Step 2 & 7</div></div>';
+    orderRadarHtml += '  </div>';
+
+    // BOTTLENECK LIST
+    if (activeOrderRadarFilter === 'done') {
+      orderRadarHtml += '  <div style="background:var(--success-light); border:1px solid var(--success-border); border-radius:var(--radius-md); padding:10px 14px; color:var(--success-text); font-weight:bold; font-size:12.5px; margin-bottom:10px;">✅ Aaj ' + orderPipe.totalCompletedToday + ' orders successfully process hokar ready ho chuke hain!</div>';
+    } else if (orderPipe.activeOrders && orderPipe.activeOrders.length > 0) {
+      var activeOrdersFiltered = orderPipe.activeOrders.filter(function(bo) {
+        if (activeOrderRadarFilter === 'overdue') return bo.isOverdue;
+        if (activeOrderRadarFilter === 'billing') return (bo.currentStageNum === 1 || bo.currentStageNum === 4);
+        if (activeOrderRadarFilter === 'packing') return (bo.currentStageNum === 3 || bo.currentStageNum === 5);
+        if (activeOrderRadarFilter === 'comms') return (bo.currentStageNum === 2 || bo.currentStageNum === 7 || bo.currentStageNum === 8);
+        return true;
+      });
+
+      if (activeOrdersFiltered.length > 0) {
+        orderRadarHtml += '  <div style="font-size:11px; font-weight:bold; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">⚠️ Active Pipeline Bottlenecks (' + activeOrdersFiltered.length + ' Orders):</div>';
+        for (var b = 0; b < Math.min(8, activeOrdersFiltered.length); b++) {
+          var bo = activeOrdersFiltered[b];
+          var isBOverdue = bo.isOverdue;
+          orderRadarHtml += '  <div class="order-bottleneck-row ' + (isBOverdue ? 'overdue-row' : '') + '">';
+          orderRadarHtml += '    <div>';
+          orderRadarHtml += '      <span style="font-size:12.5px; font-weight:bold; color:var(--text-main);">#' + bo.orderId + ' (' + bo.shopName + ')</span>';
+          orderRadarHtml += '      <span style="font-size:10.5px; color:var(--primary); margin-left:6px; background:var(--primary-light); border:1px solid var(--primary-border); padding:2px 6px; border-radius:4px;">Step ' + bo.currentStageNum + ': ' + bo.currentStageName + '</span>';
+          orderRadarHtml += '      <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Assigned: <b style="color:var(--text-main);">' + bo.assignedRole + '</b></div>';
+          orderRadarHtml += '    </div>';
+          orderRadarHtml += '    <div style="display:flex; align-items:center; gap:8px;">';
+          orderRadarHtml += '      <span style="font-size:11.5px; font-weight:bold; color:' + (isBOverdue ? 'var(--danger)' : 'var(--success)') + ';">' + (isBOverdue ? ('🔴 ' + bo.overdueMinutes + 'm late') : ('⏱️ ' + bo.remainingMinutes + 'm left')) + '</span>';
+          orderRadarHtml += '      <a href="https://wa.me/?text=' + encodeURIComponent('Urgent: Order #' + bo.orderId + ' (' + bo.shopName + ') 1-Hour SLA cross ho raha hai at Step ' + bo.currentStageNum + ' (' + bo.currentStageName + '). Please process immediately!') + '" target="_blank" class="btn-wa-nudge" style="text-decoration:none;">📲 Nudge WA</a>';
+          orderRadarHtml += '    </div>';
+          orderRadarHtml += '  </div>';
+        }
+      } else {
+        orderRadarHtml += '  <div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:10px 14px; color:var(--text-muted); font-size:12px; margin-bottom:10px;">Iss filter me koi active order pending nahi hai.</div>';
       }
+    }
+    orderRadarHtml += '</div>';
+  }
 
-      function renderRadarCards() {
-        var container = document.getElementById("radarCardsContainer");
-        if (!cachedRadarData || !cachedRadarData.staffList) {
-          container.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>No staff records found.</p>";
-          return;
-        }
+  var list = cachedRadarData.staffList;
+  var filtered = list.filter(function(s) {
+    if (activeOrderRadarFilter === 'billing') return s.role.toLowerCase().indexOf('account') !== -1;
+    if (activeOrderRadarFilter === 'packing') return (s.role.toLowerCase().indexOf('store') !== -1 || s.role.toLowerCase().indexOf('pack') !== -1);
+    if (activeOrderRadarFilter === 'comms') return (s.role.toLowerCase().indexOf('crm') !== -1 || s.role.toLowerCase().indexOf('sales') !== -1);
 
-        var orderPipe = cachedRadarData.orderPipeline;
-        var orderRadarHtml = "";
+    if (activeRadarFilter === 'overdue') return (s.overdue > 0 || (s.total > s.completed));
+    if (activeRadarFilter === 'pending') return s.pending > 0;
+    if (activeRadarFilter === 'completed') return s.total > 0 && s.completed === s.total;
+    return true;
+  });
 
-        if (orderPipe) {
-          var cutoff = orderPipe.cutoff || { cutoffTime: "07:00 PM", remainingMins: 0, isPassed: false };
-          var cutoffText = cutoff.isPassed ? "⚠️ Cut-Off Passed" : (cutoff.remainingMins + "m Left");
+  if (filtered.length === 0) {
+    var emptyMsg = '✨ Is category mein koi record nahi hai!';
+    if (activeRadarFilter === 'completed') emptyMsg = '✨ Abhi kisi staff ka 100% complete nahi hua hai - team active hai!';
+    if (activeRadarFilter === 'overdue') emptyMsg = '🎉 Great news! Koi bhi overdue task nahi hai.';
+    container.innerHTML = orderRadarHtml + '<div style="text-align:center; padding:30px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); color:var(--text-muted);"><p style="font-size:14px; margin:0 0 10px 0;">' + emptyMsg + '</p><button onclick="filterRadarView(\'all\', document.getElementById(\'pulseCardStaff\'))" class="btn-primary" style="padding:6px 14px; font-size:12px;">Show All Staff</button></div>';
+    return;
+  }
 
-          orderRadarHtml += "<div class='ceo-order-radar-box'>";
-          orderRadarHtml += "  <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;'>";
-          orderRadarHtml += "    <div style='display:flex; align-items:center; gap:8px;'>";
-          orderRadarHtml += "      <span style='font-size:20px;'>🚚</span>";
-          orderRadarHtml += "      <div>";
-          orderRadarHtml += "        <div style='font-size:14px; font-weight:bold; color:#ffffff;'>Live Order Processing Cockpit (9-Step Pipeline)</div>";
-          orderRadarHtml += "        <div style='font-size:10.5px; color:var(--text-muted);'>Strict 1-Hour SLA & 7:00 PM Dispatch Cut-off Engine</div>";
-          orderRadarHtml += "      </div>";
-          orderRadarHtml += "    </div>";
-          orderRadarHtml += "    <span style='font-size:11px; background:var(--bg-subtle); border:1px solid #d29922; color:var(--text-main); padding:3px 8px; border-radius:12px; font-weight:bold;'>Cut-off: " + cutoff.cutoffTime + " (" + cutoffText + ")</span>";
-          orderRadarHtml += "  </div>";
+  var html = '';
+  for (var i = 0; i < filtered.length; i++) {
+    var s = filtered[i];
+    var cardClass = s.overdue > 0 ? 'staff-radar-card has-overdue' : (s.completed === s.total && s.total > 0 ? 'staff-radar-card all-done' : 'staff-radar-card');
+    var progressColor = s.overdue > 0 ? 'var(--danger)' : (s.rate === 100 ? 'var(--success)' : 'var(--primary)');
 
-          // ORDER PULSE METRICS
-          orderRadarHtml += "  <div class='radar-pulse-bar' style='margin-bottom:12px;'>";
-          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>Active Orders</div><div class='pulse-val' style='color:var(--primary);'>" + orderPipe.totalActive + "</div></div>";
-          orderRadarHtml += "    <div class='pulse-card success'><div class='pulse-lbl'>Done Today</div><div class='pulse-val' style='color:#2ea043;'>" + orderPipe.totalCompletedToday + "</div></div>";
-          orderRadarHtml += "    <div class='pulse-card alert'><div class='pulse-lbl'>Overdue (>1 hr)</div><div class='pulse-val' style='color:#f85149;'>" + orderPipe.totalOverdue + "</div></div>";
-          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>In Billing (Acc)</div><div class='pulse-val'>" + ((orderPipe.stageBreakdown.balanceCheck || 0) + (orderPipe.stageBreakdown.invoicing || 0)) + "</div></div>";
-          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>In Packing (Store)</div><div class='pulse-val'>" + ((orderPipe.stageBreakdown.stockPicking || 0) + (orderPipe.stageBreakdown.packingDispatch || 0)) + "</div></div>";
-          orderRadarHtml += "    <div class='pulse-card'><div class='pulse-lbl'>In Comms (CRM)</div><div class='pulse-val'>" + ((orderPipe.stageBreakdown.confirmation || 0) + (orderPipe.stageBreakdown.deliveryComms || 0) + (orderPipe.stageBreakdown.finalRating || 0)) + "</div></div>";
-          orderRadarHtml += "  </div>";
+    var parts = s.name.trim().split(' ');
+    var initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : s.name.slice(0, 2);
 
-          // BOTTLENECK LIST (ACTIVE ORDERS)
-          if (orderPipe.activeOrders && orderPipe.activeOrders.length > 0) {
-            orderRadarHtml += "  <div style='font-size:11px; font-weight:bold; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;'>⚠️ Active Pipeline Bottlenecks (Click to Nudge Staff):</div>";
-            for (var b = 0; b < Math.min(6, orderPipe.activeOrders.length); b++) {
-              var bo = orderPipe.activeOrders[b];
-              var isBOverdue = bo.isOverdue;
-              orderRadarHtml += "  <div class='order-bottleneck-row " + (isBOverdue ? "overdue-row" : "") + "'>";
-              orderRadarHtml += "    <div>";
-              orderRadarHtml += "      <span style='font-size:12px; font-weight:bold; color:var(--text-body);'>#" + bo.orderId + " (" + bo.shopName + ")</span>";
-              orderRadarHtml += "      <span style='font-size:10px; color:var(--primary); margin-left:6px; background:var(--bg-subtle); padding:2px 6px; border-radius:4px;'>Step " + bo.currentStageNum + ": " + bo.currentStageName + "</span>";
-              orderRadarHtml += "      <div style='font-size:10px; color:var(--text-muted); margin-top:2px;'>Assigned: <b style='color:var(--text-main);'>" + bo.assignedRole + "</b></div>";
-              orderRadarHtml += "    </div>";
-              orderRadarHtml += "    <div style='display:flex; align-items:center; gap:8px;'>";
-              orderRadarHtml += "      <span style='font-size:11px; font-weight:bold; color:" + (isBOverdue ? "#f85149" : "#2ea043") + ";'>" + (isBOverdue ? ("🔴 " + bo.overdueMinutes + "m late") : ("⏱️ " + bo.remainingMinutes + "m left")) + "</span>";
-              orderRadarHtml += "      <a href='https://wa.me/?text=" + encodeURIComponent("Urgent: Order #" + bo.orderId + " (" + bo.shopName + ") 1-Hour SLA cross ho raha hai at Step " + bo.currentStageNum + " (" + bo.currentStageName + "). Please process immediately!") + "' target='_blank' style='background:#238636; color:white; font-size:10px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none;'>📲 Nudge WA</a>";
-              orderRadarHtml += "    </div>";
-              orderRadarHtml += "  </div>";
-            }
-          }
-          orderRadarHtml += "</div>";
-        }
+    html += '<div class="' + cardClass + '">';
+    html += '<div style="display:flex; justify-content:space-between; align-items:center;">';
+    html += '  <div style="display:flex; align-items:center; gap:8px;">';
+    html += '    <div style="width:32px; height:32px; border-radius:50%; background:var(--primary-light); color:var(--primary); border:1px solid var(--primary-border); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; flex-shrink:0;">' + initials.toUpperCase() + '</div>';
+    html += '    <div>';
+    html += '      <div style="color:var(--text-main); font-size:15px; font-weight:800; line-height:1.2;">👤 ' + s.name + '</div>';
+    html += '      <span style="background:var(--bg-subtle); color:var(--text-muted); font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:600; border:1px solid var(--border-subtle);">' + s.role + '</span>';
+    html += '    </div>';
+    html += '  </div>';
+    html += '  <div style="text-align:right;">';
+    html += '    <span style="font-size:12.5px; font-weight:800; color:' + progressColor + ';">' + s.completed + '/' + s.total + ' Done (' + s.rate + '%)</span>';
+    html += '  </div>';
+    html += '</div>';
 
-        var list = cachedRadarData.staffList;
-        var filtered = list.filter(function(s) {
-          if (activeRadarFilter === 'overdue') return s.overdue > 0;
-          if (activeRadarFilter === 'pending') return s.pending > 0;
-          if (activeRadarFilter === 'completed') return s.total > 0 && s.completed === s.total;
-          return true;
-        });
+    html += '<div class="radar-progress-bg"><div class="radar-progress-fill" style="width:' + s.rate + '%; background:' + progressColor + ';"></div></div>';
 
-        if (filtered.length === 0) {
-          container.innerHTML = "<div style='text-align:center; padding:25px; color:var(--text-muted);'><p style='font-size:14px; margin:0;'>✨ Is category mein koi record nahi hai!</p></div>";
-          return;
-        }
+    var pendingTasks = s.tasks.filter(function(t) { return !t.isDone; });
+    if (pendingTasks.length === 0) {
+      html += '<p style="margin:4px 0 0 0; font-size:12px; color:var(--success-text); font-weight:600;">✨ Aaj ke sabhi daily tasks complete kar liye hain!</p>';
+    } else {
+      html += '<div style="margin-top:6px;">';
+      for (var p = 0; p < pendingTasks.length; p++) {
+        var pt = pendingTasks[p];
+        var deadBadge = pt.isOverdue ? '<span style="color:var(--danger); font-weight:bold; font-size:11px;">🚨 ' + pt.overdueText + '</span>' : '<span style="color:var(--warning-text); font-size:11px;">⏰ ' + pt.deadline + '</span>';
+        var fullTitle = pt.task + (pt.subTask ? ' - ' + pt.subTask : '');
 
-        var html = "";
-        for (var i = 0; i < filtered.length; i++) {
-          var s = filtered[i];
-          var cardClass = s.overdue > 0 ? "staff-radar-card has-overdue" : (s.completed === s.total && s.total > 0 ? "staff-radar-card all-done" : "staff-radar-card");
-          var progressColor = s.overdue > 0 ? "#da3633" : (s.rate === 100 ? "#238636" : "#1f6feb");
-
-          html += "<div class='" + cardClass + "'>";
-          html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
-          html += "  <div>";
-          html += "    <b style='color:#ffffff; font-size:14px;'>👤 " + s.name + "</b>";
-          html += "    <span style='background:var(--bg-subtle); color:var(--primary); font-size:11px; padding:2px 8px; border-radius:4px; margin-left:6px; font-weight:600;'>" + s.role + "</span>";
-          html += "  </div>";
-          html += "  <div style='text-align:right;'>";
-          html += "    <span style='font-size:12px; font-weight:bold; color:" + progressColor + ";'>" + s.completed + "/" + s.total + " Done (" + s.rate + "%)</span>";
-          html += "  </div>";
-          html += "</div>";
-
-          html += "<div class='radar-progress-bg'><div class='radar-progress-fill' style='width:" + s.rate + "%; background:" + progressColor + ";'></div></div>";
-
-          // Task details
-          var pendingTasks = s.tasks.filter(function(t) { return !t.isDone; });
-          if (pendingTasks.length === 0) {
-            html += "<p style='margin:4px 0 0 0; font-size:12px; color:#3fb950;'>✨ Aaj ke sabhi daily tasks complete kar liye hain!</p>";
-          } else {
-            html += "<div style='margin-top:6px;'>";
-            for (var p = 0; p < pendingTasks.length; p++) {
-              var pt = pendingTasks[p];
-              var deadBadge = pt.isOverdue ? "<span style='color:#f85149; font-weight:bold; font-size:11px;'>🚨 " + pt.overdueText + "</span>" : "<span style='color:#e3b341; font-size:11px;'>⏰ " + pt.deadline + "</span>";
-              var fullTitle = pt.task + (pt.subTask ? " - " + pt.subTask : "");
-
-              html += "<div class='radar-task-row'>";
-              html += "  <div style='flex:1; padding-right:8px;'>";
-              html += "    <span style='color:var(--text-body);'>" + fullTitle + "</span> ";
-              html += "    <div>" + deadBadge + "</div>";
-              html += "  </div>";
-              html += "  <div>";
-              html += "    <button class='btn-wa-nudge' onclick=\"nudgeStaffOnWhatsapp('" + s.name + "', '" + (s.phone || "") + "', '" + encodeURIComponent(fullTitle) + "', '" + (pt.deadline || "Today") + "')\">📲 Nudge</button>";
-              html += "  </div>";
-              html += "</div>";
-            }
-            html += "</div>";
-          }
-
-          html += "</div>";
-        }
-
-        container.innerHTML = orderRadarHtml + html;
+        html += '<div class="radar-task-row">';
+        html += '  <div style="flex:1; padding-right:8px;">';
+        html += '    <div style="color:var(--text-main); font-weight:600; font-size:12.5px;">' + fullTitle + '</div>';
+        html += '    <div>' + deadBadge + '</div>';
+        html += '  </div>';
+        html += '  <div>';
+        html += '    <button class="btn-wa-nudge" onclick="nudgeStaffOnWhatsapp(\'' + s.name + '\', \'' + (s.phone || '') + '\', \'' + encodeURIComponent(fullTitle) + '\', \'' + (pt.deadline || 'Today') + '\')">📲 Nudge WA</button>';
+        html += '  </div>';
+        html += '</div>';
       }
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  container.innerHTML = orderRadarHtml + html;
+}
 
       function nudgeStaffOnWhatsapp(staffName, staffPhone, taskTitleEncoded, deadline) {
         var taskTitle = decodeURIComponent(taskTitleEncoded);
