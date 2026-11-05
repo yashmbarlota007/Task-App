@@ -1801,6 +1801,13 @@
 
         if (tabName === 'Radar') loadAdminRadar();
         else if (tabName === 'Scoreboard') loadAdminScoreboard();
+        else if (tabName === 'History') loadAdminHistory();
+        else if (tabName === 'Progress') {
+          var selV = document.getElementById("adminViewStaffSelect");
+          if (selV && selV.options.length <= 1) {
+            loadAdminDropdown();
+          }
+        }
       }
 
       function loadAdminDropdown() {
@@ -2039,65 +2046,131 @@
                '</div>';
       }
 
+      function formatScoreBoxHtml(label, scoreObj, period, staffName, isHighlight) {
+        var pct = 0;
+        var earned = 0;
+        var max = 0;
+        if (scoreObj) {
+          if (typeof scoreObj === 'object') {
+            pct = (scoreObj.percentage !== undefined) ? scoreObj.percentage : (scoreObj.pct || 0);
+            earned = (scoreObj.earned !== undefined) ? scoreObj.earned : (scoreObj.pts || 0);
+            max = scoreObj.max || 0;
+          } else if (typeof scoreObj === 'number') {
+            pct = scoreObj;
+            earned = scoreObj;
+            max = scoreObj;
+          } else if (typeof scoreObj === 'string') {
+            var m = scoreObj.match(/(\d+)%/);
+            if (m) pct = parseInt(m[1], 10);
+            return "<div class='score-box " + (isHighlight ? "highlight" : "") + "' onclick=\"openPointsLedger('" + (period || 'daily') + "', '" + (staffName || '') + "')\" style='cursor:pointer;' title='Click to view Points Ledger'>" +
+              "<div class='score-lbl'>" + label + "</div>" +
+              "<div class='score-val'>" + scoreObj + "</div>" +
+            "</div>";
+          }
+        }
+        var subText = (max > 0) ? (earned + " / " + max + " P") : (earned + " P");
+        return "<div class='score-box " + (isHighlight ? "highlight" : "") + "' onclick=\"openPointsLedger('" + (period || 'daily') + "', '" + (staffName || '') + "')\" style='cursor:pointer;' title='Click to view " + label + " Points Ledger'>" +
+          "<div class='score-lbl'>" + label + "</div>" +
+          "<div class='score-val'>" + pct + "%</div>" +
+          "<div class='score-pts-sub'>" + subText + "</div>" +
+        "</div>";
+      }
+
       function fetchStaffProgress() {
         var sel = document.getElementById("adminViewStaffSelect").value;
         if(!sel) { document.getElementById("staffProgressContent").innerHTML = ""; return; }
         var cleanName = sel.replace("👤 ", "").trim();
-        document.getElementById("staffProgressContent").innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Progress report nikal rahe hain...</p>";
-        google.script.run.withSuccessHandler(function(res) {
-          var html = "<div style='background:#ffffff; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #58a6ff;'>";
-          html += "<b style='color:var(--text-body); font-size:15px;'>" + cleanName + "</b> <span style='font-size:12px; color:var(--text-muted);'>(Role: " + res.role + ")</span>";
-          
-          if (res.scores) {
-            html += "<div class='score-grid' style='margin-top:10px;'>";
-            html += formatScoreBoxHtml("Today", res.scores.daily, "daily", cleanName, false);
-            html += formatScoreBoxHtml("Week", res.scores.weekly, "weekly", cleanName, false);
-            html += formatScoreBoxHtml("Month", res.scores.monthly, "monthly", cleanName, true);
-            html += formatScoreBoxHtml("Last Mo.", res.scores.lastMonth, "lastMonth", cleanName, false);
-            html += formatScoreBoxHtml("Qtr", res.scores.currentQuarter, "currentQuarter", cleanName, false);
-            html += formatScoreBoxHtml("Last Qtr", res.scores.lastQuarter, "lastQuarter", cleanName, false);
-            html += formatScoreBoxHtml("Year", res.scores.yearly, "yearly", cleanName, true);
-            html += "</div>";
-            html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:6px; margin-bottom:12px; font-size:11px;'>";
-            html += "<span style='color:var(--text-muted);'>💡 Rule: Task = 5 P Complete + 5 P On-Time (10 P total)</span>";
-            html += "<span style='color:var(--primary); cursor:pointer; font-weight:600;' onclick=\"openPointsLedger('daily', '" + cleanName + "')\">📊 Open Points Ledger ➔</span>";
-            html += "</div>";
-          }
-          html += "</div>";
+        document.getElementById("staffProgressContent").innerHTML = "<div style='color:var(--text-muted); text-align:center; padding:30px;'><div style='font-size:20px; margin-bottom:8px;'>⏳</div><b>" + cleanName + "</b> ki detailed task report nikal rahe hain...</div>";
+        
+        google.script.run
+          .withSuccessHandler(function(res) {
+            try {
+              if (!res) {
+                document.getElementById("staffProgressContent").innerHTML = "<div style='text-align:center; padding:24px; color:var(--text-muted);'>Koi data nahi mila.</div>";
+                return;
+              }
+              if (res.error) {
+                document.getElementById("staffProgressContent").innerHTML = "<div style='text-align:center; padding:24px; color:#ef4444;'>Report load karne mein error: " + res.error + "</div>";
+                return;
+              }
 
-          html += "<h4 style='color:var(--primary); margin-bottom:10px;'>📋 Routine & Assigned Tasks</h4>";
-          if(res.routine.length === 0) html += "<p style='font-size:13px; color:var(--text-muted);'>Koi routine task nahi hai.</p>";
-          for(var i=0; i<res.routine.length; i++) {
-             var st = res.routine[i];
-             var isDone = st.status.includes("Uploaded") || st.status.includes("Completed") || st.status.includes("Skipped");
-             var cColor = st.status.includes("Skipped") ? "#da3633" : (isDone ? "#2ea043" : "#e67e22");
-             html += "<div class='subtask-row' style='padding:8px; margin-bottom:6px;'>";
-             html += "<div style='display:flex; justify-content:space-between;'><span style='font-size:11px; color:var(--primary);'>[" + st.type + "]</span><span style='font-size:11px; color:var(--text-main);'>⏰ " + (st.deadline || "N/A") + "</span></div>";
-             html += "<div class='subtask-name' style='font-size:13px; margin:4px 0; " + (isDone ? "text-decoration:line-through; color:var(--text-muted);" : "") + "'>" + st.task + (st.subTask ? " - " + st.subTask : "") + "</div>";
-             if(st.refPhoto) html += renderPhotoPills(st.refPhoto);
-             html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:4px;'>";
-             html += "<div class='status-text' style='font-size:11px; color:" + cColor + "; text-align:left;'>" + st.status + "</div>";
-             if (!isDone) {
-               html += "<button class='btn-wa-nudge' onclick='nudgeStaffOnWhatsapp(\"" + cleanName + "\", \"\", \"" + encodeURIComponent(st.task + (st.subTask ? " - " + st.subTask : "")) + "\", \"" + (st.deadline || "Today") + "\")'>📲 Nudge on WA</button>";
-             }
-             html += "</div>";
-             html += "</div>";
-          }
+              var html = "<div style='background:#ffffff; padding:16px; border-radius:12px; margin-bottom:16px; border:1px solid var(--border-subtle); box-shadow:var(--shadow-xs);'>";
+              html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;'>";
+              html += "  <div><b style='color:var(--text-main); font-size:16px;'>" + cleanName + "</b> <span style='font-size:12px; color:var(--text-muted);'>(Role: " + (res.role || "Staff") + ")</span></div>";
+              html += "  <span style='font-size:11px; background:var(--bg-subtle); color:var(--text-muted); padding:3px 10px; border-radius:12px; border:1px solid var(--border-subtle); font-weight:600;'>📊 Live Inspection</span>";
+              html += "</div>";
+              
+              if (res.scores) {
+                html += "<div class='score-grid' style='margin-top:10px;'>";
+                html += formatScoreBoxHtml("Today", res.scores.daily, "daily", cleanName, true);
+                html += formatScoreBoxHtml("Week", res.scores.weekly, "weekly", cleanName, false);
+                html += formatScoreBoxHtml("Month", res.scores.monthly, "monthly", cleanName, false);
+                html += formatScoreBoxHtml("Last Mo.", res.scores.lastMonth, "lastMonth", cleanName, false);
+                html += formatScoreBoxHtml("Curr. Qtr", res.scores.currentQuarter, "currentQuarter", cleanName, false);
+                html += formatScoreBoxHtml("Last Qtr", res.scores.lastQuarter, "lastQuarter", cleanName, false);
+                html += formatScoreBoxHtml("Yearly", res.scores.yearly, "yearly", cleanName, false);
+                html += "</div>";
+                html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:11.5px;'>";
+                html += "<span style='color:var(--text-muted);'>💡 Rule: Task = 5 P Complete + 5 P On-Time (10 P total)</span>";
+                html += "<span style='color:var(--primary); cursor:pointer; font-weight:700;' onclick=\"openPointsLedger('daily', '" + cleanName + "')\">📊 Open Points Ledger ➔</span>";
+                html += "</div>";
+              }
+              html += "</div>";
 
-          html += "<h4 style='color:var(--text-main); margin-top:20px; margin-bottom:10px;'>🔔 Extra (One-Time) Tasks</h4>";
-          if(res.adhoc.length === 0) html += "<p style='font-size:13px; color:var(--text-muted);'>Inko koi extra task assign nahi hai.</p>";
-          for(var j=0; j<res.adhoc.length; j++) {
-             var at = res.adhoc[j];
-             var isDoneA = at.status.includes("Uploaded") || at.status.includes("Completed") || at.status.includes("Skipped");
-             var cColorA = at.status.includes("Skipped") ? "#da3633" : (isDoneA ? "#2ea043" : "#e67e22");
-             html += "<div class='subtask-container' style='margin-bottom:10px; border-left: 4px solid #e67e22;'>";
-             html += "<div class='subtask-name' style='font-size:13px; margin-bottom:0; " + (isDoneA ? "text-decoration:line-through; color:var(--text-muted);" : "") + "'>" + at.task + "</div>";
-             if(at.refPhoto) html += renderPhotoPills(at.refPhoto);
-             html += "<div class='status-text' style='margin-top:4px; font-size:11px; color:" + cColorA + "; text-align:left;'>" + at.status + "</div>";
-             html += "</div>";
-          }
-          document.getElementById("staffProgressContent").innerHTML = html;
-        }).getStaffProgressReport(cleanName);
+              var routineList = res.routine || [];
+              html += "<h4 style='color:var(--text-main); font-size:14px; margin-bottom:10px; font-weight:700;'>📋 Routine & Assigned Tasks (" + routineList.length + ")</h4>";
+              if(routineList.length === 0) {
+                html += "<div style='padding:14px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:8px; text-align:center; color:var(--text-muted); font-size:13px; margin-bottom:16px;'>Koi routine task nahi hai.</div>";
+              } else {
+                for(var i=0; i<routineList.length; i++) {
+                  var st = routineList[i];
+                  var stStatus = String(st.status || "Pending");
+                  var isDone = stStatus.includes("Uploaded") || stStatus.includes("Completed") || stStatus.includes("Skipped");
+                  var cColor = stStatus.includes("Skipped") ? "#ef4444" : (isDone ? "#10b981" : "#f59e0b");
+                  html += "<div class='subtask-row' style='padding:12px; margin-bottom:8px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:8px;'>";
+                  html += "<div style='display:flex; justify-content:space-between; align-items:center;'><span style='font-size:11px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:2px 8px; border-radius:4px;'>[" + (st.type || "Daily") + "]</span><span style='font-size:11.5px; color:var(--text-muted); font-weight:600;'>⏰ " + (st.deadline || "N/A") + "</span></div>";
+                  html += "<div class='subtask-name' style='font-size:13.5px; font-weight:600; margin:6px 0; " + (isDone ? "text-decoration:line-through; color:var(--text-muted);" : "color:var(--text-main);") + "'>" + (st.task || "") + (st.subTask ? " - " + st.subTask : "") + "</div>";
+                  if(st.refPhoto) html += renderPhotoPills(st.refPhoto);
+                  html += "<div style='display:flex; justify-content:space-between; align-items:center; margin-top:8px;'>";
+                  html += "<div class='status-text' style='font-size:11.5px; font-weight:700; color:" + cColor + "; text-align:left;'>" + stStatus + "</div>";
+                  if (!isDone) {
+                    html += "<button class='btn-wa-nudge' onclick='nudgeStaffOnWhatsapp(\"" + cleanName + "\", \"\", \"" + encodeURIComponent((st.task || "") + (st.subTask ? " - " + st.subTask : "")) + "\", \"" + (st.deadline || "Today") + "\")'>📲 Nudge on WA</button>";
+                  }
+                  html += "</div>";
+                  html += "</div>";
+                }
+              }
+
+              var adhocList = res.adhoc || [];
+              html += "<h4 style='color:var(--text-main); font-size:14px; margin-top:20px; margin-bottom:10px; font-weight:700;'>🔔 Extra (One-Time) Tasks (" + adhocList.length + ")</h4>";
+              if(adhocList.length === 0) {
+                html += "<div style='padding:14px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:8px; text-align:center; color:var(--text-muted); font-size:13px;'>Inko koi extra task assign nahi hai.</div>";
+              } else {
+                for(var j=0; j<adhocList.length; j++) {
+                  var at = adhocList[j];
+                  var atStatus = String(at.status || "Pending");
+                  var isDoneA = atStatus.includes("Uploaded") || atStatus.includes("Completed") || atStatus.includes("Skipped");
+                  var cColorA = atStatus.includes("Skipped") ? "#ef4444" : (isDoneA ? "#10b981" : "#f59e0b");
+                  html += "<div class='subtask-container' style='margin-bottom:10px; border-left: 4px solid #f59e0b; background:#ffffff; border:1px solid var(--border-subtle); border-left-width:4px; padding:12px; border-radius:8px;'>";
+                  html += "<div class='subtask-name' style='font-size:13.5px; font-weight:600; margin-bottom:4px; " + (isDoneA ? "text-decoration:line-through; color:var(--text-muted);" : "color:var(--text-main);") + "'>" + (at.task || "") + "</div>";
+                  if(at.deadline) html += "<div style='font-size:11px; color:var(--text-muted); margin-bottom:4px;'>⏰ " + at.deadline + "</div>";
+                  if(at.refPhoto) html += renderPhotoPills(at.refPhoto);
+                  html += "<div class='status-text' style='margin-top:6px; font-size:11.5px; font-weight:700; color:" + cColorA + "; text-align:left;'>" + atStatus + "</div>";
+                  html += "</div>";
+                }
+              }
+
+              document.getElementById("staffProgressContent").innerHTML = html;
+            } catch(renderErr) {
+              console.error("Staff progress render error:", renderErr);
+              document.getElementById("staffProgressContent").innerHTML = "<div style='color:#ef4444; padding:20px; text-align:center;'>Render error: " + renderErr.message + "</div>";
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.error("Staff progress backend error:", err);
+            document.getElementById("staffProgressContent").innerHTML = "<div style='color:#ef4444; padding:20px; text-align:center;'>Server se data laane me dikkat aayi: " + (err.message || err) + "<br><button onclick='fetchStaffProgress()' style='margin-top:10px; padding:6px 14px; border-radius:6px; background:var(--primary); color:#fff; border:none; cursor:pointer;'>Dobara Koshish Karein</button></div>";
+          })
+          .getStaffProgressReport(cleanName);
       }
 
       function renderPhotoPills(photoString) {
