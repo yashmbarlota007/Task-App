@@ -1579,8 +1579,9 @@ function parseDeadlineToDate(deadlineStr, baseDate) {
   }
 
   // Monthly Date Check (e.g., 1st, 5th of Month, 25th)
-  var dateMatch = lower.match(/(\d{1,2})(?:st|nd|rd|th)?(?:\s*of\s*month)?/i);
-  if (dateMatch && (lower.indexOf("month") !== -1 || lower.indexOf("st") !== -1 || lower.indexOf("nd") !== -1 || lower.indexOf("rd") !== -1 || lower.indexOf("th") !== -1 || !isNaN(Number(lower.split(/[,\s]/)[0])))) {
+  var strWithoutTime = lower.replace(/(\d{1,2}):(\d{2})\s*(am|pm)?/i, '').replace(/(\d{1,2})\s*(am|pm)/i, '').trim();
+  var dateMatch = strWithoutTime.match(/(\d{1,2})(?:st|nd|rd|th)?(?:\s*of\s*month)?/i);
+  if (dateMatch && (lower.indexOf("month") !== -1 || lower.indexOf("st") !== -1 || lower.indexOf("nd") !== -1 || lower.indexOf("rd") !== -1 || lower.indexOf("th") !== -1 || !isNaN(Number(strWithoutTime.split(/[,\s]/)[0])))) {
     var targetDateNum = parseInt(dateMatch[1], 10);
     if (targetDateNum >= 1 && targetDateNum <= 31) {
       var curDateNum = now.getDate();
