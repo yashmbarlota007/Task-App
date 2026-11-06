@@ -1179,7 +1179,7 @@
           <!-- Daily Slot -->
           <div id="groupDailySlot" style="margin-bottom:12px;">
             <label style="font-size:12px; font-weight:600; color:var(--text-body);">Shift Slot:</label>
-            <select id="adminDailySlot">
+            <select id="adminDailySlot" onchange="updateDeadlinePreview()">
               <option value="Morning">🌅 Morning Shift (09:00 - 11:30 AM)</option>
               <option value="Midday">☀️ Midday Shift (11:30 - 02:00 PM)</option>
               <option value="Afternoon">☕ Afternoon Shift (02:00 - 05:00 PM)</option>
@@ -1187,48 +1187,80 @@
             </select>
           </div>
 
-          <!-- Weekly Day -->
-          <div id="groupWeeklyDay" style="display:none; margin-bottom:12px; background:var(--bg-subtle); padding:10px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
-            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Select Weekday (Auto-triggers on this day):</label>
-            <select id="adminWeeklyDay">
-              <option value="Monday" selected>Monday (Har Somwar)</option>
-              <option value="Tuesday">Tuesday (Har Mangalwar)</option>
-              <option value="Wednesday">Wednesday (Har Budhwar)</option>
-              <option value="Thursday">Thursday (Har Guruwar)</option>
-              <option value="Friday">Friday (Har Shukrawar)</option>
-              <option value="Saturday">Saturday (Har Shaniwar)</option>
-              <option value="Sunday">Sunday (Har Raviwar)</option>
+          <!-- Weekly Day (Visible when Weekly Routine is selected) -->
+          <div id="groupWeeklyDay" style="display:none; margin-bottom:12px; background:var(--primary-light); padding:12px; border-radius:var(--radius-md); border:1.5px solid var(--primary-border);">
+            <label style="font-size:12.5px; font-weight:700; color:var(--primary);">📆 Select Weekday (Trigger Day):</label>
+            <select id="adminWeeklyDay" onchange="updateDeadlinePreview()" style="font-weight:600; margin-top:6px;">
+              <option value="Monday" selected>Monday (Har Somwar ko trigger)</option>
+              <option value="Tuesday">Tuesday (Har Mangalwar ko trigger)</option>
+              <option value="Wednesday">Wednesday (Har Budhwar ko trigger)</option>
+              <option value="Thursday">Thursday (Har Guruwar ko trigger)</option>
+              <option value="Friday">Friday (Har Shukrawar ko trigger)</option>
+              <option value="Saturday">Saturday (Har Shaniwar ko trigger)</option>
+              <option value="Sunday">Sunday (Har Raviwar ko trigger)</option>
             </select>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+              💡 <b>Auto-Trigger Rule:</b> Staff ke Weekly tab me rahega aur har hafte is chune hue din ko <b>🔥 Triggered Today</b> banke highlight hoga.
+            </div>
           </div>
 
-          <!-- Monthly Date -->
-          <div id="groupMonthlyDate" style="display:none; margin-bottom:12px; background:var(--bg-subtle); padding:10px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
-            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Select Date of Month (Auto-triggers on this date):</label>
-            <select id="adminMonthlyDate">
+          <!-- Monthly Date (Visible when Monthly Routine is selected) -->
+          <div id="groupMonthlyDate" style="display:none; margin-bottom:12px; background:var(--primary-light); padding:12px; border-radius:var(--radius-md); border:1.5px solid var(--primary-border);">
+            <label style="font-size:12.5px; font-weight:700; color:var(--primary);">🗓️ Select Date of Month (Trigger Date):</label>
+            <select id="adminMonthlyDate" onchange="updateDeadlinePreview()" style="font-weight:600; margin-top:6px;">
               <option value="1st of Month" selected>1st of Month (Har Mahine ki 1 Tarikh)</option>
-              <option value="2nd of Month">2nd of Month</option>
-              <option value="3rd of Month">3rd of Month</option>
-              <option value="4th of Month">4th of Month</option>
-              <option value="5th of Month">5th of Month (Salary / Rent Day)</option>
-              <option value="7th of Month">7th of Month</option>
-              <option value="10th of Month">10th of Month</option>
-              <option value="15th of Month">15th of Month (Mid-Month Review)</option>
-              <option value="20th of Month">20th of Month</option>
-              <option value="25th of Month">25th of Month</option>
+              <option value="2nd of Month">2nd of Month (2 Tarikh)</option>
+              <option value="3rd of Month">3rd of Month (3 Tarikh)</option>
+              <option value="4th of Month">4th of Month (4 Tarikh)</option>
+              <option value="5th of Month">5th of Month (5 Tarikh - Salary / Rent Day)</option>
+              <option value="6th of Month">6th of Month (6 Tarikh)</option>
+              <option value="7th of Month">7th of Month (7 Tarikh)</option>
+              <option value="8th of Month">8th of Month (8 Tarikh)</option>
+              <option value="9th of Month">9th of Month (9 Tarikh)</option>
+              <option value="10th of Month">10th of Month (10 Tarikh - Monthly GST / Billing)</option>
+              <option value="11th of Month">11th of Month (11 Tarikh)</option>
+              <option value="12th of Month">12th of Month (12 Tarikh)</option>
+              <option value="13th of Month">13th of Month (13 Tarikh)</option>
+              <option value="14th of Month">14th of Month (14 Tarikh)</option>
+              <option value="15th of Month">15th of Month (15 Tarikh - Mid-Month Review)</option>
+              <option value="16th of Month">16th of Month (16 Tarikh)</option>
+              <option value="17th of Month">17th of Month (17 Tarikh)</option>
+              <option value="18th of Month">18th of Month (18 Tarikh)</option>
+              <option value="19th of Month">19th of Month (19 Tarikh)</option>
+              <option value="20th of Month">20th of Month (20 Tarikh)</option>
+              <option value="21st of Month">21st of Month (21 Tarikh)</option>
+              <option value="22nd of Month">22nd of Month (22 Tarikh)</option>
+              <option value="23rd of Month">23rd of Month (23 Tarikh)</option>
+              <option value="24th of Month">24th of Month (24 Tarikh)</option>
+              <option value="25th of Month">25th of Month (25 Tarikh - Stock Audit)</option>
+              <option value="26th of Month">26th of Month (26 Tarikh)</option>
+              <option value="27th of Month">27th of Month (27 Tarikh)</option>
+              <option value="28th of Month">28th of Month (28 Tarikh)</option>
+              <option value="29th of Month">29th of Month (29 Tarikh)</option>
+              <option value="30th of Month">30th of Month (30 Tarikh)</option>
+              <option value="31st of Month">31st of Month (31 Tarikh)</option>
               <option value="Last Day of Month">Last Day of Month (Month-End Wrap Up)</option>
             </select>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+              💡 <b>Auto-Trigger Rule:</b> Staff ke Monthly tab me rahega aur har mahine is tarikh ko <b>🔥 Triggered Today</b> banke highlight hoga.
+            </div>
           </div>
 
-          <!-- Recurring Time -->
+          <!-- Recurring Time (For Daily, Weekly, and Monthly) -->
           <div id="groupRecurringTime" style="margin-bottom:12px;">
-            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Deadline Time (24h/12h):</label>
-            <input type="time" id="adminRecurringTime" value="19:00">
+            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Deadline Time (Kis samay tak complete hona chahiye):</label>
+            <input type="time" id="adminRecurringTime" value="19:00" onchange="updateDeadlinePreview()">
           </div>
 
-          <!-- One-Time Deadline -->
-          <div id="groupOneTimeDeadline" style="display:none; margin-bottom:12px;">
-            <label style="font-size:12px; font-weight:600; color:var(--text-body);">Task Deadline (Date & Time):</label>
-            <input type="datetime-local" id="adminAdhocDeadline">
+          <!-- One-Time Deadline (For Extra One-Time Task) -->
+          <div id="groupOneTimeDeadline" style="display:none; margin-bottom:12px; background:var(--bg-subtle); padding:12px; border-radius:var(--radius-md); border:1.5px solid var(--border-subtle);">
+            <label style="font-size:12px; font-weight:600; color:var(--text-body);">One-Time Task Deadline (Date & Time):</label>
+            <input type="datetime-local" id="adminAdhocDeadline" onchange="updateDeadlinePreview()">
+          </div>
+
+          <!-- Dynamic Live Deadline Preview Badge -->
+          <div id="deadlinePreviewBadge" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:var(--radius-md); padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:var(--text-main);">
+            📅 <b>Daily Routine:</b> Har roz 07:00 PM (Closing Shift)
           </div>
 
           <label style="font-size:12px; font-weight:600; color:var(--text-body);">Task Title:</label>
@@ -1831,7 +1863,7 @@
         return d.toLocaleString('en-US', options).replace(/\s*GMT.*/i, '').trim();
       }
 
-      // 📌 SEND ADHOC WITH MULTIPLE PHOTOS
+      // 📌 SEND ASSIGNED TASK WITH DAY / DATE DEADLINE & MULTIPLE PHOTOS
       function onTaskFrequencyChange() {
         var freq = document.getElementById("adminTaskFrequency").value;
         var gDaily = document.getElementById("groupDailySlot");
@@ -1846,16 +1878,17 @@
         if (gRecTime) gRecTime.style.display = "block";
         if (gOneTime) gOneTime.style.display = "none";
 
-        if (freq === "Daily Task") {
+        if (freq.indexOf("Daily") !== -1) {
           if (gDaily) gDaily.style.display = "block";
-        } else if (freq === "Weekly Task") {
+        } else if (freq.indexOf("Weekly") !== -1) {
           if (gWeekly) gWeekly.style.display = "block";
-        } else if (freq === "Monthly Task") {
+        } else if (freq.indexOf("Monthly") !== -1) {
           if (gMonthly) gMonthly.style.display = "block";
-        } else if (freq === "Extra (One Time)") {
+        } else if (freq.indexOf("One-Time") !== -1 || freq.indexOf("Extra") !== -1) {
           if (gRecTime) gRecTime.style.display = "none";
           if (gOneTime) gOneTime.style.display = "block";
         }
+        updateDeadlinePreview();
       }
 
       function formatTime24to12(timeStr) {
@@ -1867,6 +1900,30 @@
         h = h % 12;
         if (h === 0) h = 12;
         return (h < 10 ? '0' + h : h) + ':' + m + ' ' + ampm;
+      }
+
+      function updateDeadlinePreview() {
+        var previewEl = document.getElementById("deadlinePreviewBadge");
+        if (!previewEl) return;
+        var freq = document.getElementById("adminTaskFrequency") ? document.getElementById("adminTaskFrequency").value : "Daily";
+        var recTime = document.getElementById("adminRecurringTime") ? document.getElementById("adminRecurringTime").value : "19:00";
+        var time12 = formatTime24to12(recTime);
+        var text = "";
+
+        if (freq.indexOf("Daily") !== -1) {
+          var slot = document.getElementById("adminDailySlot") ? document.getElementById("adminDailySlot").value : "Closing";
+          text = "📅 <b>Daily Routine Deadline:</b> " + time12 + " (" + slot + " Shift) &bull; <i>Har Roz staff portal me show hoga</i>";
+        } else if (freq.indexOf("Weekly") !== -1) {
+          var day = document.getElementById("adminWeeklyDay") ? document.getElementById("adminWeeklyDay").value : "Monday";
+          text = "📆 <b>Weekly Routine Deadline:</b> <u>" + day + ", " + time12 + "</u> &bull; <i>Har " + day + " ko 🔥 Triggered Today banke open hoga</i>";
+        } else if (freq.indexOf("Monthly") !== -1) {
+          var dateVal = document.getElementById("adminMonthlyDate") ? document.getElementById("adminMonthlyDate").value : "1st of Month";
+          text = "🗓️ <b>Monthly Routine Deadline:</b> <u>" + dateVal + ", " + time12 + "</u> &bull; <i>Har Mahine is date ko 🔥 Triggered Today banke open hoga</i>";
+        } else {
+          var dt = document.getElementById("adminAdhocDeadline") ? document.getElementById("adminAdhocDeadline").value : "";
+          text = dt ? ("⚡ <b>One-Time Task Deadline:</b> " + formatDateTimeLocal(dt) + " &bull; <i>Urgent task notification</i>") : "⚡ <b>One-Time Task Deadline:</b> Jald se Jald (ASAP)";
+        }
+        previewEl.innerHTML = text;
       }
 
       function getOrdinalSuffix(n) {
@@ -1891,26 +1948,25 @@
         var deadlineStr = "";
         var timeSlot = "closing";
 
-        if (freqVal === "Daily Task") {
+        if (freqVal.indexOf("Daily") !== -1) {
           var recTime = document.getElementById("adminRecurringTime").value || "19:00";
           var time12 = formatTime24to12(recTime);
           timeSlot = document.getElementById("adminDailySlot").value || "closing";
           deadlineStr = time12;
-        } else if (freqVal === "Weekly Task") {
+        } else if (freqVal.indexOf("Weekly") !== -1) {
           var dayVal = document.getElementById("adminWeeklyDay").value || "Monday";
           var recTime = document.getElementById("adminRecurringTime").value || "18:00";
           var time12 = formatTime24to12(recTime);
           deadlineStr = dayVal + ", " + time12;
           timeSlot = "closing";
           if (!subDesc) subDesc = "Scheduled: Har " + dayVal + " (Weekly)";
-        } else if (freqVal === "Monthly Task") {
-          var dateNum = parseInt(document.getElementById("adminMonthlyDate").value, 10) || 1;
-          var suffix = getOrdinalSuffix(dateNum);
+        } else if (freqVal.indexOf("Monthly") !== -1) {
+          var dateVal = document.getElementById("adminMonthlyDate").value || "1st of Month";
           var recTime = document.getElementById("adminRecurringTime").value || "19:00";
           var time12 = formatTime24to12(recTime);
-          deadlineStr = suffix + " of Month, " + time12;
+          deadlineStr = dateVal + ", " + time12;
           timeSlot = "closing";
-          if (!subDesc) subDesc = "Scheduled: Har Mahine ki " + suffix + " Taareekh";
+          if (!subDesc) subDesc = "Scheduled: Har Mahine ki " + dateVal;
         } else {
           // Extra (One Time)
           var rawDeadline = document.getElementById("adminAdhocDeadline").value;
@@ -2551,9 +2607,14 @@
         if (freq.indexOf("monthly") !== -1) {
           var curDate = now.getDate();
           var targetDate = 1;
-          var dateMatch = str.match(/(\d{1,2})(?:st|nd|rd|th)?/i);
+          var strWithoutTime = str.replace(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i, '')
+                                  .replace(/(\d{1,2})\s*(AM|PM)/i, '').trim();
+          var dateMatch = strWithoutTime.match(/(\d{1,2})(?:st|nd|rd|th)?/i);
           if (dateMatch) {
             targetDate = parseInt(dateMatch[1], 10);
+          } else {
+            var explicitDate = str.match(/(\d{1,2})(?:st|nd|rd|th)/i);
+            if (explicitDate) targetDate = parseInt(explicitDate[1], 10);
           }
           if (targetDate < 1) targetDate = 1;
           if (targetDate > 31) targetDate = 31;
