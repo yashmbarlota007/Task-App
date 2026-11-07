@@ -1054,7 +1054,158 @@
     border-color: var(--border-strong);
   }
 
-    </style>
+    
+  /* 🔔 LIVE COMPLETED TASKS FEED STYLES */
+  .ceo-completed-feed-box {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .live-pulse-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    background: var(--success-light);
+    color: var(--success-text);
+    border: 1px solid var(--success-border);
+  }
+  .live-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    display: inline-block;
+    animation: liveBlink 1.5s infinite ease-in-out;
+  }
+  @keyframes liveBlink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.85); }
+  }
+  .feed-filter-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .feed-filter-pill {
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    font-size: 11.5px;
+    font-weight: 600;
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+  .feed-filter-pill:hover {
+    border-color: var(--primary-border);
+    color: var(--primary);
+  }
+  .feed-filter-pill.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+  }
+  .feed-item-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: #ffffff;
+    margin-bottom: 8px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .feed-item-card:hover {
+    border-color: var(--primary-border);
+    box-shadow: var(--shadow-sm);
+  }
+  .feed-staff-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid var(--primary-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .feed-photo-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .feed-photo-thumb:hover {
+    transform: scale(1.08);
+    border-color: var(--primary);
+  }
+  .notif-bell-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
+  }
+  .notif-count-badge {
+    background: var(--danger);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+  }
+  .toast-notification {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-modal);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+</style>
   </head>
   <body>
     <div class="container">
@@ -1099,7 +1250,10 @@
               </span>
             </div>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button onclick="focusCompletedFeed()" class="btn-outline notif-bell-btn" id="ceoNotifBellBtn" title="Live Completed Tasks Feed (Today)">
+              🔔 <span id="ceoNotifCount" class="notif-count-badge" style="display:none;">0</span>
+            </button>
             <button onclick="loadAdminRadar()" class="btn-outline" style="padding: 6px 12px; font-size: 12px;" title="Refresh Radar">
               🔄 Radar
             </button>
@@ -3044,6 +3198,7 @@
           t.status = res.status;
           updatePointsUI(res.pointsEarned);
           renderStaffContent();
+          showStaffSubmittedModal(t, res);
         }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, t.type, t.task, t.subTask, t.deadline, null, null, null, isAdhoc, adhocRow, "Complete");
       }
 
@@ -3054,6 +3209,7 @@
           t.status = res.status;
           updatePointsUI(res.pointsEarned);
           renderStaffContent();
+          showStaffSubmittedModal(t, res);
         }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", t.task, "", t.deadline, null, null, null, true, t.index, "Complete");
       }
 
@@ -3122,13 +3278,13 @@
             uploadBtn.innerText = "Submitting..."; uploadBtn.disabled = true;
             if (selectedTaskObj && selectedTaskObj.isAdhocModal) {
               google.script.run.withSuccessHandler(function(res) {
-                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent();
+                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
               }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, base64Data, file.type, file.name, true, selectedTaskObj.index, "Capture");
             } else {
               var isAdhoc = selectedTaskObj.isAdhocAssigned ? true : false;
               var adhocRow = selectedTaskObj.adhocRowIndex ? selectedTaskObj.adhocRowIndex - 1 : null;
               google.script.run.withSuccessHandler(function(res) {
-                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent();
+                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
               }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, base64Data, file.type, file.name, isAdhoc, adhocRow, "Capture");
             }
           };
@@ -3155,6 +3311,209 @@
       // 📡 PHASE 2: CEO LIVE OPERATIONS RADAR LOGIC
       // =====================================================================
       var cachedRadarData = null;
+
+      // =====================================================================
+      // 🔔 CEO LIVE COMPLETED TASKS FEED LOGIC & REAL-TIME STREAM
+      // =====================================================================
+      var activeFeedFilter = 'all';
+      var radarAutoRefreshTimer = null;
+      var lastCompletionsCount = -1;
+
+      function focusCompletedFeed() {
+        switchAdminTab('Radar');
+        setTimeout(function() {
+          var el = document.getElementById('ceoCompletedFeedSection');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.4)';
+            setTimeout(function() { el.style.boxShadow = 'var(--shadow-sm)'; }, 2000);
+          }
+        }, 150);
+      }
+
+      function filterCompletedFeed(filterType) {
+        activeFeedFilter = filterType;
+        renderRadarCards();
+      }
+
+      function renderCompletedFeedHtml(completions) {
+        if (!completions) completions = [];
+        var total = completions.length;
+        var photoCount = completions.filter(function(c) { return c.hasPhoto; }).length;
+        var onTimeCount = completions.filter(function(c) { return c.isOnTime; }).length;
+
+        var filteredCompletions = completions.filter(function(c) {
+          if (activeFeedFilter === 'photo') return c.hasPhoto;
+          if (activeFeedFilter === 'ontime') return c.isOnTime;
+          return true;
+        });
+
+        var html = '<div class="ceo-completed-feed-box" id="ceoCompletedFeedSection">';
+        html += '  <div class="feed-header">';
+        html += '    <div style="display:flex; align-items:center; gap:8px;">';
+        html += '      <span style="font-size:22px;">🔔</span>';
+        html += '      <div>';
+        html += '        <div style="font-size:15px; font-weight:800; color:var(--text-main);">Live Completed Tasks Feed (Today)</div>';
+        html += '        <div style="font-size:11px; color:var(--text-muted);">Real-time stream of all staff task completions, proof photos & points</div>';
+        html += '      </div>';
+        html += '    </div>';
+        html += '    <div style="display:flex; align-items:center; gap:8px;">';
+        html += '      <span class="live-pulse-badge"><span class="live-pulse-dot"></span> ' + total + ' Completed</span>';
+        html += '      <button onclick="loadAdminRadar()" class="feed-filter-pill" style="cursor:pointer;" title="Refresh Feed">🔄 Check Live</button>';
+        html += '    </div>';
+        html += '  </div>';
+
+        html += '  <div class="feed-filter-bar">';
+        html += '    <button class="feed-filter-pill ' + (activeFeedFilter === 'all' ? 'active' : '') + '" onclick="filterCompletedFeed(\'all\')">All Submissions (' + total + ')</button>';
+        html += '    <button class="feed-filter-pill ' + (activeFeedFilter === 'photo' ? 'active' : '') + '" onclick="filterCompletedFeed(\'photo\')">📷 With Photo Proof (' + photoCount + ')</button>';
+        html += '    <button class="feed-filter-pill ' + (activeFeedFilter === 'ontime' ? 'active' : '') + '" onclick="filterCompletedFeed(\'ontime\')">⚡ On-Time (+10 Pts) (' + onTimeCount + ')</button>';
+        html += '  </div>';
+
+        if (filteredCompletions.length === 0) {
+          html += '  <div style="background:var(--bg-subtle); border:1px dashed var(--border-subtle); border-radius:var(--radius-md); padding:20px; text-align:center; color:var(--text-muted); font-size:12.5px;">';
+          html += '    ✨ Aaj abhi tak koi task is category me submit nahi hua hai. Jaise hi koi staff task submit karega, yahan live notification aayegi!';
+          html += '  </div>';
+        } else {
+          html += '  <div style="max-height: 400px; overflow-y: auto; padding-right: 4px;">';
+          for (var i = 0; i < filteredCompletions.length; i++) {
+            var c = filteredCompletions[i];
+            var parts = c.staffName.trim().split(' ');
+            var initials = parts.length > 1 ? (parts[0][0] + parts[parts.length - 1][0]) : c.staffName.slice(0, 2);
+            var badgeHtml = c.isOnTime 
+              ? '<span style="background:var(--success-light); color:var(--success-text); border:1px solid var(--success-border); font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">✅ On-Time (+10 Pts)</span>'
+              : '<span style="background:var(--warning-light); color:var(--warning-text); border:1px solid var(--warning-border); font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:12px;">⚠️ Late (+5 Pts)</span>';
+            
+            var photoHtml = '';
+            if (c.photoUrl) {
+              var cleanImgUrl = c.photoUrl;
+              var driveMatch = cleanImgUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || cleanImgUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+              var thumbSrc = driveMatch ? ('https://lh3.googleusercontent.com/d/' + driveMatch[1] + '=w200') : cleanImgUrl;
+              photoHtml = '<div style="position:relative;" title="Click to view full photo">' +
+                '<img src="' + thumbSrc + '" class="feed-photo-thumb" onclick="openPhotoZoomDirect(\'' + encodeURIComponent(c.photoUrl) + '\', \'' + encodeURIComponent(c.staffName + ' - ' + c.task) + '\')" onerror="this.onerror=null; this.src=\'' + c.photoUrl + '\'">' +
+                '<span style="position:absolute; bottom:2px; right:2px; background:rgba(15,23,42,0.7); color:#fff; font-size:9px; border-radius:3px; padding:1px 3px;">🔍</span>' +
+                '</div>';
+            } else {
+              photoHtml = '<span style="background:var(--bg-subtle); color:var(--text-muted); border:1px solid var(--border-subtle); font-size:10px; font-weight:600; padding:4px 8px; border-radius:6px; white-space:nowrap;">✓ Direct Check</span>';
+            }
+
+            html += '  <div class="feed-item-card">';
+            html += '    <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">';
+            html += '      <div class="feed-staff-avatar">' + initials.toUpperCase() + '</div>';
+            html += '      <div style="flex:1; min-width:0;">';
+            html += '        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">';
+            html += '          <span style="font-weight:800; font-size:13.5px; color:var(--text-main);">👤 ' + c.staffName + '</span>';
+            html += '          <span style="background:var(--bg-subtle); color:var(--text-muted); font-size:10px; padding:1px 6px; border-radius:4px; font-weight:600; border:1px solid var(--border-subtle);">' + c.role + '</span>';
+            html += '          <span style="color:var(--text-muted); font-size:11px; font-weight:500;">⏱️ ' + c.timeDisplay + '</span>';
+            html += '        </div>';
+            html += '        <div style="font-size:12.5px; font-weight:600; color:var(--text-main); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + c.task + '">' + c.task + (c.subTask ? ' <span style="font-weight:normal; color:var(--text-muted);">(' + c.subTask + ')</span>' : '') + '</div>';
+            html += '        <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">';
+            html += '          <span style="font-size:10px; font-weight:bold; color:var(--primary); background:var(--primary-light); border:1px solid var(--primary-border); padding:1px 6px; border-radius:4px;">' + (c.taskType || 'Daily') + '</span>';
+            html += '          ' + badgeHtml;
+            html += '        </div>';
+            html += '      </div>';
+            html += '    </div>';
+            html += '    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">';
+            html += '      ' + photoHtml;
+            html += '    </div>';
+            html += '  </div>';
+          }
+          html += '  </div>';
+        }
+
+        html += '</div>';
+        return html;
+      }
+
+      function updateCeoNotifBadge(count) {
+        var b = document.getElementById('ceoNotifCount');
+        if (b) {
+          b.innerText = count || 0;
+          b.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+      }
+
+      function showCeoCompletionNotificationToast(item) {
+        var toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = '<span>🔔 <b>' + item.staffName + ' (' + item.role + ')</b> ne task complete kiya: <i>' + item.task + '</i> (+' + item.points + ' Pts)</span><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#fff; font-size:16px; cursor:pointer; margin-left:8px;">✕</button>';
+        document.body.appendChild(toast);
+        setTimeout(function() { if (toast.parentElement) toast.remove(); }, 6000);
+      }
+
+      function startRadarAutoRefresh() {
+        if (radarAutoRefreshTimer) clearInterval(radarAutoRefreshTimer);
+        radarAutoRefreshTimer = setInterval(function() {
+          var activeTab = document.getElementById('adminTabRadar');
+          if (!activeTab || activeTab.classList.contains('hidden')) return;
+
+          google.script.run.withSuccessHandler(function(radar) {
+            if (!radar || !radar.pulse) return;
+            cachedRadarData = radar;
+            document.getElementById("pulseTotalStaff").innerText = radar.pulse.totalStaff;
+            document.getElementById("pulseTotalTasks").innerText = radar.pulse.totalTasksDue;
+            document.getElementById("pulseCompleted").innerText = radar.pulse.totalCompleted;
+            document.getElementById("pulseOverdue").innerText = radar.pulse.totalOverdue;
+            document.getElementById("pulseEfficiency").innerText = radar.pulse.executionRate + "%";
+
+            var completions = radar.recentCompletions || [];
+            updateCeoNotifBadge(completions.length);
+
+            if (lastCompletionsCount !== -1 && completions.length > lastCompletionsCount) {
+              var newest = completions[0];
+              showCeoCompletionNotificationToast(newest);
+            }
+            lastCompletionsCount = completions.length;
+            renderRadarCards();
+          }).getCeoOperationsRadar();
+        }, 30000);
+      }
+
+      function stopRadarAutoRefresh() {
+        if (radarAutoRefreshTimer) {
+          clearInterval(radarAutoRefreshTimer);
+          radarAutoRefreshTimer = null;
+        }
+      }
+
+      // =====================================================================
+      // 📱 STAFF CONFIRMATION MODAL WITH WHATSAPP TO CEO
+      // =====================================================================
+      function showStaffSubmittedModal(taskObj, res) {
+        var pts = res && res.pointsEarned ? res.pointsEarned : 10;
+        var ceoPhone = (res && res.ceoPhone) ? res.ceoPhone.toString().replace(/[^0-9]/g, '') : '';
+        var ceoName = (res && res.ceoName) ? res.ceoName : 'Yash Barlota';
+        var tName = (taskObj && taskObj.task) ? taskObj.task : 'Assigned Task';
+        var sub = (taskObj && taskObj.subTask) ? (' - ' + taskObj.subTask) : '';
+
+        var msg = 'Hello ' + ceoName + ' Sir,\nMaine task complete kar diya hai:\n📋 Task: ' + tName + sub + '\n⏱️ Time: ' + (res.submitTime || 'Now') + '\n🏆 Points: +' + pts + ' Pts\nStatus: Verified ✅';
+        var waUrl = ceoPhone ? ('https://wa.me/' + (ceoPhone.startsWith('91') ? ceoPhone : ('91' + ceoPhone)) + '?text=' + encodeURIComponent(msg)) : ('https://wa.me/?text=' + encodeURIComponent(msg));
+
+        var modalHtml = '<div id="staffSubmittedModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:99999; padding:16px;">' +
+          '<div style="background:#ffffff; border-radius:16px; max-width:400px; width:100%; padding:22px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation:slideUp 0.25s ease;">' +
+            '<div style="width:52px; height:52px; border-radius:50%; background:var(--success-light); color:var(--success); border:1px solid var(--success-border); display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 12px auto;">✓</div>' +
+            '<h3 style="margin:0 0 6px 0; color:var(--text-main); font-size:18px; font-weight:800;">Task Completed!</h3>' +
+            '<p style="margin:0 0 14px 0; font-size:13px; color:var(--text-muted); line-height:1.4;">' +
+              'Aapka submission record ho gaya hai (<b>+' + pts + ' Points</b>).<br>' +
+              '<span style="color:var(--success-text); font-weight:600;">CEO Yash Barlota ko live notification & email bhej diya gaya hai.</span>' +
+            '</p>' +
+            '<div style="display:flex; flex-direction:column; gap:8px;">' +
+              '<a href="' + waUrl + '" target="_blank" class="btn-primary" style="text-decoration:none; display:inline-block; padding:10px 16px; font-size:13px; font-weight:bold; background:#16a34a; border-color:#16a34a;">' +
+                '📲 Send WhatsApp Update to CEO' +
+              '</a>' +
+              '<button onclick="document.getElementById(\'staffSubmittedModal\').remove()" class="btn-outline" style="padding:8px 16px; font-size:12.5px;">' +
+                'Close / Theek Hai' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+
+        var existing = document.getElementById('staffSubmittedModal');
+        if (existing) existing.remove();
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = modalHtml;
+        document.body.appendChild(wrapper.firstChild);
+      }
+  
       var activeRadarFilter = 'all';
 
       function loadAdminRadar() {
@@ -3174,6 +3533,11 @@
           document.getElementById("pulseCompleted").innerText = radar.pulse.totalCompleted;
           document.getElementById("pulseOverdue").innerText = radar.pulse.totalOverdue;
           document.getElementById("pulseEfficiency").innerText = radar.pulse.executionRate + "%";
+
+          var completions = radar.recentCompletions || [];
+          updateCeoNotifBadge(completions.length);
+          lastCompletionsCount = completions.length;
+          startRadarAutoRefresh();
 
           renderRadarCards();
         }).getCeoOperationsRadar();
@@ -3287,7 +3651,8 @@ function renderRadarCards() {
     var emptyMsg = '✨ Is category mein koi record nahi hai!';
     if (activeRadarFilter === 'completed') emptyMsg = '✨ Abhi kisi staff ka 100% complete nahi hua hai - team active hai!';
     if (activeRadarFilter === 'overdue') emptyMsg = '🎉 Great news! Koi bhi overdue task nahi hai.';
-    container.innerHTML = orderRadarHtml + '<div style="text-align:center; padding:30px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); color:var(--text-muted);"><p style="font-size:14px; margin:0 0 10px 0;">' + emptyMsg + '</p><button onclick="filterRadarView(\'all\', document.getElementById(\'pulseCardStaff\'))" class="btn-primary" style="padding:6px 14px; font-size:12px;">Show All Staff</button></div>';
+    var feedHtml = renderCompletedFeedHtml(cachedRadarData.recentCompletions || []);
+    container.innerHTML = orderRadarHtml + feedHtml + '<div style="text-align:center; padding:30px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); color:var(--text-muted);"><p style="font-size:14px; margin:0 0 10px 0;">' + emptyMsg + '</p><button onclick="filterRadarView(\'all\', document.getElementById(\'pulseCardStaff\'))" class="btn-primary" style="padding:6px 14px; font-size:12px;">Show All Staff</button></div>';
     return;
   }
 
@@ -3342,7 +3707,8 @@ function renderRadarCards() {
     html += '</div>';
   }
 
-  container.innerHTML = orderRadarHtml + html;
+  var feedHtml = renderCompletedFeedHtml(cachedRadarData.recentCompletions || []);
+  container.innerHTML = orderRadarHtml + feedHtml + html;
 }
 
       function nudgeStaffOnWhatsapp(staffName, staffPhone, taskTitleEncoded, deadline) {
