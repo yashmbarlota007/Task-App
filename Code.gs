@@ -1,13 +1,10 @@
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('Index');
-  if (e && e.parameter && e.parameter.empId) {
-    template.empId = e.parameter.empId;
-    template.portalEmpId = e.parameter.empId;
-    template.role = e.parameter.role;
-  } else {
-    template.empId = "";
-    template.role = "";
-  }
+  var empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
+  var role = (e && e.parameter && e.parameter.role) ? e.parameter.role : "";
+  template.empId = empId;
+  template.portalEmpId = empId;
+  template.role = role;
   return template.evaluate()
       .setTitle('Yash Marketing ERP & Task Manager')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
