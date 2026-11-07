@@ -1614,6 +1614,136 @@ function isTaskOnTime(deadlineStr, submitDateObj) {
   } catch(e) { return true; }
 }
 
+// =====================================================================
+// 📌 CEO CONTACT & NOTIFICATION CONFIGURATION
+// =====================================================================
+function getCeoContactInfo() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ceo = {
+    name: "Yash Barlota",
+    email: "",
+    phone: ""
+  };
+
+  try {
+    var masterSheet = ss.getSheetByName("staff master");
+    if (masterSheet) {
+      var data = masterSheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        var row = data[i];
+        var name = row[1] ? row[1].toString().trim() : "";
+        var role = row[5] ? row[5].toString().trim() : (row[4] ? row[4].toString().trim() : "");
+        var phone = row[2] ? row[2].toString().trim() : "";
+        
+        var rLow = role.toLowerCase();
+        var nLow = name.toLowerCase();
+        if (rLow === "owner" || rLow === "ceo" || rLow === "admin" || nLow.indexOf("yash") !== -1 || nLow.indexOf("barlota") !== -1) {
+          if (name) ceo.name = name;
+          if (phone) ceo.phone = phone;
+          
+          for (var c = 0; c < row.length; c++) {
+            var val = row[c] ? row[c].toString().trim() : "";
+            if (val.indexOf("@") !== -1 && val.indexOf(".") !== -1) {
+              ceo.email = val;
+              break;
+            }
+          }
+          break;
+        }
+      }
+    }
+  } catch(e) {
+    Logger.log("getCeoContactInfo error: " + e);
+  }
+
+  // Fallback to active/effective Google Script user email
+  if (!ceo.email) {
+    try {
+      var eff = Session.getEffectiveUser().getEmail();
+      if (eff && eff.indexOf("@") !== -1) ceo.email = eff;
+    } catch(e) {}
+  }
+  if (!ceo.email) {
+    try {
+      var act = Session.getActiveUser().getEmail();
+      if (act && act.indexOf("@") !== -1) ceo.email = act;
+    } catch(e) {}
+  }
+
+  return ceo;
+}
+
+// =====================================================================
+// 📌 CEO LIVE COMPLETED TASKS FEED (TODAY'S ACTIVITY STREAM)
+// =====================================================================
+function getCeoCompletedTasksFeed(limit) {
+  limit = limit || 50;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Task_Submissions");
+  if (!sheet || sheet.getLastRow() <= 1) return [];
+
+  var data = sheet.getDataRange().getValues();
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  var todayStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+  var list = [];
+  var fallbackList = [];
+
+  for (var i = data.length - 1; i >= 1; i--) {
+    var rawDate = data[i][0];
+    if (!rawDate) continue;
+    var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
+    if (isNaN(subDate.getTime())) continue;
+
+    var dateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
+    var isToday = (dateStr === todayStr);
+
+    var staffName = data[i][1] ? data[i][1].toString().trim() : "Staff";
+    var role = data[i][2] ? data[i][2].toString().trim() : "Staff";
+    var taskType = data[i][3] ? data[i][3].toString().trim() : "Daily";
+    var task = data[i][4] ? data[i][4].toString().trim() : "";
+    var subTask = data[i][5] ? data[i][5].toString().trim() : "";
+    var deadline = data[i][6] ? data[i][6].toString().trim() : "";
+    var submitTime = data[i][7] ? data[i][7].toString().trim() : Utilities.formatDate(subDate, tz, "hh:mm a");
+    var status = data[i][8] ? data[i][8].toString().trim() : "";
+    var rawLink = data[i][9] ? data[i][9].toString().trim() : "";
+    var points = parseFloat(data[i][10]) || 0;
+
+    var photoUrl = "";
+    if (rawLink) {
+      var match = rawLink.match(/=HYPERLINK\("([^"]+)"/i) || rawLink.match(/(https?:\/\/[^\s",)]+)/i);
+      if (match) photoUrl = match[1];
+    }
+
+    var item = {
+      submitTimestamp: Utilities.formatDate(subDate, tz, "yyyy-MM-dd HH:mm:ss"),
+      timeDisplay: (isToday ? "" : Utilities.formatDate(subDate, tz, "dd-MMM ") ) + submitTime,
+      isToday: isToday,
+      staffName: staffName,
+      role: role,
+      taskType: taskType,
+      task: task,
+      subTask: subTask,
+      deadline: deadline,
+      status: status,
+      points: points,
+      isOnTime: (points >= 10),
+      isSkipped: (status.toLowerCase().indexOf("skip") !== -1),
+      photoUrl: photoUrl,
+      hasPhoto: Boolean(photoUrl)
+    };
+
+    if (isToday) {
+      list.push(item);
+      if (list.length >= limit) break;
+    } else if (fallbackList.length < 15) {
+      fallbackList.push(item);
+    }
+  }
+
+  return list.length > 0 ? list : fallbackList;
+}
+
 function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadline, base64Data, mimeType, fileName, isAdhoc, adhocIndex, actionType) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var now = new Date();
@@ -1624,6 +1754,7 @@ function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadl
   var statusPrefix = "Uploaded ✅";
   var hyperlinkFormula = "No Image";
   var pointsEarned = 0; 
+  var fileUrl = "";
 
   if (actionType === "Skip" || actionType === true) {
       statusPrefix = "Skipped ⏭️"; hyperlinkFormula = "Skipped (No Photo)"; pointsEarned = 0; 
@@ -1637,14 +1768,16 @@ function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadl
       var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName);
       var file = folder.createFile(blob);
       try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch(e){}
-      hyperlinkFormula = '=HYPERLINK("' + file.getUrl() + '", "📷 View Photo")';
+      fileUrl = file.getUrl();
+      hyperlinkFormula = '=HYPERLINK("' + fileUrl + '", "📷 View Photo")';
       statusPrefix = "Uploaded ✅";
     } catch(e) {}
   }
 
+  var onTime = false;
   if (actionType !== "Skip" && actionType !== true) {
     pointsEarned = 5; 
-    if (isTaskOnTime(deadline, now)) { pointsEarned += 5; }
+    if (isTaskOnTime(deadline, now)) { pointsEarned += 5; onTime = true; }
   }
 
   var finalStatusDisplay = statusPrefix + " (" + dateStr + " " + submitTimeString + ")";
@@ -1661,7 +1794,73 @@ function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadl
   }
   
   sheet.appendRow([fullDateTime, staffName, role, taskType, taskName, subTask, deadline, submitTimeString, finalStatusDisplay, hyperlinkFormula, pointsEarned]);
-  return { success: true, submitTime: submitTimeString, status: finalStatusDisplay, pointsEarned: pointsEarned };
+
+  // 🔔 NOTIFY CEO (Yash Barlota) VIA BACKGROUND EMAIL
+  var ceo = getCeoContactInfo();
+  if (actionType !== "Skip" && actionType !== true) {
+    try {
+      var recipientEmails = [];
+      if (ceo && ceo.email && ceo.email.indexOf("@") !== -1) recipientEmails.push(ceo.email);
+      var effEmail = Session.getEffectiveUser().getEmail();
+      if (effEmail && effEmail.indexOf("@") !== -1 && recipientEmails.indexOf(effEmail) === -1) {
+        recipientEmails.push(effEmail);
+      }
+
+      if (recipientEmails.length > 0) {
+        var onTimeBadge = onTime ? "<span style='color:#16a34a; font-weight:bold;'>✅ On-Time (+10 Pts)</span>" : "<span style='color:#d97706; font-weight:bold;'>⚠️ Completed Late (+5 Pts)</span>";
+        var photoBox = fileUrl ? 
+          ("<div style='margin-top:14px; padding:12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; text-align:center;'>" +
+           "<a href='" + fileUrl + "' target='_blank' style='display:inline-block; padding:9px 18px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:6px; font-weight:bold; font-size:13px;'>📷 View Uploaded Proof Photo</a>" +
+           "</div>") : 
+          ("<div style='margin-top:10px; color:#64748b; font-size:12px;'>✓ Direct Completion (Checklist verified)</div>");
+
+        var subject = "🔔 Task Completed: " + staffName + " (" + role + ") - " + taskName;
+        var htmlBody = "<div style='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; max-width:540px; margin:0 auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);'>" +
+          "<div style='background:#0f172a; padding:16px 20px; color:#ffffff;'>" +
+            "<div style='font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#94a3b8; font-weight:bold;'>Yash Marketing ERP • Task Completion Alert</div>" +
+            "<div style='font-size:18px; font-weight:bold; margin-top:4px;'>Task Completed By Staff ✅</div>" +
+          "</div>" +
+          "<div style='padding:20px;'>" +
+            "<div style='margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #f1f5f9;'>" +
+              "<div style='font-size:16px; font-weight:bold; color:#0f172a;'>👤 " + staffName + " <span style='font-size:12px; color:#64748b; font-weight:normal;'>(" + role + ")</span></div>" +
+            "</div>" +
+            "<table style='width:100%; border-collapse:collapse; font-size:13px; line-height:1.7;'>" +
+              "<tr><td style='color:#64748b; padding:4px 0; width:110px;'>📋 Task:</td><td style='color:#0f172a; font-weight:bold; padding:4px 0;'>" + taskName + (subTask ? " <span style='font-weight:normal; color:#475569;'>(" + subTask + ")</span>" : "") + "</td></tr>" +
+              "<tr><td style='color:#64748b; padding:4px 0;'>🏷️ Type:</td><td style='color:#0f172a; padding:4px 0;'>" + (taskType || "Daily") + "</td></tr>" +
+              "<tr><td style='color:#64748b; padding:4px 0;'>⏰ Deadline:</td><td style='color:#0f172a; padding:4px 0;'>" + (deadline || "Today") + "</td></tr>" +
+              "<tr><td style='color:#64748b; padding:4px 0;'>⏱️ Submit Time:</td><td style='color:#0f172a; font-weight:bold; padding:4px 0;'>" + submitTimeString + "</td></tr>" +
+              "<tr><td style='color:#64748b; padding:4px 0;'>🏆 Status:</td><td style='padding:4px 0;'>" + onTimeBadge + "</td></tr>" +
+            "</table>" +
+            photoBox +
+            "<div style='margin-top:20px; text-align:center; border-top:1px solid #f1f5f9; padding-top:14px;'>" +
+              "<a href='https://yash-marketing-master-app.vercel.app/' target='_blank' style='display:inline-block; padding:10px 20px; background:#0f172a; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:bold; font-size:13px;'>Open CEO Operations Radar 🚀</a>" +
+            "</div>" +
+          "</div>" +
+        "</div>";
+
+        MailApp.sendEmail({
+          to: recipientEmails.join(","),
+          subject: subject,
+          htmlBody: htmlBody
+        });
+      }
+    } catch(mailErr) {
+      Logger.log("Email notification error (non-fatal): " + mailErr);
+    }
+  }
+
+  return {
+    success: true,
+    submitTime: submitTimeString,
+    status: finalStatusDisplay,
+    pointsEarned: pointsEarned,
+    isOnTime: onTime,
+    taskName: taskName,
+    staffName: staffName,
+    fileUrl: fileUrl,
+    ceoPhone: ceo ? ceo.phone : "",
+    ceoName: ceo ? ceo.name : "Yash Barlota"
+  };
 }
 
 function setupPermissions() { DriveApp.getRootFolder(); }
@@ -1744,7 +1943,7 @@ function getCeoOperationsRadar() {
 
     for (var t = 0; t < tasks.length; t++) {
       var item = tasks[t];
-      if (item.type !== "Daily") continue;
+      if (item.type && item.type !== "Daily" && item.type !== "Weekly" && item.type !== "Monthly") continue;
 
       var isDone = item.status && (item.status.indexOf("Uploaded") !== -1 || item.status.indexOf("Completed") !== -1 || item.status.indexOf("Skipped") !== -1);
       var isOverdue = false;
@@ -1848,7 +2047,9 @@ function getCeoOperationsRadar() {
       cutoff: orderData.cutoff,
       stageBreakdown: stageBreakdown,
       activeOrders: activeOrders.slice(0, 30)
-    }
+    },
+    recentCompletions: getCeoCompletedTasksFeed(50),
+    ceoContact: getCeoContactInfo()
   };
 }
 
