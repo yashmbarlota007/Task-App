@@ -1872,7 +1872,7 @@
       var currentActiveTab = 'Daily';
       var selectedTaskObj = null; 
       var urlParams = new URLSearchParams(window.location.search);
-      var passedEmpId = "<?= portalEmpId ?>";
+      var passedEmpId = "<?= (typeof portalEmpId !== 'undefined') ? portalEmpId : '' ?>";
       if ((!passedEmpId || passedEmpId.includes("<%=")) && urlParams.has("empId")) passedEmpId = urlParams.get("empId");
 
       window.onload = function() {
