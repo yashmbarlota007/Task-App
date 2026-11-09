@@ -103,14 +103,36 @@ function formatTimeFriendly(val) {
   try {
     if (!val) return "";
     if (val instanceof Date) {
-      if (val.getFullYear() === 1899 || val.getFullYear() === 1970) {
-        return Utilities.formatDate(val, Session.getScriptTimeZone(), "hh:mm a"); 
+      if (val.getFullYear() <= 1970) {
+        var h = val.getHours();
+        var m = val.getMinutes();
+        var ampm = h >= 12 ? "PM" : "AM";
+        var h12 = h % 12;
+        if (h12 === 0) h12 = 12;
+        var hStr = (h12 < 10 ? "0" : "") + h12;
+        var mStr = (m < 10 ? "0" : "") + m;
+        return hStr + ":" + mStr + " " + ampm;
       } else {
         return Utilities.formatDate(val, Session.getScriptTimeZone(), "dd MMM, hh:mm a");
       }
     }
-    return val.toString().replace(/\s*GMT.*/i, '').trim();
-  } catch(e) { return val.toString().replace(/\s*GMT.*/i, '').trim(); }
+    var str = val.toString().replace(/\s*GMT.*/i, "").trim();
+    var timeMatch = str.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i);
+    if (timeMatch && !timeMatch[3]) {
+      var rawH = parseInt(timeMatch[1], 10);
+      var rawM = parseInt(timeMatch[2], 10);
+      if (!isNaN(rawH) && !isNaN(rawM) && rawH < 24 && rawM < 60) {
+        var a = rawH >= 12 ? "PM" : "AM";
+        var hh = rawH % 12;
+        if (hh === 0) hh = 12;
+        var hhStr = (hh < 10 ? "0" : "") + hh;
+        var mmStr = (rawM < 10 ? "0" : "") + rawM;
+        var convertedTime = hhStr + ":" + mmStr + " " + a;
+        return str.replace(timeMatch[0], convertedTime);
+      }
+    }
+    return str;
+  } catch(e) { return (val || "").toString().replace(/\s*GMT.*/i, "").trim(); }
 }
 
 // 📌 7-PERIOD SCORE CALCULATION
