@@ -2825,6 +2825,14 @@
           var ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : "";
           if (ampm === "PM" && hrs < 12) hrs += 12;
           if (ampm === "AM" && hrs === 12) hrs = 0;
+        } else {
+          var simpleHourMatch = lower.match(/(\d{1,2})\s*(am|pm)/i);
+          if (simpleHourMatch) {
+            hrs = parseInt(simpleHourMatch[1], 10);
+            var shAmpm = simpleHourMatch[2].toUpperCase();
+            if (shAmpm === "PM" && hrs < 12) hrs += 12;
+            if (shAmpm === "AM" && hrs === 12) hrs = 0;
+          }
         }
 
         // Weekly Day Check
@@ -2840,19 +2848,22 @@
           }
         }
 
-        // Monthly Date Check
-        var dateMatch = lower.match(/(\d{1,2})(?:st|nd|rd|th)?(?:\s*of\s*month)?/i);
-        if (dateMatch && (lower.indexOf("month") !== -1 || lower.indexOf("st") !== -1 || lower.indexOf("nd") !== -1 || lower.indexOf("rd") !== -1 || lower.indexOf("th") !== -1 || !isNaN(Number(lower.split(/[,\s]/)[0])))) {
-          var targetDateNum = parseInt(dateMatch[1], 10);
-          if (targetDateNum >= 1 && targetDateNum <= 31) {
-            var curDateNum = now.getDate();
-            var targetMonth = now.getMonth();
-            var targetYear = now.getFullYear();
-            if (curDateNum > targetDateNum) {
-              targetMonth++;
-              if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+        // Monthly Date Check (Explicit monthly indicator required)
+        var isExplicitMonthly = lower.indexOf("month") !== -1 || lower.indexOf("mahina") !== -1 || /\b\d{1,2}(st|nd|rd|th)\b/i.test(lower);
+        if (isExplicitMonthly) {
+          var dateMatch = lower.match(/(\d{1,2})(?:st|nd|rd|th)?(?:\s*of\s*month)?/i);
+          if (dateMatch) {
+            var targetDateNum = parseInt(dateMatch[1], 10);
+            if (targetDateNum >= 1 && targetDateNum <= 31) {
+              var curDateNum = now.getDate();
+              var targetMonth = now.getMonth();
+              var targetYear = now.getFullYear();
+              if (curDateNum > targetDateNum) {
+                targetMonth++;
+                if (targetMonth > 11) { targetMonth = 0; targetYear++; }
+              }
+              return new Date(targetYear, targetMonth, targetDateNum, hrs, mins, 0);
             }
-            return new Date(targetYear, targetMonth, targetDateNum, hrs, mins, 0);
           }
         }
 
@@ -2865,8 +2876,7 @@
         return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hrs, mins, 0);
       }
 
-
-      function renderStaffContent() {
+function renderStaffContent() {
         var isOwner = (loggedInUser.role.toLowerCase().trim() === "ceo" || loggedInUser.role.toLowerCase().trim() === "owner" || loggedInUser.role.toLowerCase().trim() === "admin");
         
         var counts = { Daily: {t:0, d:0}, Weekly: {t:0, d:0, dueToday:0, doneToday:0}, Monthly: {t:0, d:0, dueToday:0, doneToday:0} };
@@ -3103,9 +3113,9 @@
             var isDueToday = sched.isDueToday;
             html += "<div style='background:var(--bg-page); padding:10px; border-radius:8px; margin: 10px 0; border:1px solid " + (isDueToday && !isAllDone ? "#2ea043" : "#30363d") + ";'>";
             var scheduleBadge = sched.badgeHtml;
-            html += "<p style='margin:0; font-size:12px; color:var(--text-main);'>" + scheduleBadge + "⏰ <b>Deadline:</b> " + rawDeadRoutine;
-            html += " <span class='live-timer' data-deadline='" + rawDeadRoutine + "' data-completed='" + isAllDone + "'></span>";
-            html += " <span style='float:right;'>🎯 10 Pts</span></p>";
+            html += "<p style='margin:0; font-size:12px; color:var(--text-main); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;'>";
+            html += "<span>" + scheduleBadge + " <span class='live-timer' data-deadline='" + sched.time + "' data-completed='" + isAllDone + "'></span></span>";
+            html += "<span style='font-weight:700; color:var(--primary); font-size:11px;'>🎯 10 Pts</span></p>";
             html += "</div>";
 
             if(firstTask.refPhoto) html += renderPhotoPills(firstTask.refPhoto);
