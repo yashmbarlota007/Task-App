@@ -1880,6 +1880,16 @@
           document.getElementById('empId').value = passedEmpId;
           document.getElementById('empPass').value = "SSO_BYPASS";
           loginUser();
+        } else {
+          try {
+            var savedId = localStorage.getItem('taskApp_empId');
+            var savedPass = localStorage.getItem('taskApp_empPass');
+            if (savedId && savedPass) {
+              document.getElementById('empId').value = savedId;
+              document.getElementById('empPass').value = savedPass;
+              loginUser();
+            }
+          } catch(e) {}
         }
       };
 
@@ -1892,6 +1902,10 @@
         google.script.run.withSuccessHandler(function(res) {
           if(res.success) {
             loggedInUser = { name: res.name, role: res.role };
+            try {
+              localStorage.setItem('taskApp_empId', id);
+              localStorage.setItem('taskApp_empPass', pass);
+            } catch(e) {}
             document.getElementById("loginScreen").classList.add("hidden");
             var roleClean = res.role.toLowerCase().trim();
             if (roleClean === "ceo" || roleClean === "owner" || roleClean === "admin") {
@@ -1956,6 +1970,7 @@
       }
 
       function logout() {
+        try { localStorage.removeItem('taskApp_empId'); localStorage.removeItem('taskApp_empPass'); } catch(e) {}
         loggedInUser = null;
         var orderTab = document.getElementById("orderTabBtn");
         if (orderTab) orderTab.remove();
@@ -3075,15 +3090,14 @@
               if (!matchesSlot) continue;
             }
 
-            html += "<div class='task-card'>";
+            var isAllDone = group.every(function(x) { return x.data.status.includes("Uploaded") || x.data.status.includes("Completed") || x.data.status.includes("Skipped"); });
+            html += "<div class='task-card " + (isAllDone ? "all-done-card" : "") + "'>";
             html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
-            html += "<h3 style='margin:0; font-size:15px; color:var(--primary);'>📌 " + mainTask + "</h3>";
+            html += "<div style='display:flex; align-items:center; gap:6px;'><h3 style='margin:0; font-size:15px; color:var(--primary);'>📌 " + mainTask + "</h3>" + (isAllDone ? "<span style='background:var(--success-light); color:var(--success-text); border:1px solid var(--success-border); font-size:10.5px; padding:2px 8px; border-radius:12px; font-weight:bold;'>✓ Completed</span>" : "") + "</div>";
             if (firstTask.timeSlot) {
               html += "<span style='font-size:10px; background:#1f6feb; color:white; padding:2px 8px; border-radius:10px; text-transform:uppercase; font-weight:bold;'>" + firstTask.timeSlot + "</span>";
             }
             html += "</div>";
-            
-            var isAllDone = group.every(function(x) { return x.data.status.includes("Uploaded") || x.data.status.includes("Completed") || x.data.status.includes("Skipped"); });
             var rawDeadRoutine = firstTask.deadline || "N/A";
             var sched = parseRoutineSchedule(rawDeadRoutine, currentActiveTab);
             var isDueToday = sched.isDueToday;
