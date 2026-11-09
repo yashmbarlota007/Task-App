@@ -891,6 +891,156 @@ function getTasksForRole(role, staffName) {
   return taskList;
 }
 
+
+// =====================================================================
+// 📌 SYNC ROUTINE TASK LIST WITH LIVE SUBMISSIONS
+// Matches Daily (today), Weekly (this week), Monthly (this month) tasks
+// Ensures submitted tasks STAY COMPLETED upon page refresh!
+// =====================================================================
+function syncTaskListWithSubmissions(taskList, staffName) {
+  if (!taskList || taskList.length === 0 || !staffName) return taskList;
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var subSheet = ss.getSheetByName("Task_Submissions");
+    if (!subSheet || subSheet.getLastRow() <= 1) return taskList;
+
+    var subData = subSheet.getDataRange().getValues();
+    var tz = Session.getScriptTimeZone();
+    var now = new Date();
+    var todayStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+    var todayDateStr = Utilities.formatDate(now, tz, "dd-MMM");
+
+    var dayOfWeek = now.getDay();
+    var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+    var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
+
+    var currYear = now.getFullYear();
+    var currMonth = now.getMonth();
+
+    var sClean = staffName.toString().trim().toLowerCase();
+
+    var dailySubmissions = {};
+    var weeklySubmissions = {};
+    var monthlySubmissions = {};
+
+    function cleanTaskKey(str) {
+      return (str || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    for (var i = subData.length - 1; i >= 1; i--) {
+      var rowStaff = subData[i][1] ? subData[i][1].toString().trim().toLowerCase() : "";
+      if (!rowStaff) continue;
+
+      var isStaffMatch = (rowStaff === sClean || rowStaff.replace(/\s+/g, '') === sClean.replace(/\s+/g, '') || rowStaff.includes(sClean) || sClean.includes(rowStaff));
+      if (!isStaffMatch) continue;
+
+      var rawDate = subData[i][0];
+      if (!rawDate) continue;
+      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
+      if (isNaN(subDate.getTime())) {
+        if (typeof rawDate === "string") {
+          var dMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (dMatch) {
+            subDate = new Date(parseInt(dMatch[1], 10), parseInt(dMatch[2], 10) - 1, parseInt(dMatch[3], 10));
+          }
+        }
+      }
+      if (isNaN(subDate.getTime())) continue;
+
+      var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
+      var status = subData[i][8] ? subData[i][8].toString().trim() : "";
+      var isToday = (subDateStr === todayStr) || (status.indexOf(todayDateStr) !== -1);
+      var isThisWeek = (subDate >= startOfWeek);
+      var isThisMonth = (subDate.getFullYear() === currYear && subDate.getMonth() === currMonth);
+
+      var isDoneStatus = (status.indexOf("Uploaded") !== -1 || status.indexOf("Completed") !== -1 || status.indexOf("Skipped") !== -1);
+      if (!isDoneStatus) continue;
+
+      var subTask = subData[i][4] ? subData[i][4].toString().trim() : "";
+      var subSubTask = subData[i][5] ? subData[i][5].toString().trim() : "";
+      var rawLink = subData[i][9] ? subData[i][9].toString().trim() : "";
+      var submitTime = subData[i][7] ? subData[i][7].toString().trim() : "";
+
+      var photoUrl = "";
+      if (rawLink) {
+        var m = rawLink.match(/=HYPERLINK\("([^"]+)"/i) || rawLink.match(/(https?:\/\/[^\s",)]+)/i);
+        if (m) photoUrl = m[1];
+      }
+
+      var subEntry = {
+        status: status,
+        photoUrl: photoUrl,
+        submitTime: submitTime,
+        date: subDateStr
+      };
+
+      var cTask = cleanTaskKey(subTask.replace(/^\[assigned\]\s*/i, ''));
+      var cSub = cleanTaskKey(subSubTask);
+
+      var kExact = cTask + "__" + cSub;
+      var kTaskOnly = cTask + "__";
+      var kBothSame = cTask + "__" + cTask;
+      var kSubOnly = "__" + cSub;
+
+      function storeInMap(mapObj) {
+        if (!mapObj[kExact]) mapObj[kExact] = subEntry;
+        if (!cSub || cSub === cTask) {
+          if (!mapObj[kTaskOnly]) mapObj[kTaskOnly] = subEntry;
+          if (!mapObj[kBothSame]) mapObj[kBothSame] = subEntry;
+        } else {
+          if (!mapObj[kSubOnly]) mapObj[kSubOnly] = subEntry;
+        }
+      }
+
+      if (isToday) storeInMap(dailySubmissions);
+      if (isThisWeek) storeInMap(weeklySubmissions);
+      if (isThisMonth) storeInMap(monthlySubmissions);
+    }
+
+    for (var t = 0; t < taskList.length; t++) {
+      var item = taskList[t];
+      var type = (item.type || "Daily").toLowerCase();
+
+      var targetMap = dailySubmissions;
+      if (type.indexOf("week") !== -1) targetMap = weeklySubmissions;
+      else if (type.indexOf("month") !== -1) targetMap = monthlySubmissions;
+
+      var itemTask = cleanTaskKey((item.task || "").replace(/^\[assigned\]\s*/i, ''));
+      var itemSub = cleanTaskKey(item.subTask);
+
+      var hasDistinctSub = itemSub && itemSub !== itemTask && itemSub !== "actionrequired";
+
+      var mExact = itemTask + "__" + itemSub;
+      var mBothSame = itemTask + "__" + itemTask;
+      var mTaskOnly = itemTask + "__";
+      var mSubOnly = "__" + itemSub;
+
+      var matched = targetMap[mExact];
+      if (!matched && hasDistinctSub) {
+        matched = targetMap[mSubOnly];
+      }
+      if (!matched && !hasDistinctSub) {
+        matched = targetMap[mBothSame] || targetMap[mTaskOnly];
+      }
+
+      if (matched) {
+        item.status = matched.status;
+        item.isDone = true;
+        if (matched.photoUrl) item.proofUrl = matched.photoUrl;
+        if (matched.submitTime) item.submitTime = matched.submitTime;
+      }
+    }
+  } catch(e) {
+    Logger.log("syncTaskListWithSubmissions error: " + e);
+  }
+
+  // 6. SYNCHRONIZE WITH LIVE SUBMISSIONS (TODAY FOR DAILY, THIS WEEK FOR WEEKLY, THIS MONTH FOR MONTHLY)
+  syncTaskListWithSubmissions(taskList, staffName);
+
+  return taskList;
+}
+
 // =====================================================================
 // 📌 SETUP STAFF TASK SHEETS AUTO-CREATOR (CAN BE CALLED FROM APP OR ADMIN)
 // Creates a clean, beautifully formatted 14-column task table for any staff
@@ -1791,6 +1941,7 @@ function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadl
   }
   
   sheet.appendRow([fullDateTime, staffName, role, taskType, taskName, subTask, deadline, submitTimeString, finalStatusDisplay, hyperlinkFormula, pointsEarned]);
+  SpreadsheetApp.flush();
 
   // 🔔 NOTIFY CEO (Yash Barlota) VIA BACKGROUND EMAIL
   var ceo = getCeoContactInfo();
