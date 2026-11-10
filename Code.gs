@@ -1,4 +1,59 @@
 function doGet(e) {
+  // One-time auto cleanup for misclassified one-time tasks
+  if (e && e.parameter && e.parameter.cleanup === 'oneTime') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var adhocSh = ss.getSheetByName('Adhoc_Tasks');
+    var updatedAdhoc = 0;
+    if (adhocSh && adhocSh.getLastRow() > 1) {
+      var aData = adhocSh.getDataRange().getValues();
+      for (var r = 1; r < aData.length; r++) {
+        var desc = String(aData[r][2] || "").trim().toLowerCase();
+        var freq = String(aData[r][6] || "").trim().toLowerCase();
+        var isOneTimeMisclassified = (
+          desc.includes("time nahi dikh raha") ||
+          desc.includes("jo staff ko nikal diya") ||
+          desc.includes("task ke timming me problem") ||
+          desc.includes("task descending order me dikhna") ||
+          desc.includes("photos and videos upload karo website") ||
+          desc.includes("images not uploaded") ||
+          desc.includes("weekly and monthly task day and and date missing") ||
+          desc.includes("dealer app check karo")
+        );
+        if (isOneTimeMisclassified) {
+          adhocSh.getRange(r + 1, 7).setValue("Extra (One Time)");
+          if (String(aData[r][4] || "").includes("Permanent Sheet Added")) {
+            adhocSh.getRange(r + 1, 5).setValue("Pending ⏳");
+          }
+          updatedAdhoc++;
+        }
+      }
+    }
+
+    // Clean up Shubham Bade sheet
+    var sbSh = ss.getSheetByName('Shubham Bade');
+    var deletedSbRows = 0;
+    if (sbSh && sbSh.getLastRow() > 1) {
+      var sbData = sbSh.getDataRange().getValues();
+      for (var s = sbData.length - 1; s >= 1; s--) {
+        var sTask = String(sbData[s][1] || "").trim().toLowerCase();
+        var sSub = String(sbData[s][2] || "").trim().toLowerCase();
+        var isMisclassified = (
+          sTask.includes("time nahi dikh raha") || sSub.includes("time nahi dikh raha") ||
+          sTask.includes("jo staff ko nikal diya") || sSub.includes("jo staff ko nikal diya") ||
+          sTask.includes("task ke timming me problem") || sSub.includes("task ke timming me problem") ||
+          sTask.includes("task descending order me dikhna") || sSub.includes("task descending order me dikhna") ||
+          sTask.includes("photos and videos upload karo website") || sSub.includes("photos and videos upload karo website") ||
+          sTask.includes("dealer app check karo") || sSub.includes("dealer app check karo")
+        );
+        if (isMisclassified) {
+          sbSh.deleteRow(s + 1);
+          deletedSbRows++;
+        }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: true, updatedAdhoc: updatedAdhoc, deletedSbRows: deletedSbRows })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   var template = HtmlService.createTemplateFromFile('Index');
   var empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
   var role = (e && e.parameter && e.parameter.role) ? e.parameter.role : "";
@@ -881,10 +936,11 @@ function getTasksForRole(role, staffName) {
 
       if (!isMatch) continue;
 
+      var aFLower = aFreq.toLowerCase().replace(/[-_]/g, " ").trim();
       var fType = "";
-      if (aFreq.toLowerCase().includes("daily")) fType = "Daily";
-      else if (aFreq.toLowerCase().includes("weekly")) fType = "Weekly";
-      else if (aFreq.toLowerCase().includes("monthly")) fType = "Monthly";
+      if (aFLower.includes("daily") && !aFLower.includes("extra") && !aFLower.includes("one time") && !aFLower.includes("adhoc")) fType = "Daily";
+      else if (aFLower.includes("weekly") && !aFLower.includes("extra") && !aFLower.includes("one time") && !aFLower.includes("adhoc")) fType = "Weekly";
+      else if (aFLower.includes("monthly") && !aFLower.includes("extra") && !aFLower.includes("one time") && !aFLower.includes("adhoc")) fType = "Monthly";
 
       if (fType !== "") {
         var metaA = getSmartRoleDefaults(roleClean, aDesc, aFreq);
@@ -1501,14 +1557,13 @@ function assignTaskPermanently(assigneeInfo, taskTypeVal, taskName, subTask, dea
   }
   var photoLinksString = photoUrls.length > 0 ? photoUrls.join(" , ") : "No Photo";
 
-  var freqClean = "Daily";
-  var tLower = (taskTypeVal || "").toLowerCase();
-  if (tLower.includes("daily")) freqClean = "Daily";
+    var tLower = (taskTypeVal || "").toLowerCase().replace(/[-_]/g, " ").trim();
+  var freqClean = "Extra (One Time)";
+  if (tLower.includes("daily") && !tLower.includes("one time") && !tLower.includes("extra") && !tLower.includes("adhoc")) freqClean = "Daily";
   else if (tLower.includes("weekly")) freqClean = "Weekly";
   else if (tLower.includes("monthly")) freqClean = "Monthly";
-  else if (tLower.includes("extra") || tLower.includes("one time")) freqClean = "Extra (One Time)";
+  else if (tLower.includes("extra") || tLower.includes("one time") || tLower.includes("adhoc") || tLower === "") freqClean = "Extra (One Time)";
 
-  // If Extra (One Time), record in Adhoc_Tasks sheet
   if (freqClean === "Extra (One Time)") {
     var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
     if (!adhocSheet) {
@@ -1633,7 +1688,9 @@ function getAdhocTasksForStaff(staffName) {
     var freq = String(data[i][6] || "Extra (One Time)").trim();
 
     // Routine Daily/Weekly/Monthly tasks are shown in their respective tabs via getTasksForRole
-    if (freq !== "Extra (One Time)" && freq !== "One Time" && freq !== "") continue;
+    var fLower = freq.toLowerCase().replace(/[-_]/g, " ").trim();
+    var isOneTime = fLower.includes("extra") || fLower.includes("one time") || fLower === "" || fLower === "adhoc";
+    if (!isOneTime) continue;
     if (taskDesc === "") continue;
     
     var assignDateRaw = data[i][0];
