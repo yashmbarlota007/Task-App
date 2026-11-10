@@ -3183,7 +3183,7 @@ function renderStaffContent() {
             for(var j = 0; j < group.length; j++) {
               var st = group[j].data;
               var stIndex = group[j].index; 
-              var isCompleted = st.status.includes("Uploaded") || st.status.includes("Completed") || st.status.includes("Skipped");
+              var isCompleted = st.status.includes("Uploaded") || st.status.includes("Completed") || st.status.includes("Skipped") || st.isDone;
               var isSkipped = st.status.includes("Skipped");
               var isDone = isCompleted || isSkipped;
               
