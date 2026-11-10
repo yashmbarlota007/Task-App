@@ -858,7 +858,7 @@ function getTasksForRole(role, staffName) {
      taskList.push({ type: "Daily", task: "Send EOD Report on WhatsApp", subTask: "Screenshot & Final Update", deadline: "08:00 PM", timeSlot: "closing", sop: "", sopSteps: ["Take screenshot of day visits", "Share in group"], sopVideo: "", goodSample: "Complete counter visit list", badSample: "Incomplete visit log", troubleshoot: "If network slow, send SMS", status: "Pending ⏳" });
   }
 
-  // 5. MERGE ASSIGNED DAILY, WEEKLY, MONTHLY TASKS FROM 'Adhoc_Tasks'
+    // 5. MERGE ASSIGNED DAILY, WEEKLY, MONTHLY TASKS FROM 'Adhoc_Tasks'
   var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
   if (adhocSheet && adhocSheet.getLastRow() > 1) {
     var aData = adhocSheet.getDataRange().getValues();
@@ -867,7 +867,7 @@ function getTasksForRole(role, staffName) {
     for (var a = aData.length - 1; a >= 1; a--) {
       var aAssignee = aData[a][1] ? aData[a][1].toString().trim().toLowerCase() : "";
       var aDesc = aData[a][2] ? aData[a][2].toString().trim() : "";
-      var aDead = aData[a][3] ? aData[a][3].toString().replace(/\s*GMT.*/i, '').trim() : "";
+      var aDead = aData[a][3] ? aData[a][3].toString().replace(/\s*GMT.*/i, "").trim() : "";
       var aStatus = aData[a][4] ? aData[a][4].toString().trim() : "";
       var aPhotos = aData[a][5] ? aData[a][5].toString().trim() : "";
       var aFreq = aData[a][6] ? aData[a][6].toString().trim() : "Extra (One Time)";
@@ -894,7 +894,7 @@ function getTasksForRole(role, staffName) {
           subTask: aFreq,
           deadline: aDead || "N/A",
           timeSlot: getTimeSlotFromDeadline(aDead),
-          sop: metaA.sopSteps.join('\n'),
+          sop: metaA.sopSteps.join("\n"),
           sopVideo: "",
           sopSteps: metaA.sopSteps,
           goodSample: metaA.goodSample,
@@ -910,6 +910,9 @@ function getTasksForRole(role, staffName) {
       }
     }
   }
+
+  // 6. SYNCHRONIZE WITH LIVE SUBMISSIONS (TODAY FOR DAILY, THIS WEEK FOR WEEKLY, THIS MONTH FOR MONTHLY)
+  taskList = syncTaskListWithSubmissions(taskList, staffClean || roleClean);
 
   return taskList;
 }
@@ -953,9 +956,10 @@ function syncTaskListWithSubmissions(taskList, staffName) {
 
     for (var i = subData.length - 1; i >= 1; i--) {
       var rowStaff = subData[i][1] ? subData[i][1].toString().trim().toLowerCase() : "";
-      if (!rowStaff) continue;
+      var rowRole = subData[i][2] ? subData[i][2].toString().trim().toLowerCase() : "";
+      if (!rowStaff && !rowRole) continue;
 
-      var isStaffMatch = (rowStaff === sClean || rowStaff.replace(/\s+/g, '') === sClean.replace(/\s+/g, '') || rowStaff.includes(sClean) || sClean.includes(rowStaff));
+      var isStaffMatch = (rowStaff === sClean || rowStaff.replace(/\s+/g, "") === sClean.replace(/\s+/g, "") || rowStaff.includes(sClean) || sClean.includes(rowStaff) || rowRole === sClean);
       if (!isStaffMatch) continue;
 
       var rawDate = subData[i][0];
@@ -973,7 +977,8 @@ function syncTaskListWithSubmissions(taskList, staffName) {
 
       var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
       var status = subData[i][8] ? subData[i][8].toString().trim() : "";
-      var isToday = (subDateStr === todayStr) || (status.indexOf(todayDateStr) !== -1);
+      var diffHours = (now.getTime() - subDate.getTime()) / (1000 * 60 * 60);
+      var isToday = (subDateStr === todayStr) || (status.indexOf(todayDateStr) !== -1) || (diffHours >= 0 && diffHours <= 18);
       var isThisWeek = (subDate >= startOfWeek);
       var isThisMonth = (subDate.getFullYear() === currYear && subDate.getMonth() === currMonth);
 
@@ -998,22 +1003,13 @@ function syncTaskListWithSubmissions(taskList, staffName) {
         date: subDateStr
       };
 
-      var cTask = cleanTaskKey(subTask.replace(/^\[assigned\]\s*/i, ''));
+      var cTask = cleanTaskKey(subTask.replace(/^\[assigned\]\s*/i, ""));
       var cSub = cleanTaskKey(subSubTask);
 
-      var kExact = cTask + "__" + cSub;
-      var kTaskOnly = cTask + "__";
-      var kBothSame = cTask + "__" + cTask;
-      var kSubOnly = "__" + cSub;
-
       function storeInMap(mapObj) {
-        if (!mapObj[kExact]) mapObj[kExact] = subEntry;
-        if (!cSub || cSub === cTask) {
-          if (!mapObj[kTaskOnly]) mapObj[kTaskOnly] = subEntry;
-          if (!mapObj[kBothSame]) mapObj[kBothSame] = subEntry;
-        } else {
-          if (!mapObj[kSubOnly]) mapObj[kSubOnly] = subEntry;
-        }
+        mapObj[cTask + "__" + cSub] = subEntry;
+        if (!mapObj[cTask]) mapObj[cTask] = subEntry;
+        if (cSub && !mapObj[cSub]) mapObj[cSub] = subEntry;
       }
 
       if (isToday) storeInMap(dailySubmissions);
@@ -1029,23 +1025,13 @@ function syncTaskListWithSubmissions(taskList, staffName) {
       if (type.indexOf("week") !== -1) targetMap = weeklySubmissions;
       else if (type.indexOf("month") !== -1) targetMap = monthlySubmissions;
 
-      var itemTask = cleanTaskKey((item.task || "").replace(/^\[assigned\]\s*/i, ''));
+      var itemTask = cleanTaskKey((item.task || "").replace(/^\[assigned\]\s*/i, ""));
       var itemSub = cleanTaskKey(item.subTask);
-
       var hasDistinctSub = itemSub && itemSub !== itemTask && itemSub !== "actionrequired";
 
-      var mExact = itemTask + "__" + itemSub;
-      var mBothSame = itemTask + "__" + itemTask;
-      var mTaskOnly = itemTask + "__";
-      var mSubOnly = "__" + itemSub;
-
-      var matched = targetMap[mExact];
-      if (!matched && hasDistinctSub) {
-        matched = targetMap[mSubOnly];
-      }
-      if (!matched && !hasDistinctSub) {
-        matched = targetMap[mBothSame] || targetMap[mTaskOnly];
-      }
+      var matched = targetMap[itemTask + "__" + itemSub] || 
+                    (hasDistinctSub ? targetMap[itemSub] : null) || 
+                    targetMap[itemTask];
 
       if (matched) {
         item.status = matched.status;
@@ -1058,16 +1044,9 @@ function syncTaskListWithSubmissions(taskList, staffName) {
     Logger.log("syncTaskListWithSubmissions error: " + e);
   }
 
-  // 6. SYNCHRONIZE WITH LIVE SUBMISSIONS (TODAY FOR DAILY, THIS WEEK FOR WEEKLY, THIS MONTH FOR MONTHLY)
-  syncTaskListWithSubmissions(taskList, staffName);
-
   return taskList;
 }
 
-// =====================================================================
-// 📌 SETUP STAFF TASK SHEETS AUTO-CREATOR (CAN BE CALLED FROM APP OR ADMIN)
-// Creates a clean, beautifully formatted 14-column task table for any staff
-// =====================================================================
 function setupStaffTaskSheet(targetName, roleName) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheetName = targetName.trim();
