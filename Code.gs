@@ -863,7 +863,8 @@ function getTasksForRole(role, staffName) {
   if (adhocSheet && adhocSheet.getLastRow() > 1) {
     var aData = adhocSheet.getDataRange().getValues();
     var sClean = staffName ? staffName.toString().trim().toLowerCase() : "";
-    for (var a = 1; a < aData.length; a++) {
+    // 🔻 DESCENDING ORDER: Merge newest assigned tasks first
+    for (var a = aData.length - 1; a >= 1; a--) {
       var aAssignee = aData[a][1] ? aData[a][1].toString().trim().toLowerCase() : "";
       var aDesc = aData[a][2] ? aData[a][2].toString().trim() : "";
       var aDead = aData[a][3] ? aData[a][3].toString().replace(/\s*GMT.*/i, '').trim() : "";
@@ -887,7 +888,7 @@ function getTasksForRole(role, staffName) {
 
       if (fType !== "") {
         var metaA = getSmartRoleDefaults(roleClean, aDesc, aFreq);
-        taskList.push({
+        taskList.unshift({
           type: fType,
           task: "[Assigned] " + aDesc,
           subTask: aFreq,
@@ -1616,7 +1617,8 @@ function getAdhocTasksForStaff(staffName) {
   var name = String(staffName).toLowerCase().trim();
   var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MMM");
   
-  for(var i = 1; i < data.length; i++) {
+  // 🔻 DESCENDING ORDER: Iterate backwards from newest row to oldest row
+  for(var i = data.length - 1; i >= 1; i--) {
     var rawAssignee = String(data[i][1] || "").toLowerCase().trim();
     var taskDesc = String(data[i][2] || "").trim();
     var deadline = data[i][3] ? data[i][3].toString().replace(/\s*GMT.*/i, '').trim() : "";
@@ -1691,7 +1693,7 @@ function getAllAdhocHistory() {
   if(!sheet) return [];
   var data = sheet.getDataRange().getValues();
   var history = [];
-  var start = Math.max(1, data.length - 60);
+  var start = Math.max(1, data.length - 150);
   
   for(var i = data.length - 1; i >= start; i--) {
     var rawDate = data[i][0];
