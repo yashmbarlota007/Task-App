@@ -2347,8 +2347,10 @@
               if(routineList.length === 0) {
                 html += "<div style='padding:14px; background:#ffffff; border:1px solid var(--border-subtle); border-radius:8px; text-align:center; color:var(--text-muted); font-size:13px; margin-bottom:16px;'>Koi routine task nahi hai.</div>";
               } else {
-                for(var i=0; i<routineList.length; i++) {
-                  var st = routineList[i];
+                // 🔻 DESCENDING ORDER: Newest tasks first
+                var sortedRoutine = routineList.slice().reverse();
+                for(var i=0; i<sortedRoutine.length; i++) {
+                  var st = sortedRoutine[i];
                   var stStatus = String(st.status || "Pending");
                   var isDone = stStatus.includes("Uploaded") || stStatus.includes("Completed") || stStatus.includes("Skipped");
                   var cColor = stStatus.includes("Skipped") ? "#ef4444" : (isDone ? "#10b981" : "#f59e0b");
@@ -3045,8 +3047,10 @@ function renderStaffContent() {
         } 
         else if (currentActiveTab === 'Adhoc') {
           if(extraTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:var(--text-muted);'>Koi extra task nahi hai! 🎉</div>"; updateLiveTimers(); return; }
-          for(var i=0; i<extraTasks.length; i++) {
-            var t = extraTasks[i];
+          // 🔻 DESCENDING ORDER: Newest assigned tasks at top
+          var sortedExtra = extraTasks.slice().sort(function(a, b) { return (b.index || 0) - (a.index || 0); });
+          for(var i=0; i<sortedExtra.length; i++) {
+            var t = sortedExtra[i];
             var isCompleted = t.status.includes("Uploaded") || t.status.includes("Completed") || t.status.includes("Skipped");
             var isSkipped = t.status.includes("Skipped");
             html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#ffffff;'>";
@@ -3088,7 +3092,11 @@ function renderStaffContent() {
             }
           }
           var cardIdx = 0;
-          for (var mainTask in groupedTasks) {
+          // 🔻 DESCENDING ORDER: Newest task cards displayed at the top!
+          var mainTaskKeys = Object.keys(groupedTasks);
+          mainTaskKeys.reverse();
+          for (var m = 0; m < mainTaskKeys.length; m++) {
+            var mainTask = mainTaskKeys[m];
             cardIdx++;
             var group = groupedTasks[mainTask];
             var firstTask = group[0].data;
