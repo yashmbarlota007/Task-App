@@ -2407,11 +2407,11 @@
         for (var u = 0; u < urls.length; u++) {
           var cleanUrl = urls[u].replace(/=HYPERLINK\("([^"]+)".*/, "$1").trim();
           if (!cleanUrl || cleanUrl.indexOf("http") === -1) continue;
-          var driveId = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/id=([a-zA-Z0-9_-]+)/);
-          var thumbUrl = driveId ? ("https://drive.google.com/thumbnail?id=" + driveId[1] + "&sz=w150") : cleanUrl;
-          
+          var driveId = cleanUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+          var thumbUrl = driveId ? ("https://lh3.googleusercontent.com/d/" + driveId[1] + "=w200") : cleanUrl;
+          var fallbackThumb = driveId ? ("https://drive.google.com/thumbnail?id=" + driveId[1] + "&sz=w150") : cleanUrl;
           h += "<a href='#' onclick='openPhotoZoomDirect(\"" + encodeURIComponent(cleanUrl) + "\", \"Attachment " + (u+1) + "\"); return false;' class='ref-photo-thumb' title='View Photo " + (u+1) + "'>";
-          h += "  <img src='" + thumbUrl + "' alt='Photo " + (u+1) + "' loading='lazy' onerror=\"this.onerror=null; this.src='https://placehold.co/100x100?text=Photo';\">";
+          h += "  <img src='" + thumbUrl + "' alt='Photo " + (u+1) + "' loading='lazy' onerror=\"this.onerror=null; this.src='" + fallbackThumb + "';\">";
           h += "</a>";
         }
         h += "</div>";
@@ -2691,10 +2691,64 @@
 
       function openPhotoZoomDirect(url, title) {
         if (!url) return;
-        document.getElementById('zoomModalImg').src = url;
-        document.getElementById('zoomModalTitle').innerText = title || "Photo Preview";
-        document.getElementById('zoomModalLink').href = url;
-        document.getElementById('photoZoomModal').style.display = 'block';
+        var rawUrl = url;
+        try {
+          rawUrl = decodeURIComponent(url);
+          if (rawUrl.indexOf("%") !== -1) {
+            try { rawUrl = decodeURIComponent(rawUrl); } catch(e){}
+          }
+        } catch(e) {}
+        rawUrl = rawUrl.trim();
+
+        if (rawUrl.indexOf("http://") !== 0 && rawUrl.indexOf("https://") !== 0) {
+          if (rawUrl.indexOf("//") === 0) {
+            rawUrl = "https:" + rawUrl;
+          } else {
+            rawUrl = "https://" + rawUrl;
+          }
+        }
+
+        var driveMatch = rawUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                         rawUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) ||
+                         rawUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+        var imgSrc = rawUrl;
+        var viewLink = rawUrl;
+
+        if (driveMatch && driveMatch[1]) {
+          var fileId = driveMatch[1];
+          imgSrc = "https://lh3.googleusercontent.com/d/" + fileId + "=w1200";
+          viewLink = "https://drive.google.com/file/d/" + fileId + "/view?usp=sharing";
+        }
+
+        var modalImg = document.getElementById("zoomModalImg");
+        if (modalImg) {
+          modalImg.src = imgSrc;
+          modalImg.onerror = function() {
+            if (driveMatch && driveMatch[1]) {
+              this.src = "https://drive.google.com/thumbnail?id=" + driveMatch[1] + "&sz=w1000";
+            }
+          };
+        }
+
+        var modalTitle = document.getElementById("zoomModalTitle");
+        if (modalTitle) {
+          try {
+            modalTitle.innerText = decodeURIComponent(title || "Photo Preview");
+          } catch(e) {
+            modalTitle.innerText = title || "Photo Preview";
+          }
+        }
+
+        var modalLink = document.getElementById("zoomModalLink");
+        if (modalLink) {
+          modalLink.href = viewLink;
+          modalLink.target = "_blank";
+          modalLink.rel = "noopener noreferrer";
+        }
+
+        var modal = document.getElementById("photoZoomModal");
+        if (modal) modal.style.display = "block";
       }
 
       function closeBenchmarkModal() {
