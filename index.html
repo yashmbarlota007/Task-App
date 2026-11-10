@@ -1327,7 +1327,7 @@
             <option value="Daily">📅 Daily Routine (Har Roz)</option>
             <option value="Weekly">📆 Weekly Routine (Specific Weekday)</option>
             <option value="Monthly">🗓️ Monthly Routine (Specific Date of Month)</option>
-            <option value="One-Time">⚡ One-Time / Ad-hoc Task</option>
+            <option value="Extra (One Time)">⚡ One-Time / Ad-hoc Task</option>
           </select>
 
           <!-- Daily Slot -->
@@ -2053,7 +2053,7 @@
           if (gWeekly) gWeekly.style.display = "block";
         } else if (freq.indexOf("Monthly") !== -1) {
           if (gMonthly) gMonthly.style.display = "block";
-        } else if (freq.indexOf("One-Time") !== -1 || freq.indexOf("Extra") !== -1) {
+        } else if (freq.toLowerCase().indexOf("one") !== -1 || freq.toLowerCase().indexOf("extra") !== -1 || freq.toLowerCase().indexOf("adhoc") !== -1) {
           if (gRecTime) gRecTime.style.display = "none";
           if (gOneTime) gOneTime.style.display = "block";
         }
@@ -2138,6 +2138,7 @@
           if (!subDesc) subDesc = "Scheduled: Har Mahine ki " + dateVal;
         } else {
           // Extra (One Time)
+          freqVal = "Extra (One Time)";
           var rawDeadline = document.getElementById("adminAdhocDeadline").value;
           deadlineStr = formatDateTimeLocal(rawDeadline) || "Jald";
           timeSlot = "adhoc";
