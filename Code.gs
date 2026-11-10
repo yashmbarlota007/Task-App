@@ -905,7 +905,7 @@ function getTasksForRole(role, staffName) {
           checklist: metaA.checklist,
           refPhoto: aPhotos,
           sourceSheet: "Adhoc_Tasks",
-          status: aStatus || "Pending ⏳"
+          status: "Pending ⏳"
         });
       }
     }
@@ -954,6 +954,37 @@ function syncTaskListWithSubmissions(taskList, staffName) {
       return (str || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
     }
 
+    function parseSubmissionDate(rawDate) {
+      if (!rawDate) return { dateStr: "", dateObj: null };
+      if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+        return {
+          dateStr: Utilities.formatDate(rawDate, tz, "yyyy-MM-dd"),
+          dateObj: rawDate
+        };
+      }
+      if (typeof rawDate === "string") {
+        var mIso = rawDate.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+        if (mIso) {
+          var y = mIso[1];
+          var mo = mIso[2].length === 1 ? ("0" + mIso[2]) : mIso[2];
+          var d = mIso[3].length === 1 ? ("0" + mIso[3]) : mIso[3];
+          var dObj = new Date(parseInt(y, 10), parseInt(mo, 10) - 1, parseInt(d, 10));
+          return {
+            dateStr: y + "-" + mo + "-" + d,
+            dateObj: isNaN(dObj.getTime()) ? null : dObj
+          };
+        }
+        var parsed = new Date(rawDate);
+        if (!isNaN(parsed.getTime())) {
+          return {
+            dateStr: Utilities.formatDate(parsed, tz, "yyyy-MM-dd"),
+            dateObj: parsed
+          };
+        }
+      }
+      return { dateStr: "", dateObj: null };
+    }
+
     for (var i = subData.length - 1; i >= 1; i--) {
       var rowStaff = subData[i][1] ? subData[i][1].toString().trim().toLowerCase() : "";
       var rowRole = subData[i][2] ? subData[i][2].toString().trim().toLowerCase() : "";
@@ -962,28 +993,24 @@ function syncTaskListWithSubmissions(taskList, staffName) {
       var isStaffMatch = (rowStaff === sClean || rowStaff.replace(/\s+/g, "") === sClean.replace(/\s+/g, "") || rowStaff.includes(sClean) || sClean.includes(rowStaff) || rowRole === sClean);
       if (!isStaffMatch) continue;
 
-      var rawDate = subData[i][0];
-      if (!rawDate) continue;
-      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-      if (isNaN(subDate.getTime())) {
-        if (typeof rawDate === "string") {
-          var dMatch = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
-          if (dMatch) {
-            subDate = new Date(parseInt(dMatch[1], 10), parseInt(dMatch[2], 10) - 1, parseInt(dMatch[3], 10));
-          }
-        }
-      }
-      if (isNaN(subDate.getTime())) continue;
+      var parsed = parseSubmissionDate(subData[i][0]);
+      var subDateStr = parsed.dateStr;
+      var subDateObj = parsed.dateObj;
+      if (!subDateStr) continue;
 
-      var subDateStr = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
       var status = subData[i][8] ? subData[i][8].toString().trim() : "";
-      var diffHours = (now.getTime() - subDate.getTime()) / (1000 * 60 * 60);
-      var isToday = (subDateStr === todayStr) || (status.indexOf(todayDateStr) !== -1) || (diffHours >= 0 && diffHours <= 18);
-      var isThisWeek = (subDate >= startOfWeek);
-      var isThisMonth = (subDate.getFullYear() === currYear && subDate.getMonth() === currMonth);
-
       var isDoneStatus = (status.indexOf("Uploaded") !== -1 || status.indexOf("Completed") !== -1 || status.indexOf("Skipped") !== -1);
       if (!isDoneStatus) continue;
+
+      // 🌙 DAILY RESET AT MIDNIGHT (12:00 AM):
+      // Only submissions executed TODAY (calendar date in IST) count as completed for Daily tasks.
+      // Once midnight passes (12:00 AM), todayStr increments and yesterday submissions are NOT counted,
+      // allowing Daily tasks to automatically reset to Pending for the new day!
+      var isToday = (subDateStr === todayStr) || (status.indexOf(todayDateStr) !== -1);
+
+      // Weekly & Monthly resets (Monday midnight and 1st of month midnight)
+      var isThisWeek = subDateObj ? (subDateObj >= startOfWeek) : (subDateStr >= Utilities.formatDate(startOfWeek, tz, "yyyy-MM-dd"));
+      var isThisMonth = subDateObj ? (subDateObj.getFullYear() === currYear && subDateObj.getMonth() === currMonth) : (subDateStr.indexOf(Utilities.formatDate(now, tz, "yyyy-MM")) === 0);
 
       var subTask = subData[i][4] ? subData[i][4].toString().trim() : "";
       var subSubTask = subData[i][5] ? subData[i][5].toString().trim() : "";
