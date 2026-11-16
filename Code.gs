@@ -2336,6 +2336,7 @@ function getStaffPointsLedger(staffName, period) {
       else if (periodClean === 'currentquarter' && subYear === currYear && subQuarter === currQuarter) isMatchPeriod = true;
       else if (periodClean === 'lastquarter' && subYear === lastQuarterYear && subQuarter === lastQuarter) isMatchPeriod = true;
       else if (periodClean === 'yearly' && subYear === currYear) isMatchPeriod = true;
+      else if (periodClean === 'all') isMatchPeriod = true;
 
       if (!isMatchPeriod) continue;
 
@@ -2414,6 +2415,10 @@ function getStaffPointsLedger(staffName, period) {
   } else if (periodClean === 'monthly') {
     var dayOfMonth = now.getDate();
     expectedCount = Math.max(entries.length, (dailyRoutine.length * dayOfMonth) + (weeklyRoutine.length * Math.ceil(dayOfMonth / 7)) + monthlyRoutine.length, 1);
+  } else if (periodClean === 'lastmonth') {
+    var daysInLastMonth = new Date(lastMonthYear, lastMonth + 1, 0).getDate();
+    var lastMoExpected = (dailyRoutine.length * daysInLastMonth) + (weeklyRoutine.length * Math.round(daysInLastMonth / 7)) + monthlyRoutine.length;
+    expectedCount = Math.max(entries.length, lastMoExpected, 1);
   } else {
     expectedCount = Math.max(entries.length, 1);
   }
@@ -2426,6 +2431,7 @@ function getStaffPointsLedger(staffName, period) {
     weekly: 'Weekly (This Week)',
     monthly: 'Monthly (This Month)',
     lastmonth: 'Last Month',
+    all: 'All Time',
     currentquarter: 'Current Quarter',
     lastquarter: 'Last Quarter',
     yearly: 'Yearly'
