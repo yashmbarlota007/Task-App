@@ -760,6 +760,8 @@
     padding: 6px 12px;
     border-radius: var(--radius-full);
     cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .ledger-pill-btn.active {
     background: var(--primary);
@@ -1707,22 +1709,22 @@
           Compliance Score Across Periods:
         </div>
         <div class="score-grid" id="staffScoreGrid">
-          <div class="score-box highlight">
+          <div class="score-box highlight" onclick="switchLedgerPeriod('daily')" style="cursor:pointer;" title="View Today ledger">
             <div class="score-lbl">Daily</div>
             <div class="score-val" id="scDaily">0%</div>
             <div class="score-pts-sub" id="scDailyPts">0 / 0 P</div>
           </div>
-          <div class="score-box">
+          <div class="score-box" onclick="switchLedgerPeriod('weekly')" style="cursor:pointer;" title="View This Week ledger">
             <div class="score-lbl">Weekly</div>
             <div class="score-val" id="scWeekly">0%</div>
             <div class="score-pts-sub" id="scWeeklyPts">0 / 0 P</div>
           </div>
-          <div class="score-box">
+          <div class="score-box" onclick="switchLedgerPeriod('monthly')" style="cursor:pointer;" title="View This Month ledger">
             <div class="score-lbl">Monthly</div>
             <div class="score-val" id="scMonthly">0%</div>
             <div class="score-pts-sub" id="scMonthlyPts">0 / 0 P</div>
           </div>
-          <div class="score-box">
+          <div class="score-box" onclick="switchLedgerPeriod('lastmonth')" style="cursor:pointer;" title="View Last Month ledger">
             <div class="score-lbl">Last Mo.</div>
             <div class="score-val" id="scLastMonth">0%</div>
             <div class="score-pts-sub" id="scLastMonthPts">0 P</div>
@@ -1745,10 +1747,11 @@
         </div>
 
         <!-- Period Filter Pills -->
-        <div style="display:flex; gap:6px; margin: 16px 0 12px 0; overflow-x:auto;">
+        <div style="display:flex; gap:6px; margin: 16px 0 12px 0; overflow-x:auto; -webkit-overflow-scrolling:touch;">
           <button class="ledger-pill-btn active" id="ledgerPill-daily" onclick="switchLedgerPeriod('daily')">Today</button>
           <button class="ledger-pill-btn" id="ledgerPill-weekly" onclick="switchLedgerPeriod('weekly')">This Week</button>
           <button class="ledger-pill-btn" id="ledgerPill-monthly" onclick="switchLedgerPeriod('monthly')">This Month</button>
+          <button class="ledger-pill-btn" id="ledgerPill-lastmonth" onclick="switchLedgerPeriod('lastmonth')">Last Month</button>
           <button class="ledger-pill-btn" id="ledgerPill-all" onclick="switchLedgerPeriod('all')">All Time</button>
         </div>
 
@@ -3983,7 +3986,7 @@ function renderRadarCards() {
 
       function switchLedgerPeriod(period) {
         currentLedgerPeriod = period;
-        var periods = ['daily', 'weekly', 'monthly'];
+        var periods = ['daily', 'weekly', 'monthly', 'lastmonth', 'all'];
         periods.forEach(function(p) {
           var btn = document.getElementById('ledgerPill-' + p);
           if (btn) {
@@ -3992,8 +3995,18 @@ function renderRadarCards() {
           }
         });
 
+        // Sync highlight card at top
+        var boxMap = { daily: 'scDaily', weekly: 'scWeekly', monthly: 'scMonthly', lastmonth: 'scLastMonth' };
+        var boxes = document.querySelectorAll('#staffScoreGrid .score-box');
+        boxes.forEach(function(b) { b.classList.remove('highlight'); });
+        if (boxMap[period]) {
+          var targetEl = document.getElementById(boxMap[period]);
+          if (targetEl && targetEl.parentElement) targetEl.parentElement.classList.add('highlight');
+        }
+
+        var displayPeriodLabel = period === 'lastmonth' ? 'Last Month' : (period === 'all' ? 'All Time' : (period === 'monthly' ? 'This Month' : (period === 'weekly' ? 'This Week' : 'Today')));
         var tbody = document.getElementById('ledgerTableBody');
-        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:var(--text-muted); padding:15px;'>⏳ Loading " + period + " points ledger...</td></tr>";
+        tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:var(--text-muted); padding:15px;'>⏳ Loading " + displayPeriodLabel + " points ledger...</td></tr>";
 
         google.script.run.withSuccessHandler(function(data) {
           renderPointsLedger(data);
