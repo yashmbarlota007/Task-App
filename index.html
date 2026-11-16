@@ -1719,6 +1719,11 @@
             <div class="score-val" id="scWeekly">0%</div>
             <div class="score-pts-sub" id="scWeeklyPts">0 / 0 P</div>
           </div>
+          <div class="score-box" onclick="switchLedgerPeriod('lastweek')" style="cursor:pointer;" title="View Last Week ledger">
+            <div class="score-lbl">Last Wk</div>
+            <div class="score-val" id="scLastWeek">0%</div>
+            <div class="score-pts-sub" id="scLastWeekPts">0 / 0 P</div>
+          </div>
           <div class="score-box" onclick="switchLedgerPeriod('monthly')" style="cursor:pointer;" title="View This Month ledger">
             <div class="score-lbl">Monthly</div>
             <div class="score-val" id="scMonthly">0%</div>
@@ -1750,6 +1755,7 @@
         <div style="display:flex; gap:6px; margin: 16px 0 12px 0; overflow-x:auto; -webkit-overflow-scrolling:touch;">
           <button class="ledger-pill-btn active" id="ledgerPill-daily" onclick="switchLedgerPeriod('daily')">Today</button>
           <button class="ledger-pill-btn" id="ledgerPill-weekly" onclick="switchLedgerPeriod('weekly')">This Week</button>
+          <button class="ledger-pill-btn" id="ledgerPill-lastweek" onclick="switchLedgerPeriod('lastweek')">Last Week</button>
           <button class="ledger-pill-btn" id="ledgerPill-monthly" onclick="switchLedgerPeriod('monthly')">This Month</button>
           <button class="ledger-pill-btn" id="ledgerPill-lastmonth" onclick="switchLedgerPeriod('lastmonth')">Last Month</button>
           <button class="ledger-pill-btn" id="ledgerPill-all" onclick="switchLedgerPeriod('all')">All Time</button>
@@ -1951,6 +1957,7 @@
         }
         setScoreBox('scDaily', 'scDailyPts', sc.daily);
         setScoreBox('scWeekly', 'scWeeklyPts', sc.weekly);
+        setScoreBox('scLastWeek', 'scLastWeekPts', sc.lastWeek);
         setScoreBox('scMonthly', 'scMonthlyPts', sc.monthly);
         setScoreBox('scLastMonth', 'scLastMonthPts', sc.lastMonth);
         setScoreBox('scCurrQtr', 'scCurrQtrPts', sc.currentQuarter);
@@ -2210,6 +2217,7 @@
           html += "  <th>Role</th>";
           html += "  <th>Today</th>";
           html += "  <th>This Week</th>";
+          html += "  <th>Last Wk</th>";
           html += "  <th>This Month</th>";
           html += "  <th>Last Mo.</th>";
           html += "  <th>Curr. Qtr</th>";
@@ -2225,6 +2233,7 @@
             html += "  <td><span style='background:var(--bg-subtle); color:var(--text-muted); font-size:10.5px; padding:2px 8px; border-radius:var(--radius-full); font-weight:600; border:1px solid var(--border-subtle);'>" + s.role + "</span></td>";
             html += "  <td>" + formatScoreCell(s.daily, 'daily', s.name) + "</td>";
             html += "  <td>" + formatScoreCell(s.weekly, 'weekly', s.name) + "</td>";
+            html += "  <td>" + formatScoreCell(s.lastWeek, 'lastweek', s.name) + "</td>";
             html += "  <td>" + formatScoreCell(s.monthly, 'monthly', s.name) + "</td>";
             html += "  <td>" + formatScoreCell(s.lastMonth, 'monthly', s.name) + "</td>";
             html += "  <td>" + formatScoreCell(s.currentQuarter, 'monthly', s.name) + "</td>";
@@ -2333,6 +2342,7 @@
                 html += "<div class='score-grid' style='margin-top:10px;'>";
                 html += formatScoreBoxHtml("Today", res.scores.daily, "daily", cleanName, true);
                 html += formatScoreBoxHtml("Week", res.scores.weekly, "weekly", cleanName, false);
+                html += formatScoreBoxHtml("Last Wk", res.scores.lastWeek, "lastweek", cleanName, false);
                 html += formatScoreBoxHtml("Month", res.scores.monthly, "monthly", cleanName, false);
                 html += formatScoreBoxHtml("Last Mo.", res.scores.lastMonth, "lastMonth", cleanName, false);
                 html += formatScoreBoxHtml("Curr. Qtr", res.scores.currentQuarter, "currentQuarter", cleanName, false);
@@ -3986,7 +3996,7 @@ function renderRadarCards() {
 
       function switchLedgerPeriod(period) {
         currentLedgerPeriod = period;
-        var periods = ['daily', 'weekly', 'monthly', 'lastmonth', 'all'];
+        var periods = ['daily', 'weekly', 'lastweek', 'monthly', 'lastmonth', 'all'];
         periods.forEach(function(p) {
           var btn = document.getElementById('ledgerPill-' + p);
           if (btn) {
@@ -3996,7 +4006,7 @@ function renderRadarCards() {
         });
 
         // Sync highlight card at top
-        var boxMap = { daily: 'scDaily', weekly: 'scWeekly', monthly: 'scMonthly', lastmonth: 'scLastMonth' };
+        var boxMap = { daily: 'scDaily', weekly: 'scWeekly', lastweek: 'scLastWeek', monthly: 'scMonthly', lastmonth: 'scLastMonth' };
         var boxes = document.querySelectorAll('#staffScoreGrid .score-box');
         boxes.forEach(function(b) { b.classList.remove('highlight'); });
         if (boxMap[period]) {
@@ -4004,7 +4014,8 @@ function renderRadarCards() {
           if (targetEl && targetEl.parentElement) targetEl.parentElement.classList.add('highlight');
         }
 
-        var displayPeriodLabel = period === 'lastmonth' ? 'Last Month' : (period === 'all' ? 'All Time' : (period === 'monthly' ? 'This Month' : (period === 'weekly' ? 'This Week' : 'Today')));
+        var labelMapDisplay = { daily: 'Today', weekly: 'This Week', lastweek: 'Last Week', monthly: 'This Month', lastmonth: 'Last Month', all: 'All Time' };
+        var displayPeriodLabel = labelMapDisplay[period] || period;
         var tbody = document.getElementById('ledgerTableBody');
         tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:var(--text-muted); padding:15px;'>⏳ Loading " + displayPeriodLabel + " points ledger...</td></tr>";
 
