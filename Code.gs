@@ -141,7 +141,7 @@ function getStaffScoresBreakdown(staffName) {
   var subSheet = ss.getSheetByName("Task_Submissions");
   var role = getStaffRoleByName(staffName);
 
-  var rawPts = { daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0 };
+  var rawPts = { daily: 0, weekly: 0, lastWeek: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0 };
   
   var tz = Session.getScriptTimeZone();
   var now = new Date();
@@ -150,6 +150,7 @@ function getStaffScoresBreakdown(staffName) {
   var dayOfWeek = now.getDay();
   var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
   var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
+  var startOfLastWeek = new Date(startOfWeek.getTime() - (7 * 24 * 60 * 60 * 1000));
 
   var currYear = now.getFullYear();
   var currMonth = now.getMonth();
@@ -182,6 +183,7 @@ function getStaffScoresBreakdown(staffName) {
 
       if (subDateStr === todayStr) rawPts.daily += pts;
       if (subDate >= startOfWeek) rawPts.weekly += pts;
+      if (subDate >= startOfLastWeek && subDate < startOfWeek) rawPts.lastWeek += pts;
       if (subYear === currYear && subMonth === currMonth) rawPts.monthly += pts;
       if (subYear === lastMonthYear && subMonth === lastMonth) rawPts.lastMonth += pts;
       if (subYear === currYear && subQuarter === currQuarter) rawPts.currentQuarter += pts;
@@ -211,6 +213,10 @@ function getStaffScoresBreakdown(staffName) {
   var weeklyMax = Math.max(rawPts.weekly, weeklyExpected * 10, 10);
   var weeklyPct = Math.min(100, Math.round((rawPts.weekly / weeklyMax) * 100));
 
+  var lastWkExpected = (routineDaily * 7) + routineWeekly;
+  var lastWkMax = Math.max(rawPts.lastWeek, lastWkExpected * 10, 10);
+  var lastWkPct = Math.min(100, Math.round((rawPts.lastWeek / lastWkMax) * 100));
+
   var dayOfMonth = now.getDate();
   var monthlyExpected = (routineDaily * dayOfMonth) + (routineWeekly * Math.ceil(dayOfMonth / 7)) + routineMonthly;
   var monthlyMax = Math.max(rawPts.monthly, monthlyExpected * 10, 10);
@@ -232,6 +238,7 @@ function getStaffScoresBreakdown(staffName) {
   return {
     daily: { percentage: dailyPct, earned: rawPts.daily, max: dailyMax },
     weekly: { percentage: weeklyPct, earned: rawPts.weekly, max: weeklyMax },
+    lastWeek: { percentage: lastWkPct, earned: rawPts.lastWeek, max: lastWkMax },
     monthly: { percentage: monthlyPct, earned: rawPts.monthly, max: monthlyMax },
     lastMonth: { percentage: lastMoPct, earned: rawPts.lastMonth, max: lastMoMax },
     currentQuarter: { percentage: qtrPct, earned: rawPts.currentQuarter, max: qtrMax },
@@ -256,7 +263,7 @@ function getAllStaffScoreboard() {
     if (name && role.toLowerCase() !== "owner" && role.toLowerCase() !== "ceo" && role.toLowerCase() !== "admin" && !staffMap[name.toUpperCase()]) {
       staffMap[name.toUpperCase()] = {
         name: name, role: role,
-        daily: 0, weekly: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0
+        daily: 0, weekly: 0, lastWeek: 0, monthly: 0, lastMonth: 0, currentQuarter: 0, lastQuarter: 0, yearly: 0
       };
       staffOrder.push(name.toUpperCase());
     }
@@ -272,6 +279,7 @@ function getAllStaffScoreboard() {
     var dayOfWeek = now.getDay();
     var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
     var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
+  var startOfLastWeek = new Date(startOfWeek.getTime() - (7 * 24 * 60 * 60 * 1000));
 
     var currYear = now.getFullYear();
     var currMonth = now.getMonth();
@@ -304,6 +312,7 @@ function getAllStaffScoreboard() {
       var entry = staffMap[matchKey];
       if (subDateStr === todayStr) entry.daily += pts;
       if (subDate >= startOfWeek) entry.weekly += pts;
+      if (subDate >= startOfLastWeek && subDate < startOfWeek) entry.lastWeek += pts;
       if (subYear === currYear && subMonth === currMonth) entry.monthly += pts;
       if (subYear === lastMonthYear && subMonth === lastMonth) entry.lastMonth += pts;
       if (subYear === currYear && subQuarter === currQuarter) entry.currentQuarter += pts;
@@ -321,6 +330,9 @@ function getAllStaffScoreboard() {
 
     var weeklyMax = Math.max(raw.weekly, 300);
     var weeklyPct = Math.min(100, Math.round((raw.weekly / weeklyMax) * 100));
+
+    var lastWkMax = Math.max(raw.lastWeek, 300);
+    var lastWkPct = Math.min(100, Math.round((raw.lastWeek / lastWkMax) * 100));
 
     var monthlyMax = Math.max(raw.monthly, 1000);
     var monthlyPct = Math.min(100, Math.round((raw.monthly / monthlyMax) * 100));
@@ -343,6 +355,7 @@ function getAllStaffScoreboard() {
       rawMonthly: raw.monthly,
       daily: { percentage: dailyPct, earned: raw.daily, max: dailyMax },
       weekly: { percentage: weeklyPct, earned: raw.weekly, max: weeklyMax },
+      lastWeek: { percentage: lastWkPct, earned: raw.lastWeek, max: lastWkMax },
       monthly: { percentage: monthlyPct, earned: raw.monthly, max: monthlyMax },
       lastMonth: { percentage: lastMoPct, earned: raw.lastMonth, max: lastMoMax },
       currentQuarter: { percentage: qtrPct, earned: raw.currentQuarter, max: qtrMax },
@@ -2283,6 +2296,7 @@ function getStaffPointsLedger(staffName, period) {
   var dayOfWeek = now.getDay();
   var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
   var startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
+  var startOfLastWeek = new Date(startOfWeek.getTime() - (7 * 24 * 60 * 60 * 1000));
 
   var currYear = now.getFullYear();
   var currMonth = now.getMonth();
@@ -2331,6 +2345,7 @@ function getStaffPointsLedger(staffName, period) {
       var isMatchPeriod = false;
       if (periodClean === 'daily' && subDateStr === todayStr) isMatchPeriod = true;
       else if (periodClean === 'weekly' && subDate >= startOfWeek) isMatchPeriod = true;
+      else if (periodClean === 'lastweek' && subDate >= startOfLastWeek && subDate < startOfWeek) isMatchPeriod = true;
       else if (periodClean === 'monthly' && subYear === currYear && subMonth === currMonth) isMatchPeriod = true;
       else if (periodClean === 'lastmonth' && subYear === lastMonthYear && subMonth === lastMonth) isMatchPeriod = true;
       else if (periodClean === 'currentquarter' && subYear === currYear && subQuarter === currQuarter) isMatchPeriod = true;
@@ -2412,6 +2427,9 @@ function getStaffPointsLedger(staffName, period) {
   } else if (periodClean === 'weekly') {
     var dayOfWeekNum = (dayOfWeek === 0 ? 7 : dayOfWeek);
     expectedCount = Math.max(entries.length, (dailyRoutine.length * dayOfWeekNum) + weeklyRoutine.length, 1);
+  } else if (periodClean === 'lastweek') {
+    var lastWkExpected = (dailyRoutine.length * 7) + weeklyRoutine.length;
+    expectedCount = Math.max(entries.length, lastWkExpected, 1);
   } else if (periodClean === 'monthly') {
     var dayOfMonth = now.getDate();
     expectedCount = Math.max(entries.length, (dailyRoutine.length * dayOfMonth) + (weeklyRoutine.length * Math.ceil(dayOfMonth / 7)) + monthlyRoutine.length, 1);
@@ -2429,6 +2447,7 @@ function getStaffPointsLedger(staffName, period) {
   var labelMap = {
     daily: 'Daily (Today)',
     weekly: 'Weekly (This Week)',
+    lastweek: 'Last Week',
     monthly: 'Monthly (This Month)',
     lastmonth: 'Last Month',
     all: 'All Time',
