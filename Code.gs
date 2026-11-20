@@ -1046,11 +1046,19 @@ function syncTaskListWithSubmissions(taskList, staffName) {
 
       var cTask = cleanTaskKey(subTask.replace(/^\[assigned\]\s*/i, ""));
       var cSub = cleanTaskKey(subSubTask);
+      var isDistinctSub = cSub && cSub !== cTask && cSub !== "actionrequired";
 
       function storeInMap(mapObj) {
-        mapObj[cTask + "__" + cSub] = subEntry;
-        if (!mapObj[cTask]) mapObj[cTask] = subEntry;
-        if (cSub && !mapObj[cSub]) mapObj[cSub] = subEntry;
+        if (cTask && isDistinctSub) {
+          mapObj[cTask + "__" + cSub] = subEntry;
+          if (!mapObj[cSub]) mapObj[cSub] = subEntry;
+          // Do NOT set mapObj[cTask] when submitting a specific subtask
+        } else if (cTask && !isDistinctSub) {
+          mapObj[cTask] = subEntry;
+          mapObj[cTask + "__" + cTask] = subEntry;
+        } else if (cSub) {
+          mapObj[cSub] = subEntry;
+        }
       }
 
       if (isToday) storeInMap(dailySubmissions);
@@ -1070,9 +1078,14 @@ function syncTaskListWithSubmissions(taskList, staffName) {
       var itemSub = cleanTaskKey(item.subTask);
       var hasDistinctSub = itemSub && itemSub !== itemTask && itemSub !== "actionrequired";
 
-      var matched = targetMap[itemTask + "__" + itemSub] || 
-                    (hasDistinctSub ? targetMap[itemSub] : null) || 
-                    targetMap[itemTask];
+      var matched = null;
+      if (hasDistinctSub) {
+        // Distinct subtask MUST match its specific subtask key! Never fall back to parent itemTask!
+        matched = targetMap[itemTask + "__" + itemSub] || targetMap[itemSub];
+      } else {
+        // Standalone task without distinct subtasks matches itemTask or composite key
+        matched = targetMap[itemTask + "__" + itemSub] || targetMap[itemTask] || (itemSub ? targetMap[itemSub] : null);
+      }
 
       if (matched) {
         item.status = matched.status;
