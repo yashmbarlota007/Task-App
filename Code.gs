@@ -1961,10 +1961,20 @@ function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadl
   var pointsEarned = 0; 
   var fileUrl = "";
 
+  // Mandatory Proof Photo Enforcement
+  if (actionType !== "Skip" && actionType !== true) {
+    if (!base64Data || !fileName || base64Data.toString().trim() === "") {
+      return {
+        success: false,
+        status: "Proof Required ⚠️",
+        pointsEarned: 0,
+        message: "⚠️ Task submission ke liye proof photo upload karna mandatory hai!"
+      };
+    }
+  }
+
   if (actionType === "Skip" || actionType === true) {
       statusPrefix = "Skipped ⏭️"; hyperlinkFormula = "Skipped (No Photo)"; pointsEarned = 0; 
-  } else if (actionType === "Complete") {
-      statusPrefix = "Completed ✅"; hyperlinkFormula = "Completed (No Photo)";
   }
 
   if (base64Data && fileName && actionType !== "Skip" && actionType !== "Complete") {
@@ -2486,5 +2496,328 @@ function getStaffPointsLedger(staffName, period) {
     completedCount: completedCount,
     onTimeCount: onTimeCount,
     entries: entries
+  };
+}
+
+
+// =====================================================================
+// 🏢 CEO COMPANY & STAFF OPERATIONS AUDIT REPORT ACROSS ALL 9 PERIODS
+// =====================================================================
+function getCompanyOperationsReport(period) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var masterSheet = ss.getSheetByName("staff master");
+  var subSheet = ss.getSheetByName("Task_Submissions");
+  var periodClean = (period || 'today').toLowerCase().trim();
+
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  var currYear = now.getFullYear();
+  var currMonth = now.getMonth();
+  var currDate = now.getDate();
+  var dayOfWeek = now.getDay();
+
+  var start, end, periodLabel;
+  if (periodClean === 'today' || periodClean === 'daily') {
+    start = new Date(currYear, currMonth, currDate, 0, 0, 0, 0);
+    end = new Date(currYear, currMonth, currDate, 23, 59, 59, 999);
+    periodLabel = 'Aaj (Today)';
+  } else if (periodClean === 'yesterday') {
+    start = new Date(currYear, currMonth, currDate - 1, 0, 0, 0, 0);
+    end = new Date(currYear, currMonth, currDate - 1, 23, 59, 59, 999);
+    periodLabel = 'Kal (Yesterday)';
+  } else if (periodClean === 'thisweek' || periodClean === 'weekly') {
+    var diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+    start = new Date(currYear, currMonth, currDate + diffToMon, 0, 0, 0, 0);
+    end = now;
+    periodLabel = 'This Week';
+  } else if (periodClean === 'lastweek') {
+    var diffToMon2 = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+    var monThisWeek = new Date(currYear, currMonth, currDate + diffToMon2, 0, 0, 0, 0);
+    start = new Date(monThisWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+    end = new Date(monThisWeek.getTime() - 1);
+    periodLabel = 'Last Week';
+  } else if (periodClean === 'thismonth' || periodClean === 'monthly') {
+    start = new Date(currYear, currMonth, 1, 0, 0, 0, 0);
+    end = now;
+    periodLabel = 'This Month';
+  } else if (periodClean === 'lastmonth') {
+    var lastMonthYear = currMonth === 0 ? currYear - 1 : currYear;
+    var lastMonth = currMonth === 0 ? 11 : currMonth - 1;
+    start = new Date(lastMonthYear, lastMonth, 1, 0, 0, 0, 0);
+    var daysInLastMonth = new Date(lastMonthYear, lastMonth + 1, 0).getDate();
+    end = new Date(lastMonthYear, lastMonth, daysInLastMonth, 23, 59, 59, 999);
+    periodLabel = 'Last Month';
+  } else if (periodClean === 'thisquarter' || periodClean === 'currentquarter') {
+    var q = Math.floor(currMonth / 3);
+    start = new Date(currYear, q * 3, 1, 0, 0, 0, 0);
+    end = now;
+    periodLabel = 'This Quarter';
+  } else if (periodClean === 'lastquarter') {
+    var currQ = Math.floor(currMonth / 3);
+    var lastQ = currQ === 0 ? 3 : currQ - 1;
+    var lastQYear = currQ === 0 ? currYear - 1 : currYear;
+    start = new Date(lastQYear, lastQ * 3, 1, 0, 0, 0, 0);
+    var endMonth = lastQ * 3 + 2;
+    var daysInEndMonth = new Date(lastQYear, endMonth + 1, 0).getDate();
+    end = new Date(lastQYear, endMonth, daysInEndMonth, 23, 59, 59, 999);
+    periodLabel = 'Last Quarter';
+  } else if (periodClean === 'thisyear' || periodClean === 'yearly') {
+    start = new Date(currYear, 0, 1, 0, 0, 0, 0);
+    end = now;
+    periodLabel = 'This Year';
+  } else {
+    start = new Date(currYear, currMonth, currDate, 0, 0, 0, 0);
+    end = new Date(currYear, currMonth, currDate, 23, 59, 59, 999);
+    periodLabel = 'Aaj (Today)';
+  }
+
+  // 1. Get all active staff from staff master
+  var staffList = [];
+  var staffMap = {};
+  if (masterSheet) {
+    var mData = masterSheet.getDataRange().getValues();
+    for (var i = 1; i < mData.length; i++) {
+      var sName = mData[i][1] ? mData[i][1].toString().trim() : "";
+      var sRole = mData[i][5] ? mData[i][5].toString().trim() : (mData[i][4] ? mData[i][4].toString().trim() : "Staff");
+      var sPhone = mData[i][2] ? mData[i][2].toString().trim() : "";
+      if (sName && sRole.toLowerCase() !== "owner" && sRole.toLowerCase() !== "ceo" && sRole.toLowerCase() !== "admin" && !staffMap[sName.toUpperCase()]) {
+        var staffObj = {
+          name: sName,
+          role: sRole,
+          phone: sPhone,
+          assignedCount: 0,
+          completedCount: 0,
+          onTimeCount: 0,
+          lateCount: 0,
+          missedCount: 0,
+          earnedPoints: 0,
+          maxPoints: 0,
+          scorePct: 0,
+          tasks: []
+        };
+        staffMap[sName.toUpperCase()] = staffObj;
+        staffList.push(staffObj);
+      }
+    }
+  }
+
+  // 2. Scan submissions
+  var allSubmittedTasksMap = {};
+  var taskSubmissionsList = [];
+
+  if (subSheet && subSheet.getLastRow() > 1) {
+    var subData = subSheet.getDataRange().getValues();
+    for (var j = subData.length - 1; j >= 1; j--) {
+      var rStaff = subData[j][1] ? subData[j][1].toString().trim() : "";
+      if (!rStaff) continue;
+      var staffUpper = rStaff.toUpperCase();
+      var targetStaffObj = staffMap[staffUpper];
+      if (!targetStaffObj) {
+        var matchKey = Object.keys(staffMap).find(function(k) { return k === staffUpper || k.includes(staffUpper) || staffUpper.includes(k); });
+        if (matchKey) targetStaffObj = staffMap[matchKey];
+      }
+      if (!targetStaffObj) continue;
+
+      var rawDate = subData[j][0];
+      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
+      if (isNaN(subDate.getTime())) continue;
+
+      if (subDate.getTime() < start.getTime() || subDate.getTime() > end.getTime()) continue;
+
+      var pts = parseFloat(subData[j][10]) || 0;
+      var tName = subData[j][4] ? subData[j][4].toString().trim() : "";
+      var subTName = subData[j][5] ? subData[j][5].toString().trim() : "";
+      var isDuplicateSub = subTName && (subTName.trim().toLowerCase() === tName.trim().toLowerCase() || subTName.trim().toLowerCase() === 'action required');
+      var fullTitle = isDuplicateSub ? tName : (tName + (subTName ? " - " + subTName : ""));
+      var deadline = subData[j][6] ? formatTimeFriendly(subData[j][6]) : "N/A";
+      var submitTime = subData[j][7] ? formatTimeFriendly(subData[j][7]) : Utilities.formatDate(subDate, tz, "hh:mm a");
+      var status = subData[j][8] ? subData[j][8].toString().trim() : "Completed ✅";
+      var proofLink = subData[j][9] ? subData[j][9].toString().trim() : "";
+      var taskType = subData[j][3] ? subData[j][3].toString().trim() : "Daily";
+
+      var isOnTime = (pts === 10);
+      var timingStatus = isOnTime ? "On-Time" : (pts === 5 ? "Late" : "Skipped");
+
+      targetStaffObj.completedCount++;
+      targetStaffObj.earnedPoints += pts;
+      if (isOnTime) targetStaffObj.onTimeCount++;
+      else targetStaffObj.lateCount++;
+
+      var dateKey = Utilities.formatDate(subDate, tz, "yyyy-MM-dd");
+      allSubmittedTasksMap[targetStaffObj.name.toUpperCase() + "|" + fullTitle.toUpperCase() + "|" + dateKey] = true;
+      allSubmittedTasksMap[targetStaffObj.name.toUpperCase() + "|" + tName.toUpperCase() + "|" + dateKey] = true;
+
+      var taskItem = {
+        staffName: targetStaffObj.name,
+        role: targetStaffObj.role,
+        task: tName,
+        subTask: subTName,
+        fullTitle: fullTitle,
+        taskType: taskType,
+        deadline: deadline,
+        submitTime: submitTime,
+        dateFormatted: Utilities.formatDate(subDate, tz, "dd MMM, hh:mm a"),
+        status: status,
+        timingStatus: timingStatus,
+        points: pts,
+        isOnTime: isOnTime,
+        isCompleted: true,
+        isMissed: false,
+        proofLink: proofLink
+      };
+
+      targetStaffObj.tasks.push(taskItem);
+      taskSubmissionsList.push(taskItem);
+    }
+  }
+
+  // 3. Calculate Expected Tasks & Pending/Missed Tasks for each staff
+  for (var s = 0; s < staffList.length; s++) {
+    var st = staffList[s];
+    var rTasks = [];
+    try { rTasks = getTasksForRole(st.role, st.name) || []; } catch(e) {}
+    
+    var dailyRoutine = rTasks.filter(function(t) { return t.type === 'Daily'; });
+    var weeklyRoutine = rTasks.filter(function(t) { return t.type === 'Weekly'; });
+    var monthlyRoutine = rTasks.filter(function(t) { return t.type === 'Monthly'; });
+
+    if (periodClean === 'today' || periodClean === 'daily') {
+      st.assignedCount = Math.max(st.completedCount, dailyRoutine.length);
+      var todayDateKey = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+      for (var d = 0; d < dailyRoutine.length; d++) {
+        var dt = dailyRoutine[d];
+        var isDup = dt.subTask && (dt.subTask.trim().toLowerCase() === dt.task.trim().toLowerCase() || dt.subTask.trim().toLowerCase() === 'action required');
+        var dTitle = isDup ? dt.task : (dt.task + (dt.subTask ? " - " + dt.subTask : ""));
+        var mapKey1 = st.name.toUpperCase() + "|" + dTitle.toUpperCase() + "|" + todayDateKey;
+        var mapKey2 = st.name.toUpperCase() + "|" + dt.task.toUpperCase() + "|" + todayDateKey;
+        if (!allSubmittedTasksMap[mapKey1] && !allSubmittedTasksMap[mapKey2]) {
+          st.missedCount++;
+          var pendingItem = {
+            staffName: st.name,
+            role: st.role,
+            task: dt.task,
+            subTask: dt.subTask || "",
+            fullTitle: dTitle,
+            taskType: "Daily",
+            deadline: dt.deadline ? formatTimeFriendly(dt.deadline) : "07:00 PM",
+            submitTime: "--",
+            dateFormatted: "Today",
+            status: "Pending ⏳",
+            timingStatus: "Missed",
+            points: 0,
+            isOnTime: false,
+            isCompleted: false,
+            isMissed: true,
+            proofLink: ""
+          };
+          st.tasks.push(pendingItem);
+          taskSubmissionsList.push(pendingItem);
+        }
+      }
+    } else if (periodClean === 'yesterday') {
+      st.assignedCount = Math.max(st.completedCount, dailyRoutine.length);
+      var yesterdayDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      var yesterdayDateKey = Utilities.formatDate(yesterdayDate, tz, "yyyy-MM-dd");
+      for (var d2 = 0; d2 < dailyRoutine.length; d2++) {
+        var dt2 = dailyRoutine[d2];
+        var isDup2 = dt2.subTask && (dt2.subTask.trim().toLowerCase() === dt2.task.trim().toLowerCase() || dt2.subTask.trim().toLowerCase() === 'action required');
+        var dTitle2 = isDup2 ? dt2.task : (dt2.task + (dt2.subTask ? " - " + dt2.subTask : ""));
+        var mKey1 = st.name.toUpperCase() + "|" + dTitle2.toUpperCase() + "|" + yesterdayDateKey;
+        var mKey2 = st.name.toUpperCase() + "|" + dt2.task.toUpperCase() + "|" + yesterdayDateKey;
+        if (!allSubmittedTasksMap[mKey1] && !allSubmittedTasksMap[mKey2]) {
+          st.missedCount++;
+          var missedItem = {
+            staffName: st.name,
+            role: st.role,
+            task: dt2.task,
+            subTask: dt2.subTask || "",
+            fullTitle: dTitle2,
+            taskType: "Daily",
+            deadline: dt2.deadline ? formatTimeFriendly(dt2.deadline) : "07:00 PM",
+            submitTime: "--",
+            dateFormatted: "Kal (Yesterday)",
+            status: "Nahi Hua ❌",
+            timingStatus: "Missed",
+            points: 0,
+            isOnTime: false,
+            isCompleted: false,
+            isMissed: true,
+            proofLink: ""
+          };
+          st.tasks.push(missedItem);
+          taskSubmissionsList.push(missedItem);
+        }
+      }
+    } else if (periodClean === 'thisweek' || periodClean === 'weekly') {
+      var dayOfWeekNum = (dayOfWeek === 0 ? 7 : dayOfWeek);
+      var expCount = (dailyRoutine.length * dayOfWeekNum) + weeklyRoutine.length;
+      st.assignedCount = Math.max(st.completedCount, expCount, 1);
+      st.missedCount = Math.max(0, st.assignedCount - st.completedCount);
+    } else if (periodClean === 'lastweek') {
+      var expLastWk = (dailyRoutine.length * 7) + weeklyRoutine.length;
+      st.assignedCount = Math.max(st.completedCount, expLastWk, 1);
+      st.missedCount = Math.max(0, st.assignedCount - st.completedCount);
+    } else if (periodClean === 'thismonth' || periodClean === 'monthly') {
+      var expMonth = (dailyRoutine.length * currDate) + (weeklyRoutine.length * Math.ceil(currDate / 7)) + monthlyRoutine.length;
+      st.assignedCount = Math.max(st.completedCount, expMonth, 1);
+      st.missedCount = Math.max(0, st.assignedCount - st.completedCount);
+    } else if (periodClean === 'lastmonth') {
+      var daysLastMo = new Date(lastMonthYear, lastMonth + 1, 0).getDate();
+      var expLastMo = (dailyRoutine.length * daysLastMo) + (weeklyRoutine.length * Math.round(daysLastMo / 7)) + monthlyRoutine.length;
+      st.assignedCount = Math.max(st.completedCount, expLastMo, 1);
+      st.missedCount = Math.max(0, st.assignedCount - st.completedCount);
+    } else {
+      st.assignedCount = Math.max(st.completedCount, dailyRoutine.length * 30, 1);
+      st.missedCount = Math.max(0, st.assignedCount - st.completedCount);
+    }
+
+    st.maxPoints = Math.max(st.assignedCount * 10, st.earnedPoints, 10);
+    st.scorePct = st.maxPoints > 0 ? Math.min(100, Math.round((st.earnedPoints / st.maxPoints) * 100)) : 0;
+  }
+
+  // 4. Calculate Overall Company Aggregates
+  var companyAssigned = 0;
+  var companyCompleted = 0;
+  var companyOnTime = 0;
+  var companyLate = 0;
+  var companyMissed = 0;
+  var companyEarned = 0;
+  var companyMax = 0;
+
+  for (var k = 0; k < staffList.length; k++) {
+    companyAssigned += staffList[k].assignedCount;
+    companyCompleted += staffList[k].completedCount;
+    companyOnTime += staffList[k].onTimeCount;
+    companyLate += staffList[k].lateCount;
+    companyMissed += staffList[k].missedCount;
+    companyEarned += staffList[k].earnedPoints;
+    companyMax += staffList[k].maxPoints;
+  }
+
+  var companyScorePct = companyMax > 0 ? Math.min(100, Math.round((companyEarned / companyMax) * 100)) : 0;
+  var companyOnTimePct = companyCompleted > 0 ? Math.round((companyOnTime / companyCompleted) * 100) : 0;
+  var companyCompletionPct = companyAssigned > 0 ? Math.min(100, Math.round((companyCompleted / companyAssigned) * 100)) : 0;
+
+  // Sort staff by score descending
+  staffList.sort(function(a, b) { return b.scorePct - a.scorePct || b.completedCount - a.completedCount; });
+
+  return {
+    success: true,
+    period: periodClean,
+    periodLabel: periodLabel,
+    company: {
+      scorePct: companyScorePct,
+      earnedPoints: companyEarned,
+      maxPoints: companyMax,
+      totalAssigned: companyAssigned,
+      totalCompleted: companyCompleted,
+      onTimeCount: companyOnTime,
+      lateCount: companyLate,
+      missedCount: companyMissed,
+      onTimePct: companyOnTimePct,
+      completionPct: companyCompletionPct
+    },
+    staffList: staffList,
+    allTasks: taskSubmissionsList
   };
 }
