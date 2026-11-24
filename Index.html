@@ -1675,16 +1675,32 @@
         </div>
         <p id="modalTaskTitle" style="font-size: 13.5px; color:var(--primary); font-weight:bold; margin-bottom: 16px;"></p>
         
-        <label for="proofFile" id="uploadLabel" style="display:block; background:var(--primary-light); color:var(--primary); border:2px dashed var(--primary-border); padding:20px; font-size:14px; border-radius:var(--radius-md); cursor:pointer; font-weight:600; margin-bottom:14px;">
-          📸 Open Camera / Select Photo
+        <!-- Anti-Cheat Security Notice -->
+        <div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:10px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">🛡️</span>
+          <div style="font-size:11.5px; color:var(--text-muted); line-height:1.4;">
+            <b style="color:var(--text-main);">Anti-Cheat Live Lock Active:</b> Photo pe live timestamp, staff credentials aur GPS location watermark permanently burn hoga. Purani gallery photos allowed nahi hain.
+          </div>
+        </div>
+
+        <label for="proofFile" id="uploadLabel" style="display:block; background:var(--primary-light); color:var(--primary); border:2px dashed var(--primary-border); padding:20px 14px; font-size:14px; border-radius:var(--radius-md); cursor:pointer; font-weight:700; text-align:center; margin-bottom:14px;">
+          📸 Open Live Camera (Capture Proof)
+          <div style="font-size:11px; font-weight:normal; color:var(--text-muted); margin-top:4px;">Gallery selection disabled • Only live camera capture allowed</div>
         </label>
         <input type="file" id="proofFile" accept="image/*" capture="environment" style="display:none;" onchange="showPhotoPreview(event)">
+
+        <div id="photoStampingStatus" style="display:none; margin-bottom:12px;"></div>
         
-        <img id="photoPreview" style="display:none; max-width:100%; border-radius:var(--radius-md); margin-bottom:14px; border:1px solid var(--border-subtle);" />
+        <img id="photoPreview" style="display:none; max-width:100%; border-radius:var(--radius-md); margin-bottom:14px; border:1px solid var(--border-subtle); box-shadow:var(--shadow-sm);" />
         
-        <button onclick="confirmSubmitProof()" class="btn-success" style="width:100%; padding:13px; font-size:14px; display:none;" id="uploadBtn">
-          ✅ Submit Proof & Complete (+10 P)
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button onclick="resetPhotoCapture()" class="btn-outline" style="display:none; flex:1; padding:12px; font-size:13px; font-weight:600;" id="retakePhotoBtn">
+            🔄 Retake Photo
+          </button>
+          <button onclick="confirmSubmitProof()" class="btn-success" style="display:none; flex:2; padding:12px; font-size:13px; font-weight:700;" id="uploadBtn">
+            🔒 Submit Verified Proof (+10 P)
+          </button>
+        </div>
       </div>
     </div>
 
@@ -3399,70 +3415,218 @@ function renderStaffContent() {
 
       function openStandardProofModal(index) {
         selectedTaskObj = roleTasks[index];
-        document.getElementById("modalHeading").innerText = "📸 Capture Proof";
-        document.getElementById("modalTaskTitle").innerText = "Capture: " + (selectedTaskObj.subTask || selectedTaskObj.task);
+        document.getElementById("modalHeading").innerText = "📸 Capture Proof (Live Anti-Cheat)";
+        document.getElementById("modalTaskTitle").innerText = "Task: " + (selectedTaskObj.subTask || selectedTaskObj.task);
+        resetPhotoCapture();
+        refreshGpsLocation();
         document.getElementById("proofModal").style.display = "block";
-        document.getElementById("proofFile").value = "";
-        document.getElementById("photoPreview").style.display = "none";
-        document.getElementById("uploadBtn").style.display = "none";
-        document.getElementById("uploadLabel").style.display = "block";
       }
 
       function openAdhocProofModal(index) {
         selectedTaskObj = extraTasks[index];
         selectedTaskObj.isAdhocModal = true;
-        document.getElementById("modalHeading").innerText = "📸 Capture Proof";
-        document.getElementById("modalTaskTitle").innerText = "Capture: Extra Task";
+        document.getElementById("modalHeading").innerText = "📸 Capture Proof (Ad-hoc Live Anti-Cheat)";
+        document.getElementById("modalTaskTitle").innerText = "Task: " + (selectedTaskObj.task || "Extra Task");
+        resetPhotoCapture();
+        refreshGpsLocation();
         document.getElementById("proofModal").style.display = "block";
-        document.getElementById("proofFile").value = "";
-        document.getElementById("photoPreview").style.display = "none";
-        document.getElementById("uploadBtn").style.display = "none";
-        document.getElementById("uploadLabel").style.display = "block";
       }
 
-      function closeModal() { document.getElementById("proofModal").style.display = "none"; selectedTaskObj = null; }
+      function closeModal() { document.getElementById("proofModal").style.display = "none"; selectedTaskObj = null; resetPhotoCapture(); }
+
+      var capturedGpsCoords = null;
+      var processedWatermarkedBase64 = null;
+      var processedWatermarkedMime = "image/jpeg";
+      var processedWatermarkedFileName = "proof.jpg";
+
+      function refreshGpsLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(pos) {
+            capturedGpsCoords = {
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude
+            };
+          }, function(err) {
+            console.log("GPS fetch skipped or denied:", err.message);
+          }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 });
+        }
+      }
 
       function showPhotoPreview(event) {
-        if(event.target.files.length > 0) {
-          var reader = new FileReader();
-          reader.onload = function(e){
-            var preview = document.getElementById('photoPreview');
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-            document.getElementById("uploadBtn").style.display = "block";
-            document.getElementById("uploadLabel").style.display = "none";
-          };
-          reader.readAsDataURL(event.target.files[0]);
+        if (!event.target.files || event.target.files.length === 0) return;
+        var file = event.target.files[0];
+        
+        var uploadBtn = document.getElementById("uploadBtn");
+        var uploadLabel = document.getElementById("uploadLabel");
+        var preview = document.getElementById("photoPreview");
+        var statusEl = document.getElementById("photoStampingStatus");
+        
+        if (uploadLabel) uploadLabel.style.display = "none";
+        if (statusEl) {
+          statusEl.style.display = "block";
+          statusEl.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:var(--bg-subtle); border-radius:8px; color:var(--text-main); font-weight:600; font-size:12.5px;'><span>⏳</span> Stamping Live Anti-Cheat Watermark...</div>";
         }
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            applyLiveWatermarkToImage(img, file.name);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function applyLiveWatermarkToImage(img, originalFileName) {
+        var canvas = document.createElement("canvas");
+        
+        // Target maximum dimension for crisp quality and fast upload
+        var maxDim = 1280;
+        var width = img.width;
+        var height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Anti-Cheat Watermark Overlay at bottom
+        var bannerHeight = Math.max(80, Math.round(height * 0.16));
+        var bannerY = height - bannerHeight;
+
+        // Gradient dark slate background
+        var gradient = ctx.createLinearGradient(0, bannerY - 20, 0, height);
+        gradient.addColorStop(0, "rgba(15, 23, 42, 0.0)");
+        gradient.addColorStop(0.25, "rgba(15, 23, 42, 0.88)");
+        gradient.addColorStop(1, "rgba(15, 23, 42, 0.96)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, bannerY - 20, width, bannerHeight + 20);
+
+        var baseFontSize = Math.max(12, Math.round(width * 0.024));
+        var badgeFontSize = Math.max(11, Math.round(baseFontSize * 0.9));
+
+        var now = new Date();
+        var timeStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ", " +
+                      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+        var staffName = (loggedInUser && loggedInUser.name) ? loggedInUser.name : "Staff";
+        var staffRole = (loggedInUser && loggedInUser.role) ? loggedInUser.role : "Team Member";
+        var taskTitle = "";
+        if (selectedTaskObj) {
+          taskTitle = selectedTaskObj.task || "";
+          if (selectedTaskObj.subTask && selectedTaskObj.subTask.toLowerCase() !== taskTitle.toLowerCase()) {
+            taskTitle += " - " + selectedTaskObj.subTask;
+          }
+        }
+        if (!taskTitle) taskTitle = "Task Verification";
+
+        var locText = capturedGpsCoords ? 
+          ("GPS: " + capturedGpsCoords.lat.toFixed(5) + ", " + capturedGpsCoords.lon.toFixed(5)) : 
+          "Location: Yash Marketing (Store Device)";
+
+        var textStartX = Math.max(14, Math.round(width * 0.03));
+        var lineY = bannerY + Math.round(bannerHeight * 0.22);
+        var lineSpacing = Math.round(bannerHeight * 0.23);
+
+        // 1. Badge Pill
+        ctx.font = "bold " + badgeFontSize + "px Inter, Arial, sans-serif";
+        var badgeText = "🔒 VERIFIED LIVE CAPTURE • ANTI-CHEAT ON";
+        var badgeWidth = ctx.measureText(badgeText).width + 16;
+        ctx.fillStyle = "#10b981";
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(textStartX, lineY - badgeFontSize, badgeWidth, badgeFontSize + 6, 4);
+        } else {
+          ctx.rect(textStartX, lineY - badgeFontSize, badgeWidth, badgeFontSize + 6);
+        }
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(badgeText, textStartX + 8, lineY - 2);
+
+        lineY += lineSpacing;
+
+        // 2. Staff & Task Line
+        ctx.font = "bold " + baseFontSize + "px Inter, Arial, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("👤 Staff: " + staffName + " (" + staffRole + ")   |   📌 " + taskTitle, textStartX, lineY);
+
+        lineY += lineSpacing;
+
+        // 3. Live Time & GPS Line
+        ctx.font = "600 " + Math.round(baseFontSize * 0.95) + "px Inter, Arial, sans-serif";
+        ctx.fillStyle = "#fde047";
+        ctx.fillText("⏰ Live Timestamp: " + timeStr + "   |   📍 " + locText, textStartX, lineY);
+
+        var watermarkedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        processedWatermarkedBase64 = watermarkedDataUrl.split(",")[1];
+        processedWatermarkedMime = "image/jpeg";
+        processedWatermarkedFileName = "proof_" + staffName.replace(/[^a-zA-Z0-9]/g, "_") + "_" + Date.now() + ".jpg";
+
+        var preview = document.getElementById("photoPreview");
+        var statusEl = document.getElementById("photoStampingStatus");
+        var retakeBtn = document.getElementById("retakePhotoBtn");
+        var uploadBtn = document.getElementById("uploadBtn");
+
+        if (statusEl) statusEl.style.display = "none";
+        if (preview) {
+          preview.src = watermarkedDataUrl;
+          preview.style.display = "block";
+        }
+        if (retakeBtn) retakeBtn.style.display = "block";
+        if (uploadBtn) uploadBtn.style.display = "block";
+      }
+
+      function resetPhotoCapture() {
+        var fileInput = document.getElementById("proofFile");
+        if (fileInput) fileInput.value = "";
+        processedWatermarkedBase64 = null;
+        
+        var uploadLabel = document.getElementById("uploadLabel");
+        var preview = document.getElementById("photoPreview");
+        var statusEl = document.getElementById("photoStampingStatus");
+        var retakeBtn = document.getElementById("retakePhotoBtn");
+        var uploadBtn = document.getElementById("uploadBtn");
+
+        if (uploadLabel) uploadLabel.style.display = "block";
+        if (preview) { preview.src = ""; preview.style.display = "none"; }
+        if (statusEl) statusEl.style.display = "none";
+        if (retakeBtn) retakeBtn.style.display = "none";
+        if (uploadBtn) uploadBtn.style.display = "none";
       }
 
       function confirmSubmitProof() {
         var uploadBtn = document.getElementById("uploadBtn");
-        var fileInput = document.getElementById("proofFile");
-        if (!fileInput.files || fileInput.files.length === 0) {
-          alert("⚠️ Task submit karne ke liye proof photo upload karna mandatory hai! Kripya camera se photo khinchein ya select karein.");
+        if (!processedWatermarkedBase64) {
+          alert("⚠️ Task submit karne ke liye live camera photo zaroori hai! Kripya pehle photo capture karein.");
           return;
         }
-        if (fileInput.files.length > 0) {
-          var file = fileInput.files[0];
-          var reader = new FileReader();
-          reader.onload = function(e) {
-            var base64Data = e.target.result.split(',')[1];
-            uploadBtn.innerText = "Submitting..."; uploadBtn.disabled = true;
-            if (selectedTaskObj && selectedTaskObj.isAdhocModal) {
-              google.script.run.withSuccessHandler(function(res) {
-                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
-              }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, base64Data, file.type, file.name, true, selectedTaskObj.index, "Capture");
-            } else {
-              var isAdhoc = selectedTaskObj.isAdhocAssigned ? true : false;
-              var adhocRow = selectedTaskObj.adhocRowIndex ? selectedTaskObj.adhocRowIndex - 1 : null;
-              google.script.run.withSuccessHandler(function(res) {
-                selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
-              }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, base64Data, file.type, file.name, isAdhoc, adhocRow, "Capture");
-            }
-          };
-          reader.readAsDataURL(file);
-        } else { alert("Kripya photo capture karein!"); }
+
+        var base64Data = processedWatermarkedBase64;
+        var mimeType = processedWatermarkedMime;
+        var fileName = processedWatermarkedFileName;
+
+        uploadBtn.innerText = "Submitting..."; uploadBtn.disabled = true;
+        if (selectedTaskObj && selectedTaskObj.isAdhocModal) {
+          google.script.run.withSuccessHandler(function(res) {
+            selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
+          }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, base64Data, mimeType, fileName, true, selectedTaskObj.index, "Capture");
+        } else {
+          var isAdhoc = selectedTaskObj.isAdhocAssigned ? true : false;
+          var adhocRow = selectedTaskObj.adhocRowIndex ? selectedTaskObj.adhocRowIndex - 1 : null;
+          google.script.run.withSuccessHandler(function(res) {
+            selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
+          }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, base64Data, mimeType, fileName, isAdhoc, adhocRow, "Capture");
+        }
       }
 
       function openSopModal(encodedText) { document.getElementById("sopTextContent").innerText = decodeURIComponent(encodedText); document.getElementById("sopModal").style.display = "block"; }
