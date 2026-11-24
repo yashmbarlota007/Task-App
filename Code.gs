@@ -1627,10 +1627,10 @@ function assignTaskPermanently(assigneeInfo, taskTypeVal, taskName, subTask, dea
     var adhocStatus = (freqClean === "Extra (One Time)") ? "Pending ⏳" : "Permanent Sheet Added ✅";
     if (isAllStaff) {
       for (var a = 0; a < targetsAppended.length; a++) {
-        adhocSheet.appendRow([new Date(), targetsAppended[a], taskName + (subTask ? " - " + subTask : ""), deadlineStr, adhocStatus, photoLinksString, freqClean]);
+        adhocSheet.appendRow([new Date(), targetsAppended[a], taskName + (subTask ? " - " + subTask : ""), deadlineStr, adhocStatus, photoLinksString, freqClean, finalSop]);
       }
     } else {
-      adhocSheet.appendRow([new Date(), cleanName, taskName + (subTask ? " - " + subTask : ""), deadlineStr, adhocStatus, photoLinksString, freqClean]);
+      adhocSheet.appendRow([new Date(), cleanName, taskName + (subTask ? " - " + subTask : ""), deadlineStr, adhocStatus, photoLinksString, freqClean, finalSop]);
     }
   } catch(e) {}
 
@@ -1689,7 +1689,16 @@ function getAdhocTasksForStaff(staffName) {
       if (isMatch && isPending) {
         var key = taskDesc.toLowerCase() + "|" + deadline.toLowerCase();
         seenKeys[key] = true;
-        tasks.push({ index: i, assignDate: assignDateStr, task: taskDesc, deadline: deadline, status: status || "Pending ⏳", refPhoto: refPhoto });
+        var rawSop = data[i][7] ? String(data[i][7]).trim() : "";
+        var sopSteps = [];
+        if (rawSop) {
+          sopSteps = rawSop.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+        } else {
+          var sMeta = getSmartRoleDefaults(role, taskDesc, "");
+          sopSteps = sMeta.sopSteps || [];
+          rawSop = sopSteps.join("\n");
+        }
+        tasks.push({ index: i, assignDate: assignDateStr, task: taskDesc, deadline: deadline, status: status || "Pending ⏳", refPhoto: refPhoto, sop: rawSop, sopSteps: sopSteps });
       }
     }
   }
@@ -1744,13 +1753,24 @@ function getAdhocTasksForStaff(staffName) {
           var pKey = itemDesc.toLowerCase() + "|" + dLine.toLowerCase();
           if (!seenKeys[pKey] && itemDesc !== "") {
             seenKeys[pKey] = true;
+            var pRawSop = pData[r][6] ? String(pData[r][6]).trim() : "";
+            var pSopSteps = [];
+            if (pRawSop) {
+              pSopSteps = pRawSop.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+            } else {
+              var pMeta = getSmartRoleDefaults(role, itemDesc, "");
+              pSopSteps = pMeta.sopSteps || [];
+              pRawSop = pSopSteps.join("\n");
+            }
             tasks.push({
               index: -(r + 1),
               assignDate: todayStr,
               task: itemDesc,
               deadline: dLine,
               status: "Pending ⏳",
-              refPhoto: rPhoto
+              refPhoto: rPhoto,
+              sop: pRawSop,
+              sopSteps: pSopSteps
             });
           }
         }
