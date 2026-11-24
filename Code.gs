@@ -2371,9 +2371,10 @@ function getStaffPointsLedger(staffName, period) {
       var pts = parseFloat(subData[j][10]) || 0;
       var tName = subData[j][4] ? subData[j][4].toString().trim() : "";
       var subTName = subData[j][5] ? subData[j][5].toString().trim() : "";
-      var fullTitle = tName + (subTName ? " - " + subTName : "");
-      var deadline = subData[j][6] ? subData[j][6].toString().trim() : "";
-      var submitTime = subData[j][7] ? subData[j][7].toString().trim() : Utilities.formatDate(subDate, tz, "hh:mm a");
+      var isDuplicateSub = subTName && (subTName.trim().toLowerCase() === tName.trim().toLowerCase() || subTName.trim().toLowerCase() === 'action required');
+      var fullTitle = isDuplicateSub ? tName : (tName + (subTName ? " - " + subTName : ""));
+      var deadline = subData[j][6] ? formatTimeFriendly(subData[j][6]) : "N/A";
+      var submitTime = subData[j][7] ? formatTimeFriendly(subData[j][7]) : Utilities.formatDate(subDate, tz, "hh:mm a");
       var status = subData[j][8] ? subData[j][8].toString().trim() : "";
       var proofLink = subData[j][9] ? subData[j][9].toString().trim() : "";
 
@@ -2410,15 +2411,18 @@ function getStaffPointsLedger(staffName, period) {
   if (periodClean === 'daily') {
     for (var d = 0; d < dailyRoutine.length; d++) {
       var item = dailyRoutine[d];
+      var isDup = item.subTask && (item.subTask.trim().toLowerCase() === item.task.trim().toLowerCase() || item.subTask.trim().toLowerCase() === 'action required');
+      var itemFullTitle = isDup ? item.task : (item.task + (item.subTask ? " - " + item.subTask : ""));
       var checkKey1 = (item.task + (item.subTask ? " - " + item.subTask : "")).toLowerCase();
       var checkKey2 = item.task.toLowerCase();
 
-      if (!submittedTitlesMap[checkKey1] && !submittedTitlesMap[checkKey2]) {
+      if (!submittedTitlesMap[checkKey1] && !submittedTitlesMap[checkKey2] && !submittedTitlesMap[itemFullTitle.toLowerCase()]) {
+        var itemDeadline = item.deadline ? formatTimeFriendly(item.deadline) : "07:00 PM";
         entries.push({
           task: item.task,
           subTask: item.subTask,
-          fullTitle: item.task + (item.subTask ? " - " + item.subTask : ""),
-          deadline: item.deadline || "07:00 PM",
+          fullTitle: itemFullTitle,
+          deadline: itemDeadline,
           submitTime: "Pending ⏳",
           dateFormatted: "Today",
           completionPoints: 0,
