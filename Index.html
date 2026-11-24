@@ -1267,7 +1267,7 @@
         <div class="admin-tabs">
           <div class="admin-tab active" id="tabBtnRadar" onclick="switchAdminTab('Radar')">📡 Operations Radar</div>
           <div class="admin-tab" id="tabBtnAssign" onclick="switchAdminTab('Assign')">➕ Assign Task</div>
-          <div class="admin-tab" id="tabBtnScoreboard" onclick="switchAdminTab('Scoreboard')">🏆 Scoreboard</div>
+          <div class="admin-tab" id="tabBtnScoreboard" onclick="switchAdminTab('Scoreboard')">🏢 Company & Staff Performance</div>
           <div class="admin-tab" id="tabBtnProgress" onclick="switchAdminTab('Progress')">📊 Staff Inspection</div>
           <div class="admin-tab" id="tabBtnHistory" onclick="switchAdminTab('History')">📜 Task History</div>
         </div>
@@ -1437,10 +1437,94 @@
           <p id="adminMsg" style="color: var(--success); font-weight: bold; text-align:center; margin-top:10px;"></p>
         </div>
 
-        <!-- TAB 3: SCOREBOARD -->
+        <!-- TAB 3: COMPANY & STAFF PERFORMANCE COCKPIT -->
         <div id="adminTabScoreboard" class="card hidden">
-          <h3 style="color:var(--text-main); margin-top:0; font-size:16px;">🏆 All Staff Live Scoreboard</h3>
-          <div id="adminScoreboardContent" style="overflow-x:auto;">Loading Scoreboard...</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+            <div>
+              <h3 style="color:var(--text-main); margin:0; font-size:17px; font-weight:800;">
+                🏢 Company & Staff Performance Cockpit
+              </h3>
+              <p style="margin:2px 0 0 0; font-size:12px; color:var(--text-muted);">
+                Company-wide aur individual staff level pe task audit trail, scores aur on-time compliance
+              </p>
+            </div>
+            <button onclick="loadAdminScoreboard()" class="btn-outline" style="padding:6px 12px; font-size:12px; font-weight:600;">🔄 Refresh Data</button>
+          </div>
+
+          <!-- 9 Periods Filter Pills -->
+          <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Select Audit Period:</div>
+          <div style="display:flex; gap:6px; margin: 0 0 16px 0; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch;">
+            <button class="ledger-pill active" id="compPill-today" onclick="switchCompanyReportPeriod('today')">📅 Aaj (Today)</button>
+            <button class="ledger-pill" id="compPill-yesterday" onclick="switchCompanyReportPeriod('yesterday')">⏪ Kal (Yesterday)</button>
+            <button class="ledger-pill" id="compPill-thisweek" onclick="switchCompanyReportPeriod('thisweek')">📆 This Week</button>
+            <button class="ledger-pill" id="compPill-lastweek" onclick="switchCompanyReportPeriod('lastweek')">🗓️ Last Week</button>
+            <button class="ledger-pill" id="compPill-thismonth" onclick="switchCompanyReportPeriod('thismonth')">📊 This Month</button>
+            <button class="ledger-pill" id="compPill-lastmonth" onclick="switchCompanyReportPeriod('lastmonth')">📉 Last Month</button>
+            <button class="ledger-pill" id="compPill-thisquarter" onclick="switchCompanyReportPeriod('thisquarter')">📈 This Qtr</button>
+            <button class="ledger-pill" id="compPill-lastquarter" onclick="switchCompanyReportPeriod('lastquarter')">📉 Last Qtr</button>
+            <button class="ledger-pill" id="compPill-thisyear" onclick="switchCompanyReportPeriod('thisyear')">🎯 This Year</button>
+          </div>
+
+          <!-- 1. Company Executive Overview Card -->
+          <div id="companyOverviewCard" style="margin-bottom:20px;">
+            <div style="text-align:center; padding:24px; color:var(--text-muted);">Loading Company Overview...</div>
+          </div>
+
+          <!-- 2. Staff Level Performance Cards -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="margin:0; font-size:13.5px; font-weight:800; color:var(--text-main); text-transform:uppercase; letter-spacing:0.5px;">
+              👥 Staff Level Performance & Compliance
+            </h4>
+            <span id="staffCountBadge" style="font-size:11.5px; background:var(--bg-subtle); color:var(--text-muted); padding:3px 10px; border-radius:12px; font-weight:700;">-- Staff</span>
+          </div>
+          <div id="staffTrackingCardsGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-bottom:22px;">
+            <div style="text-align:center; padding:20px; color:var(--text-muted);">Loading Staff Summaries...</div>
+          </div>
+
+          <!-- 3. Granular Task Audit Trail -->
+          <div style="background:#ffffff; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:16px; margin-bottom:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+              <div>
+                <h4 style="margin:0; font-size:14.5px; font-weight:800; color:var(--text-main);">
+                  📋 Granular Task Audit Trail (<span id="auditPeriodLabelDisplay">Today</span>)
+                </h4>
+                <p style="margin:2px 0 0 0; font-size:11.5px; color:var(--text-muted);">
+                  Konse task complete hue, konse pending/missed hain, timing aur proof links:
+                </p>
+              </div>
+              <!-- Staff Filter Dropdown -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:11.5px; font-weight:700; color:var(--text-muted);">Staff:</label>
+                <select id="auditStaffFilterSelect" onchange="filterAuditTasksByStaff()" style="padding:6px 12px; font-size:12px; border-radius:6px; border:1px solid var(--border-subtle); background:#ffffff; color:var(--text-main); font-weight:600;">
+                  <option value="ALL">All Staff Members</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Task Status Filter Tabs -->
+            <div style="display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch;">
+              <button class="ledger-pill active" id="auditFilter-all" onclick="filterAuditTasksByStatus('all')">All Tasks (<span id="countAuditAll">0</span>)</button>
+              <button class="ledger-pill" id="auditFilter-completed" onclick="filterAuditTasksByStatus('completed')">✅ Completed (<span id="countAuditComp">0</span>)</button>
+              <button class="ledger-pill" id="auditFilter-ontime" onclick="filterAuditTasksByStatus('ontime')">⏱️ On-Time (<span id="countAuditOnTime">0</span>)</button>
+              <button class="ledger-pill" id="auditFilter-late" onclick="filterAuditTasksByStatus('late')">🚨 Late (<span id="countAuditLate">0</span>)</button>
+              <button class="ledger-pill" id="auditFilter-missed" onclick="filterAuditTasksByStatus('missed')">⏳ Nahi Hue / Missed (<span id="countAuditMissed">0</span>)</button>
+            </div>
+
+            <!-- Task Audit List / Table -->
+            <div id="auditTasksListContainer" style="overflow-x:auto;">
+              <div style="text-align:center; padding:20px; color:var(--text-muted);">Loading Task Audit Trail...</div>
+            </div>
+          </div>
+
+          <!-- 4. Toggle Historical Scoreboard Matrix -->
+          <div style="margin-top:10px;">
+            <button onclick="toggleScoreboardMatrix()" class="btn-outline" style="width:100%; padding:10px; font-size:12px; font-weight:700;">
+              📊 Toggle Multi-Period Scoreboard Matrix (Table View) ▾
+            </button>
+            <div id="scoreboardMatrixWrapper" style="display:none; margin-top:12px;">
+              <div id="adminScoreboardContent" style="overflow-x:auto;">Loading Table...</div>
+            </div>
+          </div>
         </div>
 
         <!-- TAB 4: STAFF INSPECTION -->
@@ -3142,8 +3226,7 @@ function renderStaffContent() {
             } else {
               html += "<div class='subtask-name' style='font-size:13px; color:var(--text-body); margin-bottom:6px;'>👉 Action:</div>";
               html += "<div class='subtask-actions'>";
-              html += "<button class='btn-complete' onclick='triggerSelfAuditCheck(" + i + ", true, this)'>✅ Done</button>";
-              html += "<button class='btn-capture' onclick='openAdhocProofModal(" + i + ")'>📸 Photo</button>";
+              html += "<button class='btn-capture' style='background:var(--primary); color:#ffffff; font-weight:700; padding:8px 14px; border:none;' onclick='openAdhocProofModal(" + i + ")'>📸 Upload Proof & Done</button>";
               if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + i + ", this)'>⏭️ Skip</button>";
               html += "</div>";
             }
@@ -3265,8 +3348,7 @@ function renderStaffContent() {
               } else {
                 html += "<div class='subtask-name'>" + displayName + "</div>";
                 html += "<div class='subtask-actions'>";
-                html += "<button class='btn-complete' onclick='triggerSelfAuditCheck(" + stIndex + ", false, this)'>✅ Done</button>";
-                html += "<button class='btn-capture' onclick='openStandardProofModal(" + stIndex + ")'>📸 Photo</button>";
+                html += "<button class='btn-capture' style='background:var(--primary); color:#ffffff; font-weight:700; padding:8px 14px; border:none;' onclick='openStandardProofModal(" + stIndex + ")'>📸 Upload Proof & Done</button>";
                 if (isOwner) html += "<button class='btn-skip' onclick='skipTask(" + stIndex + ", this)'>⏭️ Skip</button>";
                 html += "</div>";
               }
@@ -3291,27 +3373,13 @@ function renderStaffContent() {
 
       // DIRECT DONE WITHOUT PHOTO
       function directCompleteRoutine(index, btn) {
-        var t = roleTasks[index];
-        btn.innerText = "..."; btn.disabled = true;
-        var isAdhoc = t.isAdhocAssigned ? true : false;
-        var adhocRow = t.adhocRowIndex ? t.adhocRowIndex - 1 : null;
-        google.script.run.withSuccessHandler(function(res) {
-          t.status = res.status;
-          updatePointsUI(res.pointsEarned);
-          renderStaffContent();
-          showStaffSubmittedModal(t, res);
-        }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, t.type, t.task, t.subTask, t.deadline, null, null, null, isAdhoc, adhocRow, "Complete");
+        // Proof photo mandatory
+        openStandardProofModal(index);
       }
 
       function directCompleteAdhoc(index, btn) {
-        var t = extraTasks[index];
-        btn.innerText = "..."; btn.disabled = true;
-        google.script.run.withSuccessHandler(function(res) {
-          t.status = res.status;
-          updatePointsUI(res.pointsEarned);
-          renderStaffContent();
-          showStaffSubmittedModal(t, res);
-        }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", t.task, "", t.deadline, null, null, null, true, t.index, "Complete");
+        // Proof photo mandatory
+        openAdhocProofModal(index);
       }
 
       function skipTask(index, btn) {
@@ -3371,6 +3439,10 @@ function renderStaffContent() {
       function confirmSubmitProof() {
         var uploadBtn = document.getElementById("uploadBtn");
         var fileInput = document.getElementById("proofFile");
+        if (!fileInput.files || fileInput.files.length === 0) {
+          alert("⚠️ Task submit karne ke liye proof photo upload karna mandatory hai! Kripya camera se photo khinchein ya select karein.");
+          return;
+        }
         if (fileInput.files.length > 0) {
           var file = fileInput.files[0];
           var reader = new FileReader();
