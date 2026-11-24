@@ -2872,7 +2872,12 @@
 
       function toggleStepper(id) {
         var el = document.getElementById(id);
-        if (el) el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        var icon = document.getElementById(id + "_toggle");
+        if (el) {
+          var isHidden = (el.style.display === 'none');
+          el.style.display = isHidden ? 'block' : 'none';
+          if (icon) icon.innerText = isHidden ? '▲ Collapse' : '▼ View Steps';
+        }
       }
 
       function toggleTroubleshoot(id) {
@@ -3235,6 +3240,25 @@ function renderStaffContent() {
 
             if(t.refPhoto) html += renderPhotoPills(t.refPhoto);
 
+            // Step-by-Step SOP for One-Time Tasks (Open by default for clear visibility)
+            var adhocStepperId = "stepper_adhoc_" + i;
+            var adhocSopSteps = t.sopSteps || [];
+            if (!adhocSopSteps || adhocSopSteps.length === 0) {
+              if (t.sop) adhocSopSteps = t.sop.split(/\r?\n/).map(function(s){return s.trim();}).filter(Boolean);
+            }
+            if (adhocSopSteps && adhocSopSteps.length > 0) {
+              html += "<div class='task-stepper-box' style='margin:10px 0;'>";
+              html += "<div class='stepper-header' onclick='toggleStepper(\"" + adhocStepperId + "\")' style='cursor:pointer;'>";
+              html += "<span style='font-weight:700; color:var(--text-main);'>📋 Step-by-Step SOP (Execution Guide):</span>";
+              html += "<span id='" + adhocStepperId + "_toggle' style='font-size:11px; color:var(--primary); font-weight:600;'>▲ Collapse</span>";
+              html += "</div>";
+              html += "<div class='stepper-content' id='" + adhocStepperId + "' style='display:block;'>";
+              for (var as = 0; as < adhocSopSteps.length; as++) {
+                html += "<div class='stepper-step'><span class='stepper-num'>" + (as+1) + "</span><span>" + adhocSopSteps[as] + "</span></div>";
+              }
+              html += "</div></div>";
+            }
+
             html += "<div class='subtask-row " + (isCompleted ? "completed" : "") + "'>";
             if(isCompleted) {
               html += "<div class='subtask-name' style='color:var(--text-muted); font-size:12px; margin-bottom:0;'>Status: Done</div>";
@@ -3296,16 +3320,19 @@ function renderStaffContent() {
 
             if(firstTask.refPhoto) html += renderPhotoPills(firstTask.refPhoto);
 
-            // 1-2-3 STEPPER ACCORDION (Unique ID per card)
+            // 1-2-3 STEPPER ACCORDION (Unique ID per card, Open by Default for Full Visibility)
             var stepperId = "stepper_card_" + cardIdx;
             var sopSteps = firstTask.sopSteps || [];
-            if (sopSteps.length > 0) {
-              html += "<div class='task-stepper-box'>";
-              html += "<div class='stepper-header' onclick='toggleStepper(\"" + stepperId + "\")'>";
-              html += "<span>📋 Step-by-Step SOP (Execution Guide)</span>";
-              html += "<span style='font-size:10px; color:var(--primary);'>Tap to View ▼</span>";
+            if (!sopSteps || sopSteps.length === 0) {
+              if (firstTask.sop) sopSteps = firstTask.sop.split(/\r?\n/).map(function(s){return s.trim();}).filter(Boolean);
+            }
+            if (sopSteps && sopSteps.length > 0) {
+              html += "<div class='task-stepper-box' style='margin:10px 0;'>";
+              html += "<div class='stepper-header' onclick='toggleStepper(\"" + stepperId + "\")' style='cursor:pointer;'>";
+              html += "<span style='font-weight:700; color:var(--text-main);'>📋 Step-by-Step SOP (Execution Guide):</span>";
+              html += "<span id='" + stepperId + "_toggle' style='font-size:11px; color:var(--primary); font-weight:600;'>▲ Collapse</span>";
               html += "</div>";
-              html += "<div class='stepper-content' id='" + stepperId + "'>";
+              html += "<div class='stepper-content' id='" + stepperId + "' style='display:block;'>";
               for (var s = 0; s < sopSteps.length; s++) {
                 html += "<div class='stepper-step'><span class='stepper-num'>" + (s+1) + "</span><span>" + sopSteps[s] + "</span></div>";
               }
