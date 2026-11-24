@@ -1734,17 +1734,17 @@
             <div class="score-val" id="scLastMonth">0%</div>
             <div class="score-pts-sub" id="scLastMonthPts">0 P</div>
           </div>
-          <div class="score-box">
+          <div class="score-box" onclick="switchLedgerPeriod('currentquarter')" style="cursor:pointer;" title="View Curr. Qtr ledger">
             <div class="score-lbl">Curr. Qtr</div>
             <div class="score-val" id="scCurrQtr">0%</div>
             <div class="score-pts-sub" id="scCurrQtrPts">0 P</div>
           </div>
-          <div class="score-box">
+          <div class="score-box" onclick="switchLedgerPeriod('lastquarter')" style="cursor:pointer;" title="View Last Qtr ledger">
             <div class="score-lbl">Last Qtr</div>
             <div class="score-val" id="scLastQtr">0%</div>
             <div class="score-pts-sub" id="scLastQtrPts">0 P</div>
           </div>
-          <div class="score-box">
+          <div class="score-box" onclick="switchLedgerPeriod('yearly')" style="cursor:pointer;" title="View Yearly ledger">
             <div class="score-lbl">Yearly</div>
             <div class="score-val" id="scYearly">0%</div>
             <div class="score-pts-sub" id="scYearlyPts">0 P</div>
@@ -1787,15 +1787,16 @@
             <thead>
               <tr>
                 <th>Task</th>
-                <th>Type</th>
                 <th>Deadline</th>
-                <th>Status</th>
+                <th>Submit Time</th>
+                <th>Completion</th>
                 <th>Timing</th>
                 <th>Points</th>
+                <th>Proof</th>
               </tr>
             </thead>
             <tbody id="ledgerTableBody">
-              <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:16px;">Loading points ledger...</td></tr>
+              <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:16px;">Loading points ledger...</td></tr>
             </tbody>
           </table>
         </div>
@@ -3789,7 +3790,8 @@ function renderRadarCards() {
       for (var p = 0; p < pendingTasks.length; p++) {
         var pt = pendingTasks[p];
         var deadBadge = pt.isOverdue ? '<span style="color:var(--danger); font-weight:bold; font-size:11px;">🚨 ' + pt.overdueText + '</span>' : '<span style="color:var(--warning-text); font-size:11px;">⏰ ' + pt.deadline + '</span>';
-        var fullTitle = pt.task + (pt.subTask ? ' - ' + pt.subTask : '');
+        var isDupSub = pt.subTask && (pt.subTask.trim().toLowerCase() === pt.task.trim().toLowerCase() || pt.subTask.trim().toLowerCase() === 'action required');
+        var fullTitle = isDupSub ? pt.task : (pt.task + (pt.subTask ? ' - ' + pt.subTask : ''));
 
         html += '<div class="radar-task-row">';
         html += '  <div style="flex:1; padding-right:8px;">';
@@ -3982,9 +3984,22 @@ function renderRadarCards() {
       function openPointsLedger(period, targetStaff) {
         currentLedgerPeriod = period || 'daily';
         currentLedgerTargetStaff = targetStaff || (loggedInUser ? loggedInUser.name : '');
+        try { currentLedgerTargetStaff = decodeURIComponent(currentLedgerTargetStaff); } catch(e) {}
 
         var subEl = document.getElementById('ledgerStaffSubtitle');
         if (subEl) subEl.innerText = "Staff: " + currentLedgerTargetStaff + " | Breakdown & Audit Trail";
+
+        // Reset the 8 score boxes to loading and fetch target staff scores
+        var scoreValIds = ['scDaily', 'scWeekly', 'scLastWeek', 'scMonthly', 'scLastMonth', 'scCurrQtr', 'scLastQtr', 'scYearly'];
+        var scorePtsIds = ['scDailyPts', 'scWeeklyPts', 'scLastWeekPts', 'scMonthlyPts', 'scLastMonthPts', 'scCurrQtrPts', 'scLastQtrPts', 'scYearlyPts'];
+        scoreValIds.forEach(function(id) { var el = document.getElementById(id); if (el) el.innerText = '...'; });
+        scorePtsIds.forEach(function(id) { var el = document.getElementById(id); if (el) el.innerText = ''; });
+
+        if (window.google && google.script && google.script.run) {
+          google.script.run.withSuccessHandler(function(sc) {
+            applyScorecardUI(sc);
+          }).getStaffScoresBreakdown(currentLedgerTargetStaff);
+        }
 
         switchLedgerPeriod(currentLedgerPeriod);
         document.getElementById('pointsLedgerModal').style.display = 'block';
@@ -4006,7 +4021,7 @@ function renderRadarCards() {
         });
 
         // Sync highlight card at top
-        var boxMap = { daily: 'scDaily', weekly: 'scWeekly', lastweek: 'scLastWeek', monthly: 'scMonthly', lastmonth: 'scLastMonth' };
+        var boxMap = { daily: 'scDaily', weekly: 'scWeekly', lastweek: 'scLastWeek', monthly: 'scMonthly', lastmonth: 'scLastMonth', currentquarter: 'scCurrQtr', lastquarter: 'scLastQtr', yearly: 'scYearly' };
         var boxes = document.querySelectorAll('#staffScoreGrid .score-box');
         boxes.forEach(function(b) { b.classList.remove('highlight'); });
         if (boxMap[period]) {
@@ -4014,7 +4029,7 @@ function renderRadarCards() {
           if (targetEl && targetEl.parentElement) targetEl.parentElement.classList.add('highlight');
         }
 
-        var labelMapDisplay = { daily: 'Today', weekly: 'This Week', lastweek: 'Last Week', monthly: 'This Month', lastmonth: 'Last Month', all: 'All Time' };
+        var labelMapDisplay = { daily: 'Today', weekly: 'This Week', lastweek: 'Last Week', monthly: 'This Month', lastmonth: 'Last Month', currentquarter: 'Curr Qtr', lastquarter: 'Last Qtr', yearly: 'Yearly', all: 'All Time' };
         var displayPeriodLabel = labelMapDisplay[period] || period;
         var tbody = document.getElementById('ledgerTableBody');
         tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; color:var(--text-muted); padding:15px;'>⏳ Loading " + displayPeriodLabel + " points ledger...</td></tr>";
