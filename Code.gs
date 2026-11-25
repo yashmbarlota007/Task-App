@@ -119,7 +119,21 @@ function formatTimeFriendly(val) {
         return Utilities.formatDate(val, Session.getScriptTimeZone(), "dd MMM, hh:mm a");
       }
     }
-    var str = val.toString().replace(/\s*GMT.*/i, "").trim();
+    var str = String(val).trim();
+    if (str.indexOf("1899") !== -1 || str.indexOf("1900") !== -1) {
+      var tMatch = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (tMatch) {
+        var rawH = parseInt(tMatch[1], 10);
+        var rawM = parseInt(tMatch[2], 10);
+        var a = rawH >= 12 ? "PM" : "AM";
+        var hh = rawH % 12;
+        if (hh === 0) hh = 12;
+        var hhStr = (hh < 10 ? "0" : "") + hh;
+        var mmStr = (rawM < 10 ? "0" : "") + rawM;
+        return hhStr + ":" + mmStr + " " + a;
+      }
+    }
+    str = str.replace(/\s*GMT.*$/i, "").replace(/\s*\([^)]*\)$/i, "").trim();
     var timeMatch = str.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i);
     if (timeMatch && !timeMatch[3]) {
       var rawH = parseInt(timeMatch[1], 10);
@@ -176,8 +190,15 @@ function getStaffScoresBreakdown(staffName) {
       if (pts <= 0) continue;
 
       var rawDate = subData[j][0];
-      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-      if (isNaN(subDate.getTime())) continue;
+      var subDate = null;
+      if (rawDate instanceof Date) {
+        subDate = rawDate;
+      } else if (rawDate) {
+        var dStr = String(rawDate).trim();
+        subDate = new Date(dStr);
+        if (isNaN(subDate.getTime())) subDate = new Date(dStr.replace(" ", "T"));
+      }
+      if (!subDate || isNaN(subDate.getTime())) continue;
 
       var subYear = subDate.getFullYear();
       var subMonth = subDate.getMonth();
@@ -304,8 +325,15 @@ function getAllStaffScoreboard() {
       if (pts <= 0) continue;
 
       var rawDate = subData[j][0];
-      var subDate = (rawDate instanceof Date) ? rawDate : new Date(rawDate);
-      if (isNaN(subDate.getTime())) continue;
+      var subDate = null;
+      if (rawDate instanceof Date) {
+        subDate = rawDate;
+      } else if (rawDate) {
+        var dStr = String(rawDate).trim();
+        subDate = new Date(dStr);
+        if (isNaN(subDate.getTime())) subDate = new Date(dStr.replace(" ", "T"));
+      }
+      if (!subDate || isNaN(subDate.getTime())) continue;
 
       var subYear = subDate.getFullYear();
       var subMonth = subDate.getMonth();
@@ -1714,16 +1742,48 @@ function getAdhocTasksForStaff(staffName) {
         } catch(e) { assignDateStr = assignDateRaw.toString().replace(/\s*GMT.*/i, '').trim(); }
       }
 
+      // Split task title and subtask detail if concatenated with " - "
+      var taskTitle = taskDesc;
+      var subTaskDetail = "";
+      if (taskDesc.indexOf(" - ") !== -1) {
+        var sParts = taskDesc.split(/\s+-\s+(.+)/);
+        taskTitle = sParts[0].trim();
+        subTaskDetail = (sParts[1] || "").trim();
+      }
+
       var rawSop = data[i][7] ? String(data[i][7]).trim() : "";
+      
+      // If Adhoc_Tasks has empty SOP or generic fallback, cross-check personal staff sheet
+      if (!rawSop || rawSop.indexOf("Task ki di gayi deadline") !== -1) {
+        try {
+          var checkSh = ss.getSheetByName(staffName);
+          if (checkSh && checkSh.getLastRow() >= 2) {
+            var cData = checkSh.getDataRange().getValues();
+            for (var cr = 1; cr < cData.length; cr++) {
+              var cTask = String(cData[cr][1] || "").toLowerCase().trim();
+              var cSub = String(cData[cr][2] || "").trim();
+              var cSop = String(cData[cr][6] || "").trim();
+              if (cTask === taskTitle.toLowerCase() || (cSub && cSub.toLowerCase() === taskTitle.toLowerCase())) {
+                if (cSop && cSop.indexOf("Task ki di gayi deadline") === -1) {
+                  rawSop = cSop;
+                  if (!subTaskDetail && cSub && cSub.toLowerCase() !== cTask) subTaskDetail = cSub;
+                  break;
+                }
+              }
+            }
+          }
+        } catch(e) {}
+      }
+
       var sopSteps = [];
       if (rawSop) {
         sopSteps = rawSop.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
       } else {
-        var sMeta = getSmartRoleDefaults(role, taskDesc, "");
+        var sMeta = getSmartRoleDefaults(role, taskTitle, subTaskDetail);
         sopSteps = sMeta.sopSteps || [];
         rawSop = sopSteps.join("\n");
       }
-      tasks.push({ index: i, assignDate: assignDateStr, task: taskDesc, deadline: deadline, status: "Pending ⏳", refPhoto: refPhoto, sop: rawSop, sopSteps: sopSteps });
+      tasks.push({ index: i, assignDate: assignDateStr, task: taskTitle, subTask: subTaskDetail, deadline: deadline, status: "Pending ⏳", refPhoto: refPhoto, sop: rawSop, sopSteps: sopSteps });
     }
   }
 
@@ -1804,10 +1864,12 @@ function getAdhocTasksForStaff(staffName) {
               pSteps = pM.sopSteps || [];
               pRaw = pSteps.join("\n");
             }
+            var subDetail = (sI && sI.toLowerCase() !== tN.toLowerCase()) ? sI : "";
             tasks.push({
               index: -(r + 1),
               assignDate: todayStr,
-              task: itmDesc,
+              task: tN,
+              subTask: subDetail,
               deadline: dL,
               status: "Pending ⏳",
               refPhoto: rP,
