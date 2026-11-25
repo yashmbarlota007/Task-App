@@ -1759,14 +1759,30 @@ function getAdhocTasksForStaff(staffName) {
           var checkSh = ss.getSheetByName(staffName);
           if (checkSh && checkSh.getLastRow() >= 2) {
             var cData = checkSh.getDataRange().getValues();
+            var normDesc = taskDesc.toLowerCase().replace(/[^a-z0-9]/g, "");
+            var normTitle = taskTitle.toLowerCase().replace(/[^a-z0-9]/g, "");
+
             for (var cr = 1; cr < cData.length; cr++) {
-              var cTask = String(cData[cr][1] || "").toLowerCase().trim();
-              var cSub = String(cData[cr][2] || "").trim();
+              var cTaskRaw = String(cData[cr][1] || "").trim();
+              var cSubRaw = String(cData[cr][2] || "").trim();
               var cSop = String(cData[cr][6] || "").trim();
-              if (cTask === taskTitle.toLowerCase() || (cSub && cSub.toLowerCase() === taskTitle.toLowerCase())) {
+
+              var normCTask = cTaskRaw.toLowerCase().replace(/[^a-z0-9]/g, "");
+              var normCSub = cSubRaw.toLowerCase().replace(/[^a-z0-9]/g, "");
+              var normCombo = (normCTask + normCSub);
+
+              var isSheetRowMatch = false;
+              if (normCTask && (normCTask === normDesc || normCTask === normTitle)) isSheetRowMatch = true;
+              else if (normCSub && (normCSub === normDesc || normCSub === normTitle)) isSheetRowMatch = true;
+              else if (normDesc && (normCTask.indexOf(normDesc) !== -1 || normDesc.indexOf(normCTask) !== -1)) isSheetRowMatch = true;
+              else if (normTitle && (normCTask.indexOf(normTitle) !== -1 || normCombo.indexOf(normTitle) !== -1)) isSheetRowMatch = true;
+
+              if (isSheetRowMatch) {
                 if (cSop && cSop.indexOf("Task ki di gayi deadline") === -1) {
                   rawSop = cSop;
-                  if (!subTaskDetail && cSub && cSub.toLowerCase() !== cTask) subTaskDetail = cSub;
+                  if (!subTaskDetail && cSubRaw && normCSub !== normCTask) {
+                    subTaskDetail = cSubRaw;
+                  }
                   break;
                 }
               }
@@ -1815,7 +1831,23 @@ function getAdhocTasksForStaff(staffName) {
       for (var t = 0; t < tasks.length; t++) {
         var tDesc = String(tasks[t].task || "").trim();
         var tDescLow = tDesc.toLowerCase();
-        if (!existingTasks[tDescLow] && tasks[t].index > 0) {
+        var normTDesc = tDescLow.replace(/[^a-z0-9]/g, "");
+        var isAlreadyInSheet = existingTasks[tDescLow];
+        if (!isAlreadyInSheet) {
+          for (var p = 1; p < pData.length; p++) {
+            var exTask = String(pData[p][1] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            var exSub = String(pData[p][2] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (exTask && (exTask === normTDesc || exTask.indexOf(normTDesc) !== -1 || normTDesc.indexOf(exTask) !== -1)) {
+              isAlreadyInSheet = true;
+              break;
+            }
+            if (exSub && (exSub === normTDesc || exSub.indexOf(normTDesc) !== -1 || normTDesc.indexOf(exSub) !== -1)) {
+              isAlreadyInSheet = true;
+              break;
+            }
+          }
+        }
+        if (!isAlreadyInSheet && tasks[t].index > 0) {
           var sopDefaults = getSmartRoleDefaults(role, tDesc, "");
           var autoRow = [
             "Extra (One Time)",
