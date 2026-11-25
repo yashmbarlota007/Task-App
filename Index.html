@@ -3229,7 +3229,10 @@ function renderStaffContent() {
             var isCompleted = t.status.includes("Uploaded") || t.status.includes("Completed") || t.status.includes("Skipped");
             var isSkipped = t.status.includes("Skipped");
             html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#ffffff;'>";
-            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:var(--text-main);'>🔔 Extra Task: " + t.task + "</p>";
+            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:var(--text-main);'>🔔 Extra Task: <span style='color:var(--primary);'>" + t.task + "</span></p>";
+            if (t.subTask && t.subTask.trim() !== '' && t.subTask.trim().toLowerCase() !== t.task.trim().toLowerCase()) {
+              html += "<div style='margin:6px 0 8px 0; font-size:13px; color:var(--text-body); background:var(--bg-subtle); padding:8px 12px; border-radius:6px; border-left:3px solid var(--primary);'><b>📝 Instruction / Detail:</b> " + t.subTask + "</div>";
+            }
             
             html += "<div style='background:var(--bg-page); padding:10px; border-radius:8px; margin: 10px 0; border:1px solid var(--border-subtle);'>";
             if (t.assignDate) { html += "<p style='margin:0 0 5px 0; font-size:11px; color:var(--primary);'>🟢 <b>Assigned:</b> " + t.assignDate + "</p>"; }
@@ -3255,7 +3258,8 @@ function renderStaffContent() {
               html += "</div>";
               html += "<div class='stepper-content' id='" + adhocStepperId + "' style='display:block;'>";
               for (var as = 0; as < adhocSopSteps.length; as++) {
-                html += "<div class='stepper-step'><span class='stepper-num'>" + (as+1) + "</span><span>" + adhocSopSteps[as] + "</span></div>";
+                var cleanStep = String(adhocSopSteps[as] || '').replace(/^\s*\d+[\.\)\-:]\s*/, '').trim();
+                html += "<div class='stepper-step'><span class='stepper-num'>" + (as+1) + "</span><span>" + cleanStep + "</span></div>";
               }
               html += "</div></div>";
             }
@@ -3335,7 +3339,8 @@ function renderStaffContent() {
               html += "</div>";
               html += "<div class='stepper-content' id='" + stepperId + "' style='display:block;'>";
               for (var s = 0; s < sopSteps.length; s++) {
-                html += "<div class='stepper-step'><span class='stepper-num'>" + (s+1) + "</span><span>" + sopSteps[s] + "</span></div>";
+                var cleanStep = String(sopSteps[s] || '').replace(/^\s*\d+[\.\)\-:]\s*/, '').trim();
+                html += "<div class='stepper-step'><span class='stepper-num'>" + (s+1) + "</span><span>" + cleanStep + "</span></div>";
               }
               if (firstTask.refPhoto && firstTask.refPhoto.trim() !== '') {
                 html += "<div style='margin-top:8px;'><a href='#' onclick='openPhotoZoomDirect(\"" + encodeURIComponent(firstTask.refPhoto) + "\", \"Reference Document\"); return false;' style='font-size:11px; color:var(--primary); text-decoration:none;'>📄 View Reference Document / Template Form</a></div>";
