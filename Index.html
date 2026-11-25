@@ -3225,6 +3225,7 @@ function renderStaffContent() {
           var sortedExtra = extraTasks.slice().sort(function(a, b) { return (b.index || 0) - (a.index || 0); });
           for(var i=0; i<sortedExtra.length; i++) {
             var t = sortedExtra[i];
+            var origIndex = extraTasks.indexOf(t);
             var isCompleted = t.status.includes("Uploaded") || t.status.includes("Completed") || t.status.includes("Skipped");
             var isSkipped = t.status.includes("Skipped");
             html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#ffffff;'>";
@@ -3266,8 +3267,8 @@ function renderStaffContent() {
             } else {
               html += "<div class='subtask-name' style='font-size:13px; color:var(--text-body); margin-bottom:6px;'>👉 Action:</div>";
               html += "<div class='subtask-actions'>";
-              html += "<button class='btn-capture' style='background:var(--primary); color:#ffffff; font-weight:700; padding:8px 14px; border:none;' onclick='openAdhocProofModal(" + i + ")'>📸 Upload Proof & Done</button>";
-              if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + i + ", this)'>⏭️ Skip</button>";
+              html += "<button class='btn-capture' style='background:var(--primary); color:#ffffff; font-weight:700; padding:8px 14px; border:none;' onclick='openAdhocProofModal(" + origIndex + ")'>📸 Upload Proof & Done</button>";
+              if (isOwner) html += "<button class='btn-skip' onclick='skipAdhocTask(" + origIndex + ", this)'>⏭️ Skip</button>";
               html += "</div>";
             }
             html += "</div></div>";
