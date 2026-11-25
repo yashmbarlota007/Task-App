@@ -1650,6 +1650,25 @@ function getAdhocTasksForStaff(staffName) {
   var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MMM");
   var seenKeys = {};
 
+  // Build a set of ALL submitted / completed one-time tasks for this staff member
+  var completedSet = {};
+  var subSheet = ss.getSheetByName("Task_Submissions");
+  if (subSheet && subSheet.getLastRow() > 1) {
+    var subData = subSheet.getDataRange().getValues();
+    for (var s = 1; s < subData.length; s++) {
+      var sStaff = String(subData[s][1] || "").toLowerCase().trim();
+      var sStatus = String(subData[s][8] || "").toLowerCase();
+      var isDoneSub = sStatus.includes("upload") || sStatus.includes("complet") || sStatus.includes("skip");
+      if (sStaff === name && isDoneSub) {
+        var sTask = String(subData[s][4] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        var sSub = String(subData[s][5] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (sTask) completedSet[sTask] = true;
+        if (sSub) completedSet[sSub] = true;
+        if (sTask || sSub) completedSet[sTask + sSub] = true;
+      }
+    }
+  }
+
   // A. Search Adhoc_Tasks Sheet
   var sheet = ss.getSheetByName("Adhoc_Tasks");
   if (sheet && sheet.getLastRow() > 1) {
@@ -1667,6 +1686,24 @@ function getAdhocTasksForStaff(staffName) {
       if (!isOneTime) continue;
       if (taskDesc === "") continue;
 
+      var isMatch = false;
+      if (rawAssignee === name || rawAssignee === role || rawAssignee === "all" || rawAssignee === "everyone" || rawAssignee === "all staff") { isMatch = true; }
+      else if (rawAssignee !== "" && name !== "") { if (rawAssignee.includes(name) || name.includes(rawAssignee)) isMatch = true; }
+
+      if (!isMatch) continue;
+
+      var taskKey = taskDesc.toLowerCase().replace(/[^a-z0-9]/g, "");
+      var key = taskDesc.toLowerCase() + "|" + deadline.toLowerCase();
+      seenKeys[key] = true;
+
+      // CRITICAL: Once a One-Time task is submitted/uploaded/completed/skipped, NEVER show it again!
+      var isAlreadyDone = status.toLowerCase().includes("upload") || status.toLowerCase().includes("complet") || status.toLowerCase().includes("skip");
+      if (completedSet[taskKey]) { isAlreadyDone = true; }
+
+      if (isAlreadyDone) {
+        continue; // DO NOT RETURN COMPLETED ONE-TIME TASKS!
+      }
+
       var assignDateRaw = data[i][0];
       var assignDateStr = "";
       if (assignDateRaw) {
@@ -1677,47 +1714,44 @@ function getAdhocTasksForStaff(staffName) {
         } catch(e) { assignDateStr = assignDateRaw.toString().replace(/\s*GMT.*/i, '').trim(); }
       }
 
-      var isMatch = false;
-      if (rawAssignee === name || rawAssignee === role || rawAssignee === "all" || rawAssignee === "everyone" || rawAssignee === "all staff") { isMatch = true; }
-      else if (rawAssignee !== "" && name !== "") { if (rawAssignee.includes(name) || name.includes(rawAssignee)) isMatch = true; }
-
-      var isPending = true;
-      if (status.toLowerCase().includes("upload") || status.toLowerCase().includes("complet") || status.toLowerCase().includes("skip")) {
-        if (!status.includes(todayStr)) { isPending = false; }
+      var rawSop = data[i][7] ? String(data[i][7]).trim() : "";
+      var sopSteps = [];
+      if (rawSop) {
+        sopSteps = rawSop.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+      } else {
+        var sMeta = getSmartRoleDefaults(role, taskDesc, "");
+        sopSteps = sMeta.sopSteps || [];
+        rawSop = sopSteps.join("\n");
       }
-
-      if (isMatch && isPending) {
-        var key = taskDesc.toLowerCase() + "|" + deadline.toLowerCase();
-        seenKeys[key] = true;
-        var rawSop = data[i][7] ? String(data[i][7]).trim() : "";
-        var sopSteps = [];
-        if (rawSop) {
-          sopSteps = rawSop.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
-        } else {
-          var sMeta = getSmartRoleDefaults(role, taskDesc, "");
-          sopSteps = sMeta.sopSteps || [];
-          rawSop = sopSteps.join("\n");
-        }
-        tasks.push({ index: i, assignDate: assignDateStr, task: taskDesc, deadline: deadline, status: status || "Pending ⏳", refPhoto: refPhoto, sop: rawSop, sopSteps: sopSteps });
-      }
+      tasks.push({ index: i, assignDate: assignDateStr, task: taskDesc, deadline: deadline, status: "Pending ⏳", refPhoto: refPhoto, sop: rawSop, sopSteps: sopSteps });
     }
   }
 
-  // B. Auto-Sync to Staff Personal Sheet: Ensure any pending adhoc task appears in staff's personal tab
+  // B. Auto-Sync to Staff Personal Sheet & Clean up completed one-time tasks
   try {
     var pSheet = ss.getSheetByName(staffName);
     if (pSheet && pSheet.getLastRow() >= 1) {
       var pData = pSheet.getDataRange().getValues();
       var existingTasks = {};
+      var rowsToDelete = [];
+
       for (var p = 1; p < pData.length; p++) {
         var pTaskName = String(pData[p][1] || "").toLowerCase().trim();
         var pSub = String(pData[p][2] || "").toLowerCase().trim();
         existingTasks[pTaskName] = true;
         if (pSub) existingTasks[pSub] = true;
         existingTasks[pTaskName + " - " + pSub] = true;
+
+        var rowFreq = String(pData[p][0] || "").toLowerCase().trim();
+        if (rowFreq.includes("extra") || rowFreq.includes("one time") || rowFreq.includes("adhoc")) {
+          var pFull = (pTaskName + " " + pSub).replace(/[^a-z0-9]/g, "");
+          if (completedSet[pFull] || completedSet[pTaskName.replace(/[^a-z0-9]/g, "")]) {
+            rowsToDelete.push(p + 1);
+          }
+        }
       }
 
-      // 1. Sync pending tasks into staff's personal sheet
+      // 1. Sync genuine pending tasks into staff's personal sheet
       for (var t = 0; t < tasks.length; t++) {
         var tDesc = String(tasks[t].task || "").trim();
         var tDescLow = tDesc.toLowerCase();
@@ -1730,7 +1764,7 @@ function getAdhocTasksForStaff(staffName) {
             tasks[t].deadline || "Jald",
             "adhoc",
             10,
-            sopDefaults.sopSteps ? sopDefaults.sopSteps.join("\n") : "Complete assigned one-time task accurately.",
+            tasks[t].sop || (sopDefaults.sopSteps ? sopDefaults.sopSteps.join("\n") : "Complete assigned one-time task accurately."),
             sopDefaults.goodSample || "Verified clean execution.",
             "", "", "", "",
             tasks[t].refPhoto || "",
@@ -1741,36 +1775,44 @@ function getAdhocTasksForStaff(staffName) {
         }
       }
 
-      // 2. Also pick up any Extra (One Time) rows entered directly into the personal sheet
-      for (var r = 1; r < pData.length; r++) {
-        var rowFreq = String(pData[r][0] || "").toLowerCase().trim();
-        if (rowFreq.includes("extra") || rowFreq.includes("one time") || rowFreq.includes("adhoc")) {
-          var tName = String(pData[r][1] || "").trim();
-          var sItem = String(pData[r][2] || "").trim();
-          var itemDesc = tName + (sItem && sItem.toLowerCase() !== tName.toLowerCase() ? " - " + sItem : "");
-          var dLine = pData[r][3] ? pData[r][3].toString().replace(/\s*GMT.*/i, '').trim() : "Jald";
-          var rPhoto = pData[r][12] ? String(pData[r][12]).trim() : "";
-          var pKey = itemDesc.toLowerCase() + "|" + dLine.toLowerCase();
-          if (!seenKeys[pKey] && itemDesc !== "") {
-            seenKeys[pKey] = true;
-            var pRawSop = pData[r][6] ? String(pData[r][6]).trim() : "";
-            var pSopSteps = [];
-            if (pRawSop) {
-              pSopSteps = pRawSop.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+      // 2. Delete completed one-time rows from personal sheet so sheet stays clean!
+      for (var d = rowsToDelete.length - 1; d >= 0; d--) {
+        try { pSheet.deleteRow(rowsToDelete[d]); } catch(e) {}
+      }
+
+      // 3. Pick up any UNCOMPLETED Extra (One Time) rows entered directly into the personal sheet
+      var freshData = pSheet.getDataRange().getValues();
+      for (var r = 1; r < freshData.length; r++) {
+        var rFreq = String(freshData[r][0] || "").toLowerCase().trim();
+        if (rFreq.includes("extra") || rFreq.includes("one time") || rFreq.includes("adhoc")) {
+          var tN = String(freshData[r][1] || "").trim();
+          var sI = String(freshData[r][2] || "").trim();
+          var itmDesc = tN + (sI && sI.toLowerCase() !== tN.toLowerCase() ? " - " + sI : "");
+          var itmKey = itmDesc.toLowerCase().replace(/[^a-z0-9]/g, "");
+          var dL = freshData[r][3] ? freshData[r][3].toString().replace(/\s*GMT.*/i, '').trim() : "Jald";
+          var rP = freshData[r][12] ? String(freshData[r][12]).trim() : "";
+          var pK = itmDesc.toLowerCase() + "|" + dL.toLowerCase();
+
+          if (!seenKeys[pK] && itmDesc !== "" && !completedSet[itmKey]) {
+            seenKeys[pK] = true;
+            var pRaw = freshData[r][6] ? String(freshData[r][6]).trim() : "";
+            var pSteps = [];
+            if (pRaw) {
+              pSteps = pRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
             } else {
-              var pMeta = getSmartRoleDefaults(role, itemDesc, "");
-              pSopSteps = pMeta.sopSteps || [];
-              pRawSop = pSopSteps.join("\n");
+              var pM = getSmartRoleDefaults(role, itmDesc, "");
+              pSteps = pM.sopSteps || [];
+              pRaw = pSteps.join("\n");
             }
             tasks.push({
               index: -(r + 1),
               assignDate: todayStr,
-              task: itemDesc,
-              deadline: dLine,
+              task: itmDesc,
+              deadline: dL,
               status: "Pending ⏳",
-              refPhoto: rPhoto,
-              sop: pRawSop,
-              sopSteps: pSopSteps
+              refPhoto: rP,
+              sop: pRaw,
+              sopSteps: pSteps
             });
           }
         }
@@ -1779,37 +1821,6 @@ function getAdhocTasksForStaff(staffName) {
   } catch(e) {}
 
   return tasks;
-}
-
-function getStaffProgressReport(staffName) {
-  try {
-    var role = getStaffRoleByName(staffName) || "Staff";
-    var routineTasks = getTasksForRole(role, staffName) || [];
-    var adhocTasks = getAdhocTasksForStaff(staffName) || [];
-    var scores = null;
-    try {
-      scores = getStaffScoresBreakdown(staffName);
-    } catch(errScores) {
-      Logger.log("Scores calculation error for " + staffName + ": " + errScores);
-    }
-    return {
-      success: true,
-      routine: routineTasks,
-      adhoc: adhocTasks,
-      role: role,
-      scores: scores
-    };
-  } catch(e) {
-    Logger.log("getStaffProgressReport error: " + e);
-    return {
-      success: false,
-      error: e.toString(),
-      routine: [],
-      adhoc: [],
-      role: "Staff",
-      scores: null
-    };
-  }
 }
 
 function getAllAdhocHistory() {
@@ -2090,7 +2101,42 @@ function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadl
 
   if(isAdhoc === true && adhocIndex !== null && adhocIndex !== undefined) {
     var adhocSheet = ss.getSheetByName("Adhoc_Tasks");
-    if(adhocSheet) { adhocSheet.getRange(adhocIndex + 1, 5).setValue(finalStatusDisplay); }
+    if(adhocSheet) {
+      if (adhocIndex > 0 && adhocIndex + 1 <= adhocSheet.getLastRow()) {
+        adhocSheet.getRange(adhocIndex + 1, 5).setValue(finalStatusDisplay);
+      } else {
+        // Match by staff and task description
+        var aData = adhocSheet.getDataRange().getValues();
+        var sClean = String(staffName || "").toLowerCase().trim();
+        var tClean = (String(taskName || "") + " " + String(subTask || "")).toLowerCase().replace(/[^a-z0-9]/g, "");
+        for (var a = aData.length - 1; a >= 1; a--) {
+          var aStaff = String(aData[a][1] || "").toLowerCase().trim();
+          var aTask = String(aData[a][2] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          if ((aStaff === sClean || aStaff === "all staff" || aStaff === "all") && (aTask.includes(tClean) || tClean.includes(aTask))) {
+            adhocSheet.getRange(a + 1, 5).setValue(finalStatusDisplay);
+            break;
+          }
+        }
+      }
+    }
+
+    // Clean completed one-time row from staff's personal sheet so it never lingers
+    try {
+      var pSheet = ss.getSheetByName(staffName);
+      if (pSheet && pSheet.getLastRow() >= 2) {
+        var pData = pSheet.getDataRange().getValues();
+        var targetClean = (String(taskName || "") + " " + String(subTask || "")).toLowerCase().replace(/[^a-z0-9]/g, "");
+        for (var pr = pData.length - 1; pr >= 1; pr--) {
+          var prFreq = String(pData[pr][0] || "").toLowerCase().trim();
+          if (prFreq.includes("extra") || prFreq.includes("one time") || prFreq.includes("adhoc")) {
+            var prTitle = (String(pData[pr][1] || "") + " " + String(pData[pr][2] || "")).toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (prTitle.includes(targetClean) || targetClean.includes(prTitle)) {
+              pSheet.deleteRow(pr + 1);
+            }
+          }
+        }
+      }
+    } catch(e) {}
   }
 
   var sheet = ss.getSheetByName("Task_Submissions");
