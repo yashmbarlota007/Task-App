@@ -3105,9 +3105,12 @@ function renderStaffContent() {
            if (adhocPending > 0) {
              adhocBtn.classList.add('has-pending-adhoc');
              adhocBtn.innerHTML = '<div class="tab-label" style="color:#ea580c; font-weight:700;">⚡ One-Time</div><div class="tab-sub" style="color:#c2410c; font-weight:bold;">🔥 ' + adhocPending + ' Due!</div>';
+           } else if (extraTasks.length > 0) {
+             adhocBtn.classList.remove('has-pending-adhoc');
+             adhocBtn.innerHTML = '<div class="tab-label">⚡ One-Time</div><div class="tab-sub" style="color:#10b981; font-weight:bold;">✓ All Done</div>';
            } else {
              adhocBtn.classList.remove('has-pending-adhoc');
-             adhocBtn.innerHTML = '<div class="tab-label">⚡ One-Time</div><div class="tab-sub">' + extraTasks.length + ' Tasks</div>';
+             adhocBtn.innerHTML = '<div class="tab-label">⚡ One-Time</div><div class="tab-sub">0 Tasks</div>';
            }
         }
 
@@ -3220,16 +3223,42 @@ function renderStaffContent() {
           html += "</div>";
         } 
         else if (currentActiveTab === 'Adhoc') {
-          if(extraTasks.length === 0) { area.innerHTML = "<div class='card' style='text-align:center; color:var(--text-muted);'>Koi extra task nahi hai! 🎉</div>"; updateLiveTimers(); return; }
-          // 🔻 DESCENDING ORDER: Newest assigned tasks at top
-          var sortedExtra = extraTasks.slice().sort(function(a, b) { return (b.index || 0) - (a.index || 0); });
-          for(var i=0; i<sortedExtra.length; i++) {
-            var t = sortedExtra[i];
-            var origIndex = extraTasks.indexOf(t);
+          if(extraTasks.length === 0) {
+            area.innerHTML = "<div class='card' style='text-align:center; color:var(--text-muted); padding:30px;'><div style='font-size:24px; margin-bottom:8px;'>🎉</div>Koi extra task nahi hai!</div>";
+            updateLiveTimers();
+            return;
+          }
+
+          // Sort & group: Pending tasks first, Completed tasks second
+          var pendingList = [];
+          var completedList = [];
+          for (var ei = 0; ei < extraTasks.length; ei++) {
+            var tItem = extraTasks[ei];
+            var isDoneItem = tItem.status.includes("Uploaded") || tItem.status.includes("Completed") || tItem.status.includes("Skipped");
+            if (isDoneItem) {
+              completedList.push({ data: tItem, origIndex: ei });
+            } else {
+              pendingList.push({ data: tItem, origIndex: ei });
+            }
+          }
+
+          var displayList = pendingList.concat(completedList);
+
+          for(var i=0; i<displayList.length; i++) {
+            var itemObj = displayList[i];
+            var t = itemObj.data;
+            var origIndex = itemObj.origIndex;
             var isCompleted = t.status.includes("Uploaded") || t.status.includes("Completed") || t.status.includes("Skipped");
             var isSkipped = t.status.includes("Skipped");
-            html += "<div class='task-card adhoc' style='border-left-color: #e67e22; background:#ffffff;'>";
-            html += "<p style='margin:0; font-size:15px; font-weight:bold; color:var(--text-main);'>🔔 Extra Task: <span style='color:var(--primary);'>" + t.task + "</span></p>";
+
+            html += "<div class='task-card adhoc' style='border-left-color: " + (isCompleted ? (isSkipped ? "#da3633" : "#2ea043") : "#e67e22") + "; background:#ffffff;'>";
+            html += "<div style='display:flex; justify-content:space-between; align-items:center;'>";
+            html += "  <p style='margin:0; font-size:15px; font-weight:bold; color:var(--text-main);'>🔔 Extra Task: <span style='color:var(--primary);'>" + t.task + "</span></p>";
+            if (isCompleted) {
+              html += "  <span style='background:" + (isSkipped ? "#fee2e2" : "#d1fae5") + "; color:" + (isSkipped ? "#991b1b" : "#065f46") + "; font-size:10.5px; padding:2px 8px; border-radius:12px; font-weight:bold;'>" + (isSkipped ? "⏭️ Skipped" : "✓ Completed") + "</span>";
+            }
+            html += "</div>";
+
             if (t.subTask && t.subTask.trim() !== '' && t.subTask.trim().toLowerCase() !== t.task.trim().toLowerCase()) {
               html += "<div style='margin:6px 0 8px 0; font-size:13px; color:var(--text-body); background:var(--bg-subtle); padding:8px 12px; border-radius:6px; border-left:3px solid var(--primary);'><b>📝 Instruction / Detail:</b> " + t.subTask + "</div>";
             }
@@ -3252,11 +3281,11 @@ function renderStaffContent() {
             }
             if (adhocSopSteps && adhocSopSteps.length > 0) {
               html += "<div class='task-stepper-box' style='margin:10px 0;'>";
-              html += "<div class='stepper-header' onclick='toggleStepper(\"" + adhocStepperId + "\")' style='cursor:pointer;'>";
+              html += "<div class='stepper-header' onclick='toggleStepper(\"' + adhocStepperId + '\")' style='cursor:pointer;'>";
               html += "<span style='font-weight:700; color:var(--text-main);'>📋 Step-by-Step SOP (Execution Guide):</span>";
-              html += "<span id='" + adhocStepperId + "_toggle' style='font-size:11px; color:var(--primary); font-weight:600;'>▲ Collapse</span>";
+              html += "<span id='' + adhocStepperId + '_toggle' style='font-size:11px; color:var(--primary); font-weight:600;'>▲ Collapse</span>";
               html += "</div>";
-              html += "<div class='stepper-content' id='" + adhocStepperId + "' style='display:block;'>";
+              html += "<div class='stepper-content' id='' + adhocStepperId + '' style='display:block;'>";
               for (var as = 0; as < adhocSopSteps.length; as++) {
                 var cleanStep = String(adhocSopSteps[as] || '').replace(/^\s*\d+[\.\)\-:]\s*/, '').trim();
                 html += "<div class='stepper-step'><span class='stepper-num'>" + (as+1) + "</span><span>" + cleanStep + "</span></div>";
@@ -3267,7 +3296,7 @@ function renderStaffContent() {
             html += "<div class='subtask-row " + (isCompleted ? "completed" : "") + "'>";
             if(isCompleted) {
               html += "<div class='subtask-name' style='color:var(--text-muted); font-size:12px; margin-bottom:0;'>Status: Done</div>";
-              html += "<div class='status-text' style='color:" + (isSkipped ? "#da3633" : "#2ea043") + "; text-align:left;'>" + t.status + "</div>";
+              html += "<div class='status-text' style='color:" + (isSkipped ? "#da3633" : "#2ea043") + "; text-align:left; font-weight:bold;'>" + t.status + "</div>";
             } else {
               html += "<div class='subtask-name' style='font-size:13px; color:var(--text-body); margin-bottom:6px;'>👉 Action:</div>";
               html += "<div class='subtask-actions'>";
