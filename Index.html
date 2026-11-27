@@ -3523,6 +3523,66 @@ function renderStaffContent() {
         }
       }
 
+      function resetPhotoCapture() {
+        var camInput = document.getElementById("proofFileCamera");
+        if (camInput) camInput.value = "";
+        var galInput = document.getElementById("proofFileGallery");
+        if (galInput) galInput.value = "";
+        var oldInput = document.getElementById("proofFile");
+        if (oldInput) oldInput.value = "";
+
+        processedWatermarkedBase64 = null;
+        processedWatermarkedMime = "image/jpeg";
+        processedWatermarkedFileName = "proof.jpg";
+        
+        var uploadActionGroup = document.getElementById("uploadActionGroup");
+        var uploadLabel = document.getElementById("uploadLabel");
+        var preview = document.getElementById("photoPreview");
+        var statusEl = document.getElementById("photoStampingStatus");
+        var retakeBtn = document.getElementById("retakePhotoBtn");
+        var uploadBtn = document.getElementById("uploadBtn") || document.getElementById("btnUploadSubmit");
+
+        if (uploadActionGroup) uploadActionGroup.style.display = "flex";
+        if (uploadLabel) uploadLabel.style.display = "block";
+        if (preview) { preview.src = ""; preview.style.display = "none"; }
+        if (statusEl) statusEl.style.display = "none";
+        if (retakeBtn) retakeBtn.style.display = "none";
+        if (uploadBtn) { 
+          uploadBtn.style.display = "none"; 
+          uploadBtn.disabled = false; 
+          uploadBtn.innerText = "🔒 Submit Verified Proof (+10 P)"; 
+        }
+      }
+
+      function switchCompanyReportPeriod(period) {
+        var pills = document.querySelectorAll("#tabCompanyAudit .ledger-pill");
+        pills.forEach(function(p) { p.classList.remove("active"); });
+        var activePill = document.getElementById("compPill-" + period);
+        if (activePill) activePill.classList.add("active");
+        if (typeof renderCompanyReportTable === "function") {
+          renderCompanyReportTable(period);
+        }
+      }
+
+      function filterAuditTasksByStaff() {
+        if (typeof applyAuditFilters === "function") applyAuditFilters();
+      }
+
+      function filterAuditTasksByStatus(status) {
+        var pills = document.querySelectorAll("#auditFilter-all, #auditFilter-completed, #auditFilter-ontime, #auditFilter-late, #auditFilter-missed");
+        pills.forEach(function(p) { p.classList.remove("active"); });
+        var activePill = document.getElementById("auditFilter-" + status);
+        if (activePill) activePill.classList.add("active");
+        if (typeof applyAuditFilters === "function") applyAuditFilters();
+      }
+
+      function toggleScoreboardMatrix() {
+        var matrix = document.getElementById("scoreboardMatrixTable");
+        if (matrix) {
+          matrix.style.display = matrix.style.display === "none" ? "block" : "none";
+        }
+      }
+
       function showPhotoPreview(event) {
         if (!event.target.files || event.target.files.length === 0) return;
         var file = event.target.files[0];
@@ -3659,10 +3719,14 @@ function renderStaffContent() {
             statusEl.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; gap:6px; color:var(--success); font-weight:700; font-size:12px;'>✓ Live Watermark Stamped (" + Math.round(base64Clean.length * 0.75 / 1024) + " KB)</div>";
           }
 
-          var uploadBtn = document.getElementById("btnUploadSubmit");
+          var retakeBtn = document.getElementById("retakePhotoBtn");
+          if (retakeBtn) retakeBtn.style.display = "block";
+
+          var uploadBtn = document.getElementById("uploadBtn") || document.getElementById("btnUploadSubmit");
           if (uploadBtn) {
             uploadBtn.style.display = "block";
             uploadBtn.disabled = false;
+            uploadBtn.innerText = "🔒 Submit Verified Proof (+10 P)";
           }
         };
 
@@ -3682,7 +3746,7 @@ function renderStaffContent() {
       }
 
       function confirmSubmitProof() {
-        var uploadBtn = document.getElementById("btnUploadSubmit");
+        var uploadBtn = document.getElementById("uploadBtn") || document.getElementById("btnUploadSubmit");
         if (!processedWatermarkedBase64) {
           alert("Kripya pehle photo khinchein!");
           return;
