@@ -1,4 +1,15 @@
 function doGet(e) {
+  if (e && e.parameter && e.parameter.api === 'inspect_adhoc') {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ash = ss.getSheetByName('Adhoc_Tasks');
+    var adata = ash ? ash.getDataRange().getValues() : [];
+    var ssh = ss.getSheetByName('Shubham Bade');
+    var sdata = ssh ? ssh.getDataRange().getValues() : [];
+    return ContentService.createTextOutput(JSON.stringify({
+      adhoc: adata,
+      shubham: sdata
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
   var template = HtmlService.createTemplateFromFile('Index');
   var empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
   var role = (e && e.parameter && e.parameter.role) ? e.parameter.role : "";
@@ -2207,23 +2218,7 @@ function submitTaskWithProof(staffName, role, taskType, taskName, subTask, deadl
       }
     }
 
-    // Clean completed one-time row from staff's personal sheet so it never lingers
-    try {
-      var pSheet = ss.getSheetByName(staffName);
-      if (pSheet && pSheet.getLastRow() >= 2) {
-        var pData = pSheet.getDataRange().getValues();
-        var targetClean = (String(taskName || "") + " " + String(subTask || "")).toLowerCase().replace(/[^a-z0-9]/g, "");
-        for (var pr = pData.length - 1; pr >= 1; pr--) {
-          var prFreq = String(pData[pr][0] || "").toLowerCase().trim();
-          if (prFreq.includes("extra") || prFreq.includes("one time") || prFreq.includes("adhoc")) {
-            var prTitle = (String(pData[pr][1] || "") + " " + String(pData[pr][2] || "")).toLowerCase().replace(/[^a-z0-9]/g, "");
-            if (prTitle.includes(targetClean) || targetClean.includes(prTitle)) {
-              pSheet.deleteRow(pr + 1);
-            }
-          }
-        }
-      }
-    } catch(e) {}
+    // Note: Never delete rows from personal sheets (Pure Read-Only preservation)
   }
 
   var sheet = ss.getSheetByName("Task_Submissions");
