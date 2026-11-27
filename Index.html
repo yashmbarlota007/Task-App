@@ -1683,11 +1683,20 @@
           </div>
         </div>
 
-        <label for="proofFile" id="uploadLabel" style="display:block; background:var(--primary-light); color:var(--primary); border:2px dashed var(--primary-border); padding:20px 14px; font-size:14px; border-radius:var(--radius-md); cursor:pointer; font-weight:700; text-align:center; margin-bottom:14px;">
-          📸 Open Live Camera (Capture Proof)
-          <div style="font-size:11px; font-weight:normal; color:var(--text-muted); margin-top:4px;">Gallery selection disabled • Only live camera capture allowed</div>
-        </label>
-        <input type="file" id="proofFile" accept="image/*" capture="environment" style="display:none;" onchange="showPhotoPreview(event)">
+        <!-- Dual Photo Capture Options: Live Camera & Gallery/Files (Zero Crash on Android) -->
+        <div id="uploadActionGroup" style="display:flex; gap:10px; margin-bottom:14px;">
+          <label for="proofFileCamera" style="flex:1; background:var(--primary-light); color:var(--primary); border:2px dashed var(--primary-border); padding:16px 8px; font-size:13px; border-radius:var(--radius-md); cursor:pointer; font-weight:700; text-align:center;">
+            📸 Live Camera
+            <div style="font-size:10.5px; font-weight:normal; color:var(--text-muted); margin-top:3px;">Direct Photo</div>
+          </label>
+          <input type="file" id="proofFileCamera" accept="image/*" capture="environment" style="display:none;" onchange="showPhotoPreview(event)">
+
+          <label for="proofFileGallery" style="flex:1; background:var(--bg-subtle); color:var(--text-main); border:2px dashed var(--border-subtle); padding:16px 8px; font-size:13px; border-radius:var(--radius-md); cursor:pointer; font-weight:700; text-align:center;">
+            📁 Gallery / Files
+            <div style="font-size:10.5px; font-weight:normal; color:var(--text-muted); margin-top:3px;">Select Photo</div>
+          </label>
+          <input type="file" id="proofFileGallery" accept="image/*" style="display:none;" onchange="showPhotoPreview(event)">
+        </div>
 
         <div id="photoStampingStatus" style="display:none; margin-bottom:12px;"></div>
         
@@ -3281,11 +3290,11 @@ function renderStaffContent() {
             }
             if (adhocSopSteps && adhocSopSteps.length > 0) {
               html += "<div class='task-stepper-box' style='margin:10px 0;'>";
-              html += "<div class='stepper-header' onclick='toggleStepper(\"' + adhocStepperId + '\")' style='cursor:pointer;'>";
+              html += "<div class='stepper-header' onclick='toggleStepper(\"" + adhocStepperId + "\")' style='cursor:pointer;'>";
               html += "<span style='font-weight:700; color:var(--text-main);'>📋 Step-by-Step SOP (Execution Guide):</span>";
-              html += "<span id='' + adhocStepperId + '_toggle' style='font-size:11px; color:var(--primary); font-weight:600;'>▲ Collapse</span>";
+              html += "<span id='" + adhocStepperId + "_toggle' style='font-size:11px; color:var(--primary); font-weight:600;'>▲ Collapse</span>";
               html += "</div>";
-              html += "<div class='stepper-content' id='' + adhocStepperId + '' style='display:block;'>";
+              html += "<div class='stepper-content' id='" + adhocStepperId + "' style='display:block;'>";
               for (var as = 0; as < adhocSopSteps.length; as++) {
                 var cleanStep = String(adhocSopSteps[as] || '').replace(/^\s*\d+[\.\)\-:]\s*/, '').trim();
                 html += "<div class='stepper-step'><span class='stepper-num'>" + (as+1) + "</span><span>" + cleanStep + "</span></div>";
@@ -3518,176 +3527,209 @@ function renderStaffContent() {
         if (!event.target.files || event.target.files.length === 0) return;
         var file = event.target.files[0];
         
-        var uploadBtn = document.getElementById("uploadBtn");
-        var uploadLabel = document.getElementById("uploadLabel");
+        var uploadActionGroup = document.getElementById("uploadActionGroup");
         var preview = document.getElementById("photoPreview");
         var statusEl = document.getElementById("photoStampingStatus");
         
-        if (uploadLabel) uploadLabel.style.display = "none";
+        if (uploadActionGroup) uploadActionGroup.style.display = "none";
         if (statusEl) {
           statusEl.style.display = "block";
           statusEl.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:var(--bg-subtle); border-radius:8px; color:var(--text-main); font-weight:600; font-size:12.5px;'><span>⏳</span> Stamping Live Anti-Cheat Watermark...</div>";
         }
 
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          var img = new Image();
-          img.onload = function() {
-            applyLiveWatermarkToImage(img, file.name);
-          };
-          img.src = e.target.result;
+        var img = new Image();
+        var objectUrl = null;
+        try {
+          objectUrl = URL.createObjectURL(file);
+        } catch(urlErr) {
+          console.warn("createObjectURL failed, fallback to FileReader", urlErr);
+        }
+
+        img.onload = function() {
+          if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch(e) {}
+          }
+          
+          var originalWidth = img.width;
+          var originalHeight = img.height;
+          
+          // Downscale to max 1000px dimension for performance & memory safety (~100KB-150KB)
+          var maxDim = 1000;
+          var targetWidth = originalWidth;
+          var targetHeight = originalHeight;
+          if (originalWidth > maxDim || originalHeight > maxDim) {
+            if (originalWidth > originalHeight) {
+              targetWidth = maxDim;
+              targetHeight = Math.round((originalHeight * maxDim) / originalWidth);
+            } else {
+              targetHeight = maxDim;
+              targetWidth = Math.round((originalWidth * maxDim) / originalHeight);
+            }
+          }
+
+          var canvas = document.createElement("canvas");
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          var ctx = canvas.getContext("2d");
+
+          // Draw scaled photo
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+          // Get location if available
+          var lat = window.currentStaffLat || "";
+          var lng = window.currentStaffLng || "";
+          var locStr = (lat && lng) ? ("GPS: " + Number(lat).toFixed(5) + ", " + Number(lng).toFixed(5)) : "GPS: Acquired";
+
+          // Anti-Cheat Watermark Overlay
+          var now = new Date();
+          var dateStr = now.toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' });
+          var timeStr = now.toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+          var taskTitle = (selectedTaskObj && (selectedTaskObj.task || selectedTaskObj.title)) || "Task Verification";
+          var staffName = (loggedInUser && loggedInUser.name) || "Staff";
+          var staffRole = (loggedInUser && loggedInUser.role) || "Team";
+
+          // Responsive font sizes based on canvas size
+          var baseFontSize = Math.max(14, Math.round(targetWidth * 0.024));
+          var lineHeight = Math.round(baseFontSize * 1.35);
+          var boxPadding = Math.round(baseFontSize * 0.85);
+
+          var lines = [
+            "🔒 VERIFIED LIVE CAPTURE • ANTI-CHEAT ON",
+            "👤 Staff: " + staffName + " (" + staffRole + ")",
+            "📌 Task: " + taskTitle,
+            "⏰ Time: " + dateStr + " " + timeStr + " • " + locStr
+          ];
+
+          var boxHeight = (lines.length * lineHeight) + (boxPadding * 2);
+
+          // Gradient backdrop banner at bottom for 100% legibility
+          var grad = ctx.createLinearGradient(0, targetHeight - boxHeight - 20, 0, targetHeight);
+          grad.addColorStop(0, "rgba(0, 0, 0, 0)");
+          grad.addColorStop(0.2, "rgba(0, 0, 0, 0.75)");
+          grad.addColorStop(1, "rgba(0, 0, 0, 0.92)");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, targetHeight - boxHeight - 20, targetWidth, boxHeight + 20);
+
+          // Top Accent Line
+          ctx.fillStyle = "#2ea043";
+          ctx.fillRect(0, targetHeight - boxHeight - 2, targetWidth, 3);
+
+          // Watermark Texts
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+
+          var startY = targetHeight - boxHeight + boxPadding + (lineHeight / 2);
+
+          for (var i = 0; i < lines.length; i++) {
+            var curY = startY + (i * lineHeight);
+            if (i === 0) {
+              ctx.font = "bold " + Math.round(baseFontSize * 1.05) + "px sans-serif";
+              ctx.fillStyle = "#3fb950"; // Emerald badge
+            } else if (i === 1) {
+              ctx.font = "bold " + baseFontSize + "px sans-serif";
+              ctx.fillStyle = "#ffffff";
+            } else if (i === 2) {
+              ctx.font = "600 " + Math.round(baseFontSize * 0.95) + "px sans-serif";
+              ctx.fillStyle = "#f0883e"; // Amber task highlight
+            } else {
+              ctx.font = "normal " + Math.round(baseFontSize * 0.9) + "px sans-serif";
+              ctx.fillStyle = "#8b949e";
+            }
+            ctx.shadowColor = "rgba(0,0,0,0.8)";
+            ctx.shadowBlur = 4;
+            ctx.fillText(lines[i], boxPadding, curY);
+          }
+          ctx.shadowBlur = 0;
+
+          // Convert to lightweight compressed JPEG (0.75 quality ~120KB)
+          var stampedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
+          var base64Clean = stampedDataUrl.replace(/^data:image\/[a-z]+;base64,/, "");
+
+          processedWatermarkedBase64 = base64Clean;
+          processedWatermarkedMime = "image/jpeg";
+          processedWatermarkedFileName = "verified_proof_" + Date.now() + ".jpg";
+
+          if (preview) {
+            preview.src = stampedDataUrl;
+            preview.style.display = "block";
+          }
+          if (statusEl) {
+            statusEl.style.display = "block";
+            statusEl.innerHTML = "<div style='display:flex; align-items:center; justify-content:center; gap:6px; color:var(--success); font-weight:700; font-size:12px;'>✓ Live Watermark Stamped (" + Math.round(base64Clean.length * 0.75 / 1024) + " KB)</div>";
+          }
+
+          var uploadBtn = document.getElementById("btnUploadSubmit");
+          if (uploadBtn) {
+            uploadBtn.style.display = "block";
+            uploadBtn.disabled = false;
+          }
         };
-        reader.readAsDataURL(file);
-      }
 
-      function applyLiveWatermarkToImage(img, originalFileName) {
-        var canvas = document.createElement("canvas");
-        
-        // Target maximum dimension for crisp quality and fast upload
-        var maxDim = 1280;
-        var width = img.width;
-        var height = img.height;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
+        img.onerror = function() {
+          alert("Photo load karne me dikkat aayi. Kripya dobara try karein.");
+          if (uploadActionGroup) uploadActionGroup.style.display = "flex";
+          if (statusEl) statusEl.style.display = "none";
+        };
 
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Anti-Cheat Watermark Overlay at bottom
-        var bannerHeight = Math.max(80, Math.round(height * 0.16));
-        var bannerY = height - bannerHeight;
-
-        // Gradient dark slate background
-        var gradient = ctx.createLinearGradient(0, bannerY - 20, 0, height);
-        gradient.addColorStop(0, "rgba(15, 23, 42, 0.0)");
-        gradient.addColorStop(0.25, "rgba(15, 23, 42, 0.88)");
-        gradient.addColorStop(1, "rgba(15, 23, 42, 0.96)");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, bannerY - 20, width, bannerHeight + 20);
-
-        var baseFontSize = Math.max(12, Math.round(width * 0.024));
-        var badgeFontSize = Math.max(11, Math.round(baseFontSize * 0.9));
-
-        var now = new Date();
-        var timeStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ", " +
-                      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-
-        var staffName = (loggedInUser && loggedInUser.name) ? loggedInUser.name : "Staff";
-        var staffRole = (loggedInUser && loggedInUser.role) ? loggedInUser.role : "Team Member";
-        var taskTitle = "";
-        if (selectedTaskObj) {
-          taskTitle = selectedTaskObj.task || "";
-          if (selectedTaskObj.subTask && selectedTaskObj.subTask.toLowerCase() !== taskTitle.toLowerCase()) {
-            taskTitle += " - " + selectedTaskObj.subTask;
-          }
-        }
-        if (!taskTitle) taskTitle = "Task Verification";
-
-        var locText = capturedGpsCoords ? 
-          ("GPS: " + capturedGpsCoords.lat.toFixed(5) + ", " + capturedGpsCoords.lon.toFixed(5)) : 
-          "Location: Yash Marketing (Store Device)";
-
-        var textStartX = Math.max(14, Math.round(width * 0.03));
-        var lineY = bannerY + Math.round(bannerHeight * 0.22);
-        var lineSpacing = Math.round(bannerHeight * 0.23);
-
-        // 1. Badge Pill
-        ctx.font = "bold " + badgeFontSize + "px Inter, Arial, sans-serif";
-        var badgeText = "🔒 VERIFIED LIVE CAPTURE • ANTI-CHEAT ON";
-        var badgeWidth = ctx.measureText(badgeText).width + 16;
-        ctx.fillStyle = "#10b981";
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(textStartX, lineY - badgeFontSize, badgeWidth, badgeFontSize + 6, 4);
+        if (objectUrl) {
+          img.src = objectUrl;
         } else {
-          ctx.rect(textStartX, lineY - badgeFontSize, badgeWidth, badgeFontSize + 6);
+          var fr = new FileReader();
+          fr.onload = function(e) { img.src = e.target.result; };
+          fr.readAsDataURL(file);
         }
-        ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText(badgeText, textStartX + 8, lineY - 2);
-
-        lineY += lineSpacing;
-
-        // 2. Staff & Task Line
-        ctx.font = "bold " + baseFontSize + "px Inter, Arial, sans-serif";
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText("👤 Staff: " + staffName + " (" + staffRole + ")   |   📌 " + taskTitle, textStartX, lineY);
-
-        lineY += lineSpacing;
-
-        // 3. Live Time & GPS Line
-        ctx.font = "600 " + Math.round(baseFontSize * 0.95) + "px Inter, Arial, sans-serif";
-        ctx.fillStyle = "#fde047";
-        ctx.fillText("⏰ Live Timestamp: " + timeStr + "   |   📍 " + locText, textStartX, lineY);
-
-        var watermarkedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
-        processedWatermarkedBase64 = watermarkedDataUrl.split(",")[1];
-        processedWatermarkedMime = "image/jpeg";
-        processedWatermarkedFileName = "proof_" + staffName.replace(/[^a-zA-Z0-9]/g, "_") + "_" + Date.now() + ".jpg";
-
-        var preview = document.getElementById("photoPreview");
-        var statusEl = document.getElementById("photoStampingStatus");
-        var retakeBtn = document.getElementById("retakePhotoBtn");
-        var uploadBtn = document.getElementById("uploadBtn");
-
-        if (statusEl) statusEl.style.display = "none";
-        if (preview) {
-          preview.src = watermarkedDataUrl;
-          preview.style.display = "block";
-        }
-        if (retakeBtn) retakeBtn.style.display = "block";
-        if (uploadBtn) uploadBtn.style.display = "block";
-      }
-
-      function resetPhotoCapture() {
-        var fileInput = document.getElementById("proofFile");
-        if (fileInput) fileInput.value = "";
-        processedWatermarkedBase64 = null;
-        
-        var uploadLabel = document.getElementById("uploadLabel");
-        var preview = document.getElementById("photoPreview");
-        var statusEl = document.getElementById("photoStampingStatus");
-        var retakeBtn = document.getElementById("retakePhotoBtn");
-        var uploadBtn = document.getElementById("uploadBtn");
-
-        if (uploadLabel) uploadLabel.style.display = "block";
-        if (preview) { preview.src = ""; preview.style.display = "none"; }
-        if (statusEl) statusEl.style.display = "none";
-        if (retakeBtn) retakeBtn.style.display = "none";
-        if (uploadBtn) uploadBtn.style.display = "none";
       }
 
       function confirmSubmitProof() {
-        var uploadBtn = document.getElementById("uploadBtn");
+        var uploadBtn = document.getElementById("btnUploadSubmit");
         if (!processedWatermarkedBase64) {
-          alert("⚠️ Task submit karne ke liye live camera photo zaroori hai! Kripya pehle photo capture karein.");
+          alert("Kripya pehle photo khinchein!");
           return;
         }
 
         var base64Data = processedWatermarkedBase64;
-        var mimeType = processedWatermarkedMime;
-        var fileName = processedWatermarkedFileName;
+        var mimeType = processedWatermarkedMime || "image/jpeg";
+        var fileName = processedWatermarkedFileName || ("proof_" + Date.now() + ".jpg");
 
-        uploadBtn.innerText = "Submitting..."; uploadBtn.disabled = true;
+        uploadBtn.innerText = "⏳ Uploading Proof...";
+        uploadBtn.disabled = true;
+
+        function handleSuccess(res) {
+          uploadBtn.disabled = false;
+          uploadBtn.innerText = "🔒 Submit Verified Proof (+10 P)";
+          if (res && res.success === false) {
+            alert("⚠️ " + (res.message || "Task submission me dikkat aayi. Kripya dobara try karein."));
+            return;
+          }
+          if (selectedTaskObj) {
+            selectedTaskObj.status = res.status;
+          }
+          updatePointsUI(res.pointsEarned);
+          closeModal();
+          renderStaffContent();
+          showStaffSubmittedModal(selectedTaskObj, res);
+        }
+
+        function handleFailure(err) {
+          uploadBtn.disabled = false;
+          uploadBtn.innerText = "🔒 Submit Verified Proof (+10 P)";
+          console.error("Task submission server error:", err);
+          alert("⚠️ Upload Error: " + (err.message || err) + "\nServer response me dikkat aayi. Kripya dobara button dabayein.");
+        }
+
         if (selectedTaskObj && selectedTaskObj.isAdhocModal) {
-          google.script.run.withSuccessHandler(function(res) {
-            selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
-          }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, base64Data, mimeType, fileName, true, selectedTaskObj.index, "Capture");
+          google.script.run
+            .withSuccessHandler(handleSuccess)
+            .withFailureHandler(handleFailure)
+            .submitTaskWithProof(loggedInUser.name, loggedInUser.role, "Ad-hoc", selectedTaskObj.task, "", selectedTaskObj.deadline, base64Data, mimeType, fileName, true, selectedTaskObj.index, "Capture");
         } else {
           var isAdhoc = selectedTaskObj.isAdhocAssigned ? true : false;
           var adhocRow = selectedTaskObj.adhocRowIndex ? selectedTaskObj.adhocRowIndex - 1 : null;
-          google.script.run.withSuccessHandler(function(res) {
-            selectedTaskObj.status = res.status; updatePointsUI(res.pointsEarned); closeModal(); uploadBtn.innerText = "✅ Done"; uploadBtn.disabled = false; renderStaffContent(); showStaffSubmittedModal(selectedTaskObj, res);
-          }).submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, base64Data, mimeType, fileName, isAdhoc, adhocRow, "Capture");
+          google.script.run
+            .withSuccessHandler(handleSuccess)
+            .withFailureHandler(handleFailure)
+            .submitTaskWithProof(loggedInUser.name, loggedInUser.role, selectedTaskObj.type, selectedTaskObj.task, selectedTaskObj.subTask, selectedTaskObj.deadline, base64Data, mimeType, fileName, isAdhoc, adhocRow, "Capture");
         }
       }
 
