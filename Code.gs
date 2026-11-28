@@ -13,9 +13,11 @@ function doGet(e) {
   var template = HtmlService.createTemplateFromFile('Index');
   var empId = (e && e.parameter && e.parameter.empId) ? e.parameter.empId : "";
   var role = (e && e.parameter && e.parameter.role) ? e.parameter.role : "";
+  var name = (e && e.parameter && e.parameter.name) ? e.parameter.name : "";
   template.empId = empId;
   template.portalEmpId = empId;
   template.role = role;
+  template.empName = name;
   return template.evaluate()
       .setTitle('Yash Marketing ERP & Task Manager')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -25,28 +27,65 @@ function doGet(e) {
 function verifyLogin(empId, password) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var passSheet = ss.getSheetByName("password");
-  if (!passSheet) return { success: false, message: "Error: 'password' sheet nahi mili!" };
+  var masterSheet = ss.getSheetByName("Staff Master") || ss.getSheetByName("staff master");
   
-  var passData = passSheet.getDataRange().getValues();
+  var cleanInput = (empId || "").toString().trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  var rawInput = (empId || "").toString().trim().toLowerCase();
   var matchedEmpName = "";
-  for (var i = 1; i < passData.length; i++) {
-    var sheetId = passData[i][0] ? passData[i][0].toString().trim() : "";
-    var sheetPass = passData[i][1] ? passData[i][1].toString().trim() : "";
-    if (sheetId.toLowerCase() === empId.toString().trim().toLowerCase() && (sheetPass === password.toString().trim() || password === "SSO_BYPASS")) {
-      matchedEmpName = findEmployeeName(sheetId);
-      break;
+  var isSso = (password === "SSO_BYPASS");
+
+  // 1. Try matching in password sheet
+  if (passSheet) {
+    var passData = passSheet.getDataRange().getValues();
+    for (var i = 1; i < passData.length; i++) {
+      var rawId = passData[i][0] ? passData[i][0].toString().trim() : "";
+      var cleanSheetId = rawId.toLowerCase().replace(/[^a-z0-9]/g, "");
+      var sheetPass = passData[i][1] ? passData[i][1].toString().trim() : "";
+
+      if ((cleanSheetId === cleanInput || rawId.toLowerCase() === rawInput) && (sheetPass === password.toString().trim() || isSso)) {
+        matchedEmpName = findEmployeeName(rawId);
+        break;
+      }
     }
   }
+
+  // 2. If SSO_BYPASS and not matched in password sheet, match directly in Staff Master by ID or Name!
+  if (!matchedEmpName && masterSheet && isSso) {
+    var masterData = masterSheet.getDataRange().getValues();
+    for (var m = 1; m < masterData.length; m++) {
+      var mId = masterData[m][0] ? masterData[m][0].toString().trim() : "";
+      var mName = masterData[m][1] ? masterData[m][1].toString().trim() : "";
+      var cleanMId = mId.toLowerCase().replace(/[^a-z0-9]/g, "");
+      var cleanMName = mName.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+      if (cleanMId === cleanInput || cleanMName === cleanInput || mName.toLowerCase() === rawInput) {
+        matchedEmpName = mName;
+        break;
+      }
+    }
+  }
+
+  // 3. Fallback for staff personal sheet directly if named tab exists in spreadsheet
+  if (!matchedEmpName && isSso && rawInput) {
+    var allSheets = ss.getSheets();
+    for (var s = 0; s < allSheets.length; s++) {
+      var sName = allSheets[s].getName().trim();
+      var cleanSName = sName.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (cleanSName === cleanInput || sName.toLowerCase() === rawInput) {
+        matchedEmpName = sName;
+        break;
+      }
+    }
+  }
+
   if (matchedEmpName !== "") {
     var role = getStaffRoleByName(matchedEmpName);
-    // Auto-ensure staff sheet exists in background
     try {
       var staffSh = ss.getSheetByName(matchedEmpName);
       if (!staffSh) {
         setupStaffTaskSheet(matchedEmpName, role);
       }
     } catch(e) {}
-    var role = getStaffRoleByName(matchedEmpName);
     var scores = getStaffScoresBreakdown(matchedEmpName);
     return { success: true, name: matchedEmpName, role: role, scores: scores };
   }
