@@ -1984,10 +1984,16 @@
       var urlParams = new URLSearchParams(window.location.search);
       var passedEmpId = "<?= (typeof portalEmpId !== 'undefined') ? portalEmpId : '' ?>";
       if ((!passedEmpId || passedEmpId.includes("<%=")) && urlParams.has("empId")) passedEmpId = urlParams.get("empId");
+      var passedName = "<?= (typeof empName !== 'undefined') ? empName : '' ?>";
+      if ((!passedName || passedName.includes("<%=")) && urlParams.has("name")) passedName = urlParams.get("name");
 
       window.onload = function() {
         if (passedEmpId && passedEmpId.trim() !== "") {
           document.getElementById('empId').value = passedEmpId;
+          document.getElementById('empPass').value = "SSO_BYPASS";
+          loginUser();
+        } else if (passedName && passedName.trim() !== "") {
+          document.getElementById('empId').value = passedName;
           document.getElementById('empPass').value = "SSO_BYPASS";
           loginUser();
         } else {
